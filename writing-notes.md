@@ -1,6 +1,5 @@
 ---
 type: Guide
-title: Writing notes
 description: How to add portable notes, link them, and record their sources.
 sources:
   - id: okf-spec
