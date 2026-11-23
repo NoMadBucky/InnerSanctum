@@ -4,8 +4,8 @@ title: Writing notes
 description: How to add portable notes, link them, and record their sources.
 sources:
   - id: okf-spec
-    resource: https://github.com/open-knowledge-format/open-knowledge-format/blob/main/SPEC.md
-    title: Open Knowledge Format specification
+    resource: references/okf/SPEC.md
+    title: Open Knowledge Format v0.3 specification
 ---
 
 # Writing notes
@@ -16,4 +16,4 @@ Use standard Markdown links with relative file paths rather than `[[wikilinks]]`
 
 Use descriptive, lowercase filenames with hyphens. Update the [bundle index](index.md) as useful entry points emerge. Keep sensitive notes local unless you explicitly intend to share them.
 
-[^okf-spec]: Open Knowledge Format v0.3, §§3–6.
+[^okf-spec]: [Open Knowledge Format v0.3](references/okf/SPEC.md), §§3–6.
