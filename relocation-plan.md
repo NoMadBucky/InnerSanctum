@@ -5,11 +5,14 @@ this checkout's `OKF/` and sibling `SourceFiles/`. The SynologyDrive store
 remains authoritative until verified cutover. This plan does not convert OKF to
 v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
 
-**Checkpoint window:** Barry chose an attended, checkpoint-only window and
-owner-managed backup. The date, time zone, and exact backup destination are not
-yet confirmed. The private handoff pins the existing candidate artifacts; both
-services were still running when checked. It does not authorize a stop or
-application of the new binding.
+**Checkpoint-only window completed.** The stopped OKF/Notes pair passed
+MatterKeep's offline verifier. Separate local backups of `SourceFiles/` and
+Auth passed byte-for-byte verification; all 84 cataloged attachments matched.
+The approved root `.DS_Store` mode repair changed no file bytes. Both services
+returned on their original launchers and bindings. The retained local
+checkpoint protects against a failed move, not disk loss. Before a later
+cutover, take another fresh stopped checkpoint; this one does not authorize
+relocation or supersede later writes.
 
 ## Before scheduling downtime
 
