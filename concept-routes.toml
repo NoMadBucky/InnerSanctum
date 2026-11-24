@@ -1,0 +1,5 @@
+# Proposed authoring destinations for standalone v0.2 bundles using these indexes.
+# Validation scope and field rules remain in each bundle's okf_schema blocks.
+[types.Video]
+schema = "Resources/videos/index.md"
+directory = "Resources/videos"

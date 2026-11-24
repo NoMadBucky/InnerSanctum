@@ -1,5 +1,11 @@
 # InnerSanctum Change Log
 
+## 2026-11-24
+
+* **Standalone concept Create**: Added schema-driven templates and a
+  recoverable local writer for disposable bundles. No MatterKeep runtime
+  dependency, live store changes or writer cutover.
+
 ## 2026-11-23
 
 * **Specification relocation** (`2026-11-23T18:18:30-06:00`, `mk-agent/gpt-6-2-sol`):

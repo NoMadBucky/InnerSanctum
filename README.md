@@ -17,6 +17,51 @@ sole writer; the former SynologyDrive store is retained but inactive. Keep
 inbound sync excluded. The [relocation plan](relocation-plan.md) records the
 binding change and verification. Any v0.3 conversion is separate.
 
+## Standalone concept creation
+
+InnerSanctum can create an ordinary Markdown concept without MatterKeep or a
+browser. This first version is for **disposable, standalone bundles outside the
+checkout**. It refuses repository paths, SynologyDrive and bundles carrying
+Personal's writer marker. Do not remove a marker to make a bundle eligible.
+The live bundle still belongs to MatterKeep Personal.
+
+Use an existing bundle with a root `index.md` and `log.md`, a declaring index
+with a fenced `okf_schema` block, and a destination index with a
+`## Directory Listing` section. A [route](concept-routes.toml) points to the
+declaring index and selects the exact destination; `directory` inside the
+schema still limits the allowed subtree. Routes cannot override the schema.
+Add types as data, not Python code. The supplied Video route expects the
+declaration and destination index at `Resources/videos/index.md`.
+
+```sh
+uv run --locked innersanctum concept template Video \
+  --bundle "$DISPOSABLE_OKF" --routes concept-routes.toml
+
+uv run --locked innersanctum concept create --from "$DRAFT" \
+  --bundle "$DISPOSABLE_OKF" --routes concept-routes.toml --actor "human:your-name"
+```
+
+Supply the actual producer as `--actor`. The draft supplies `type`, `title`,
+other schema fields and any Markdown body. The command allocates a seven-digit
+`bho:` ID and adds generation provenance without reformatting the draft. It
+validates required and declared fields, leaves extra metadata alone unless
+forbidden, and refuses unsupported schema rules. It writes the new concept
+without overwriting an existing file, adds the parent index entry and audit
+entry, then verifies all three. It returns a JSON path, ID and source revision.
+Create does not deduplicate by title or external URL, create directories, or
+fetch attachments. Full bundle validation, Read, Update and Delete are future work.
+
+Use `--dry-run` to validate and preview the affected paths without writing; it
+does not reserve the proposed ID. During Create, the private
+`.innersanctum/` directory holds a local lock and a pending journal. If
+interrupted, use `concept recover --bundle "$DISPOSABLE_OKF"` rather than
+submitting another Create. Recovery finishes the original changes or stops if
+it encounters unexpected bytes. It does not roll back or merge changes. File
+replacements are sequential: the lock coordinates InnerSanctum commands on
+one host, not readers, sync, or another writer. If an interrupted command has
+no pending journal, check the concept index and audit log before resubmitting:
+the write may have finished before the command could report success.
+
 ## Format requirements
 
 The v0.3 target uses:

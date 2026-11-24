@@ -1,0 +1,22 @@
+[project]
+name = "innersanctum"
+version = "0.1.0"
+description = "Local schema-driven OKF concept authoring"
+requires-python = ">=3.12"
+dependencies = ["markdown-it-py>=4,<5", "ruamel.yaml>=0.18,<0.20"]
+
+[project.scripts]
+innersanctum = "innersanctum.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10"]
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/innersanctum"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

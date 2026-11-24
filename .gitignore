@@ -1,2 +1,5 @@
 /OKF/
 /SourceFiles/
+.venv/
+.pytest_cache/
+__pycache__/
