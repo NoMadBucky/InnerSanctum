@@ -1,6 +1,6 @@
 # Notes Save rollout
 
-**2026-11-24T19:33:23Z · Read-only preflight complete; activation held.**
+**2026-11-24T19:38:30Z · Stopped backup verified; attended start prepared.**
 The [project registry](project-registry.md) resolves `barry` and `bho`.
 The [cutover record](create-cutover.md) remains the source for writer authority.
 The November 24 record is not a fresh observation of either service.
@@ -103,16 +103,30 @@ configuration edit is part of this gate.
    Do not select Clerk concept or Transcript, Daily Briefing,
    journal publication, or Work publishing in either gate.
 
-### Current activation hold
+### Attended Personal-only start
 
 The successor backup method passed a disposable rehearsal: it held the
 current writer marker, copied and independently verified canonical files
 including hidden receipts, and verified separate private Notes and Auth
 database copies without opening them for writing. It refused overwrite,
 pending canonical work, a SQLite sidecar, and altered backup bytes.
-No live copy or installation has occurred. Do not proceed until the
-owner verifies the protected launcher and confirms inbound sync and other
-writers are excluded for the maintenance window. Keep BHO held.
+
+The owner then confirmed inbound sync off and no intervening writers,
+and reported the protected launcher is root-owned, mode `0600`, with
+the expected label. A new private stopped backup verified independently:
+1,130 canonical files, no completed InnerSanctum receipts at capture,
+and separate Notes and Auth databases. No attachments were copied or
+changed. The original sealed adoption checkpoint remains intact.
+
+Both exact noneditable runtimes and a new inactive `/barry` config are
+staged outside the repositories. The existing Auth identity and login
+passkey matched; mail, delegated Save and other publishers are off.
+The proposed launcher is attended (`KeepAlive` off). The private Terminal
+runbook rechecks the stopped backup and BHO hold, archives the original
+protected launcher, and changes only the Personal job. The backup sources
+still matched at runbook preparation. No privileged command ran, no
+service was started, and no Save was performed. The owner must run the
+reviewed Terminal step before signed-in read verification.
 
 **Backout:** On any mismatch, stop and restart-inhibit only the
 candidate Personal host if it was started. If the BHO Source selector
