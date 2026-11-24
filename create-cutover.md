@@ -4,8 +4,9 @@
 
 **Cutover complete.** InnerSanctum owns write authority for the live `OKF/`
 bundle. The former installed Personal runtime refused the new marker before
-opening Notes. Both Personal and BHO remain stopped and restart-disabled;
-no reader-only configuration or replacement publishers were enabled.
+opening Notes. MatterKeep Personal remains stopped and restart-disabled.
+BHO is back online with its Personal publishers disabled; it did not take
+over writer authority.
 
 A fresh stopped Personal checkpoint of OKF and Notes verified independently
 before and after the marker change. Separate private Auth and `SourceFiles/`
@@ -24,10 +25,19 @@ were preparation, not evidence of the later writer transfer.
 
 ## Decide what stays running
 
+The first handover kept both services offline. BHO subsequently returned on
+its existing user job with only four Personal API launcher selections removed:
+delegated Notes editing, Clerk Transcript publication, Clerk concept changes,
+and Daily Briefing publication. The original launcher is preserved privately.
+The owner publication hold is active, native Personal writes still refuse,
+and the existing brokered read of the InnerSanctum bundle passed without
+changing the binding. Local and public HTTPS sign-in responded; no publisher
+was invoked. The sampled canonical files and publisher journals were unchanged.
+
 Use one writer for the entire bundle, not one writer per collection. Create
 changes the shared root audit log and checks bundle-wide IDs. Until an explicit
-reader-only deployment is qualified, the simplest first handover is to keep
-the Personal writer stopped and keep its publishers held.
+reader-only Personal deployment is qualified, keep the Personal service stopped
+and keep its publishers held.
 
 | Existing surface | Required disposition before cutover |
 | --- | --- |

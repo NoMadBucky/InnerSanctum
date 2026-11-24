@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **BHO dashboard restored**: Verified the dashboard and its existing brokered
+  Personal read path with Personal publisher selections disabled. MatterKeep
+  Personal remains offline; sampled canonical files and journals did not change.
+
 * **Live writer handover**: Transferred `OKF/` authority to InnerSanctum
   after verifying the stopped checkpoint and separate backups. Verified
   the first ordinary Video Create and its index and audit updates. The

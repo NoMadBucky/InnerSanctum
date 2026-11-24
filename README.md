@@ -12,10 +12,10 @@ for its Personal bundle is [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
   the source catalog. It is outside the OKF bundle.
 
 Both folders are local to this checkout and intentionally ignored by Git. They
-do not come with a clone and need their own backup. MatterKeep Personal is the
-sole writer; the former SynologyDrive store is retained but inactive. Keep
-inbound sync excluded. The [relocation plan](relocation-plan.md) records the
-binding change and verification. Any v0.3 conversion is separate.
+do not come with a clone and need their own backup. InnerSanctum is the sole
+writer; the former SynologyDrive store is retained but inactive. Keep inbound
+sync excluded. The [cutover record](create-cutover.md) records current writer
+authority. Any v0.3 conversion is separate.
 
 ## Standalone concept creation
 
@@ -24,8 +24,9 @@ browser. During development, use **disposable, standalone bundles outside the
 checkout**. Standalone mode refuses repository paths, SynologyDrive and
 bundles carrying Personal's writer marker. Do not remove a marker to make
 a bundle eligible. The [live Create cutover](create-cutover.md) verified that
-InnerSanctum is now the sole writer of `OKF/`. Personal and BHO remain offline
-until a separate reader-only or publisher handback is approved.
+InnerSanctum is now the sole writer of `OKF/`. MatterKeep Personal remains
+offline. The BHO dashboard is online with its Personal publishers and delegated
+Notes editing disabled.
 
 Use an existing bundle with a root `index.md` and `log.md`, a declaring index
 with a fenced `okf_schema` block, and a destination index with a
