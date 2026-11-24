@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **Notes Save rollout preparation**: Qualified the installed Personal
+  entrypoint on a disposable `/barry` mount, with the existing BHO Source
+  client held live. Recorded artifact pins and a separate preflight gate.
+
 * **Notes Save migration**: Added receipt lookup and path/adoption pins for
   client updates. Prepared a Notes-only Personal adapter that retains draft
   checks and supports the existing BHO Source wire contract. No live activation.

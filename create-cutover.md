@@ -167,3 +167,6 @@ runtime, Note schemas and indexes, owner binding, and BHO grant and hold.
 Keep Clerk, managed publishers, and the Work socket disabled. Preserve
 the current Notes database and InnerSanctum receipts if rolling back the
 client; do not restore the legacy writer or overwrite current data.
+
+The [Notes Save rollout card](notes-save-rollout.md) pins the rehearsed
+candidate and separates read-only preflight from live activation.
