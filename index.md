@@ -9,6 +9,7 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 ## Directory Listing
 
 * [README](README.md) - Project layout, migration status, and format requirements.
+* [Personal relocation plan](relocation-plan.md) - Stopped-writer cutover and acceptance for the v0.2 store.
 * [Change log](log.md) - History of changes to the project.
 * [OKF specification and license](OKF_SPEC/index.md) - Vendored OKF v0.3 reference.
 * [Git ignore rules](.gitignore) - Keep local Personal content out of Git.

@@ -14,10 +14,9 @@ for its Personal bundle is [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
 Both folders are local to this checkout and intentionally ignored by Git. They
 do not come with a clone and need their own backup. MatterKeep still uses the
 registered SynologyDrive store; the local folders are migration copies, not a
-second filing destination. Before switching, verify that both copies match the
-source, that ownership and modes meet MatterKeep's requirements (`0700` for
-directories, `0600` for files), and that MatterKeep can read and write through the
-new registry binding. Relocate as v0.2 first; validate the v0.3 conversion separately.
+second filing destination. The [relocation plan](relocation-plan.md) covers the
+stopped-writer checkpoint, exact binding approval, and acceptance checks. Relocate
+as v0.2 first; validate the v0.3 conversion separately.
 
 ## Format requirements
 
