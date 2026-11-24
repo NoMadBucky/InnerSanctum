@@ -74,7 +74,26 @@ relocation or supersede later writes.
   Daily Briefing (which publishes both a Note and a Transcript), and BHO's
   delegated editors. Do not infer a drain from a disabled broker or an empty
   queue; reconcile any submitted, uncertain, or partially delivered operation
-  before the stop.
+  before the stop. A read-only preflight found no pending intents or incomplete
+  receipts in the nine sampled Personal tables, and all 86 frozen Clerk
+  Transcript operations had confirmed read-back. Four Clerk deliveries lacked
+  a provider message mapping and did not match an observed session fence or
+  ready Briefing day. One other action was marked `submitted` / `not-sent`.
+  Two matching, complete OpenCode history reads for each of the five
+  original actions found one exact new user message after the stored
+  prefix, a final response, and a success marker. All five inboxes were
+  empty. Even the action marked `not-sent` had this evidence; do not
+  resend it. None had a confirmed action-bound Clerk receipt. The five
+  current canonical Transcripts and their existing receipts matched
+  Personal's records. Two Transcripts contain the exact final response;
+  three do not contain it verbatim. Before scheduling, review an exact
+  no-resend recovery or preservation disposition for these original actions.
+  Do not edit the journals or reuse the old, deferred session-fence preview.
+  One old Briefing recovery manifest remains `paired` even though its day
+  is `ready` with both publications confirmed; treat that as bookkeeping, not
+  permission to republish. The sampled concept operation marked `uncertain`
+  matched its exact local closure, and the unsent BHO Save form contained
+  only its original source. These samples do not establish a writer hold.
 - [ ] Confirm the checkout, the retained-copy and checkpoint directories, and
   working space on the service host. The checkout must have a physical `.git/`
   and root ignore rules `/OKF/` and `/SourceFiles/`, with neither tree in the
@@ -89,13 +108,11 @@ relocation or supersede later writes.
   by SHA-256; it retains the differing movie record and leaves both originals
   in place. This is a backup of the incomplete local copies, not a stopped
   checkpoint or a backup of the authoritative store.
-- [ ] Confirm an independent backup destination for the authoritative
-  `OKF/` and `SourceFiles/`. A read-only comparison found one new live
-  Markdown file, a changed nested index, and an updated root log since the
-  earlier stage. Live `SourceFiles/` still matched that stage, and the
-  previously reviewed local differences were unchanged. Retain the earlier
-  stage for reference only; build the cutover copies from a fresh stopped
-  checkpoint and stopped source inventory.
+- [x] Record Barry's decision to forego an independent off-device backup
+  for this cutover. Retain the earlier stage for reference only. A fresh,
+  verified stopped OKF/Notes checkpoint and separate local `SourceFiles/`
+  and Auth preservation are still required. Same-host copies do not
+  protect against loss of the serving disk.
 
 ### Read-only control map
 
