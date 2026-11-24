@@ -91,12 +91,12 @@ relocation or supersede later writes.
   canonical preimages and receipts. All ten retained files passed read-back.
   Review digest:
   `cb052855625991ebc34f0782c89ea21c9793e087c179ffe8538e87633ebf991a`.
-  Recommended: leave the two matching Transcripts unchanged and preserve
-  the other three responses privately with their preimages. Before scheduling,
-  Barry must confirm preservation-only or request separately qualified
-  canonical recovery. In either case, ensure these old sessions cannot settle
-  during the window. Do not edit journals, infer a new receipt, or reuse the
-  old, deferred session-fence preview.
+  Barry approved preservation only: leave the canonical Transcripts
+  unchanged and retain the original responses privately. The ten files,
+  the five journal rows and their canonical revisions passed another
+  read-only check. Keep these sessions from settling during the window.
+  Do not edit journals, infer a new receipt, or reuse the old, deferred
+  session-fence preview.
   One old Briefing recovery manifest remains `paired` even though its day
   is `ready` with both publications confirmed; treat that as bookkeeping, not
   permission to republish. The sampled concept operation marked `uncertain`
@@ -110,7 +110,11 @@ relocation or supersede later writes.
   state must remain outside Git. The current checkout, Notes, and private
   plan directory passed the same-filesystem check; the existing data roots
   still have mode `0755`. Pause Git operations that can move, stage, or
-  remove ignored files throughout the maintenance window.
+  remove ignored files throughout the maintenance window. Running preflight
+  reverified Git exclusion, both retained copies, same-device space, and
+  package/config/source pins. A private, qualified-wheel planning overlay
+  was prepared without replacing either installed runtime. The reserved
+  folder holds no fresh checkpoint or approved stopped plan yet.
 - [x] Preserve both existing InnerSanctum copies outside Git. The private
   archive has 459 OKF files and 85 source files, all independently verified
   by SHA-256; it retains the differing movie record and leaves both originals
