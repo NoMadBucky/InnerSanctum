@@ -33,9 +33,13 @@ def folded(name):
     return unicodedata.normalize("NFC", name).casefold()
 
 
-def refuse_personal(root):
-    if any(folded(name) == MARKER for name in os.listdir(root)):
+def check_authority(root, successor=None):
+    matches = [name for name in os.listdir(root) if folded(name) == MARKER]
+    if successor is None and matches:
         raise Refused("This bundle is managed by MatterKeep Personal. No publication was attempted.")
+    if successor is not None and (matches != [MARKER]
+                                  or read_file(root / MARKER, limit=256) != successor):
+        raise Refused("The approved InnerSanctum writer marker changed.")
 
 
 def open_bundle(path, checkout):
@@ -45,7 +49,7 @@ def open_bundle(path, checkout):
             or any(folded(part) == "synologydrive" for part in root.parts)
             or any(present(parent / ".git") for parent in (root, *root.parents))):
         raise Refused("Select a physical standalone bundle outside repositories and SynologyDrive.")
-    refuse_personal(root)
+    check_authority(root)
     return root
 
 
@@ -239,8 +243,8 @@ def sync_directory(path):
 
 
 @contextmanager
-def locked(root):
-    refuse_personal(root)
+def locked(root, successor=None):
+    check_authority(root, successor)
     state = root / STATE
     try:
         state.mkdir(mode=0o700)
@@ -261,8 +265,7 @@ def locked(root):
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise Refused("Another InnerSanctum write is in progress.") from None
-        if any(folded(name) == MARKER for name in os.listdir(root)):
-            raise Refused("A MatterKeep Personal writer marker is present.")
+        check_authority(root, successor)
         # A crash after linking a staged new concept can leave a second link.
         # Stages are never the recovery authority; the durable journal is.
         for leftover in state.glob("stage-*"):
@@ -375,13 +378,13 @@ def describe(changes, status):
             "revision": digest(record.after.encode()), "files": [change.path for change in changes]}
 
 
-def create(root, routes, raw, actor, *, dry_run=False):
-    refuse_personal(root)
+def create(root, routes, raw, actor, *, dry_run=False, successor=None):
+    check_authority(root, successor)
     if dry_run:
         if present(root / STATE / PENDING):
             raise Refused("A Create is pending; recover it before planning another.")
         return describe(plan_create(root, routes, raw, actor), "planned")
-    with locked(root) as state:
+    with locked(root, successor) as state:
         if present(state / PENDING):
             raise Refused("A Create is pending; run concept recover before trying another.")
         changes = plan_create(root, routes, raw, actor)
@@ -395,9 +398,9 @@ def create(root, routes, raw, actor, *, dry_run=False):
         return publish(root, state, changes)
 
 
-def recover(root):
-    refuse_personal(root)
+def recover(root, *, successor=None):
+    check_authority(root, successor)
     if not present(root / STATE / PENDING):
         raise Refused("No Create is pending.")
-    with locked(root) as state:
+    with locked(root, successor) as state:
         return publish(root, state, read_changes(root, state), recovering=True)

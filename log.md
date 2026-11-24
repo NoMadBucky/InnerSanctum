@@ -2,6 +2,9 @@
 
 ## 2026-11-24
 
+* **Writer handover candidate**: Added and rehearsed exact-checkout adoption
+  with a stopped Personal checkpoint. No live marker or service changes.
+
 * **Live Create preparation**: Checked the live Video route and adapted
   Create to preserve repeated historical audit sections and legacy tagged
   metadata. Added the [handover plan](/create-cutover.md); no live writes,

@@ -20,10 +20,10 @@ binding change and verification. Any v0.3 conversion is separate.
 ## Standalone concept creation
 
 InnerSanctum can create an ordinary Markdown concept without MatterKeep or a
-browser. This first version is for **disposable, standalone bundles outside the
-checkout**. It refuses repository paths, SynologyDrive and bundles carrying
-Personal's writer marker. Do not remove a marker to make a bundle eligible.
-The live bundle still belongs to MatterKeep Personal.
+browser. During development, use **disposable, standalone bundles outside the
+checkout**. Standalone mode refuses repository paths, SynologyDrive and
+bundles carrying Personal's writer marker. Do not remove a marker to make
+a bundle eligible. The live bundle still belongs to MatterKeep Personal.
 See the [live Create cutover plan](create-cutover.md) for the compatibility
 checks and remaining writer handover gates.
 

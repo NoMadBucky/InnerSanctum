@@ -1,11 +1,13 @@
 """Schema-driven Create commands for a standalone OKF bundle."""
 
 import argparse
+from contextlib import nullcontext
 import json
 from pathlib import Path
 import sys
 
 from .schema import LIMIT, Refused, read_text, resolve_route
+from .handover import adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, recover
 
 
@@ -21,9 +23,17 @@ def parser():
     new.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
     recovery = actions.add_parser("recover", help="Finish an interrupted Create without replanning")
     for action in (template, new, recovery):
-        action.add_argument("--bundle", required=True, help="Explicit standalone bundle directory")
+        target = action.add_mutually_exclusive_group(required=True)
+        target.add_argument("--bundle", help="Explicit standalone bundle directory")
+        target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
     for action in (template, new):
         action.add_argument("--routes", required=True, help="TOML map of authoring destinations")
+    transfer = actions.add_parser("adopt", help="Transfer one stopped, checkpointed checkout")
+    transfer.add_argument("--live-checkout", required=True, help="Exact InnerSanctum checkout")
+    transfer.add_argument("--checkpoint", required=True, help="Independently verified stopped Personal checkpoint")
+    transfer.add_argument("--sha256", required=True, help="Retained approval digest for the checkpoint receipt")
+    transfer.add_argument("--writers-stopped", action="store_true", required=True,
+                          help="Assert writers and publishers are excluded; this does not stop them")
     return command
 
 
@@ -31,18 +41,24 @@ def main(argv=None):
     args = parser().parse_args(argv)
     checkout = Path(__file__).resolve().parents[2]
     try:
-        root = open_bundle(args.bundle, checkout)
-        if args.action == "recover":
-            result = recover(root)
+        if args.action == "adopt":
+            result = adopt(Path(args.live_checkout).expanduser().absolute(), args.checkpoint,
+                           args.sha256, writers_stopped=args.writers_stopped)
         else:
-            routes = read_text(read_file(Path(args.routes).expanduser()))
-            if args.action == "template":
-                indexes, _ = inventory(root, collect_ids=False)
-                print(resolve_route(args.type, routes, indexes).template(), end="")
-                return 0
-            raw = (sys.stdin.buffer.read(LIMIT + 1) if args.source == "-"
-                   else read_file(Path(args.source).expanduser()))
-            result = create(root, routes, raw, args.actor, dry_run=args.dry_run)
+            target = (live_checkout(Path(args.live_checkout).expanduser().absolute()) if args.live_checkout
+                      else nullcontext((open_bundle(args.bundle, checkout), None)))
+            with target as (root, successor):
+                if args.action == "recover":
+                    result = recover(root, successor=successor)
+                else:
+                    routes = read_text(read_file(Path(args.routes).expanduser()))
+                    if args.action == "template":
+                        indexes, _ = inventory(root, collect_ids=False)
+                        print(resolve_route(args.type, routes, indexes).template(), end="")
+                        return 0
+                    raw = (sys.stdin.buffer.read(LIMIT + 1) if args.source == "-"
+                           else read_file(Path(args.source).expanduser()))
+                    result = create(root, routes, raw, args.actor, dry_run=args.dry_run, successor=successor)
         print(json.dumps(result, sort_keys=True))
     except Refused as error:
         print(f"innersanctum: {error}", file=sys.stderr)

@@ -2,8 +2,10 @@
 
 ## Status
 
-The standalone writer is **not live**. MatterKeep Personal still owns
-`OKF/`, its writer marker is present, and the new CLI rejects the checkout.
+The InnerSanctum writer is **not live**. MatterKeep Personal still owns
+`OKF/`, its writer marker is present, and the CLI refuses live Create under
+that marker. A candidate for an exact-checkout handover has been rehearsed
+on a disposable checkout.
 This is separate from the completed [Personal relocation](relocation-plan.md)
 and does not change the bundle's OKF v0.2 format or the `SourceFiles/` binding.
 
@@ -31,11 +33,11 @@ the Personal writer stopped and keep its publishers held.
 
 ## Handover gates
 
-1. **Prepare a candidate on disposable data.** Introduce an explicit
+1. **Prepare a candidate on disposable data.** The candidate introduces an explicit
    exact-checkout opt-in for `InnerSanctum/OKF`, an InnerSanctum writer binding,
    and a guarded transfer of ownership. Keep default refusal for repositories,
    other workspaces and active Personal markers. Rehearse interruption,
-   conflicting authority and rollback. Do not rename or remove the live
+   conflicting authority and recovery. Do not rename or remove the live
    Personal marker to bypass the existing gate.
 2. **Approve an exact maintenance window.** Pin the candidate, target and
    service actions. Account for the Personal service and local operator, BHO
@@ -60,3 +62,27 @@ If interrupted, reconcile the original journal before any retry or service
 restart. After an InnerSanctum write, do not reactivate Personal against the
 new state or restore an old checkpoint without separately approving how the
 new records, drafts and receipts will be preserved.
+
+## Candidate commands
+
+Only after writer and publisher exclusion, backup preservation, and independent
+verification with the installed Personal offline checkpoint verifier:
+
+```sh
+uv run --locked innersanctum concept adopt --live-checkout "$CHECKOUT" \
+  --checkpoint "$STOPPED_CHECKPOINT" --sha256 "$RECEIPT_SHA256" \
+  --writers-stopped
+```
+
+`adopt` does not stop services, inspect their queues, create backups, or verify
+Personal's APFS custody evidence. It checks the sealed receipt and canonical
+preimage, including the backup's file bytes and Notes copy, while holding the
+current Personal writer lock. It then replaces the marker atomically with one
+bound to the selected checkout and bundle. Personal's configured writer
+requires its v2 marker and rejects the successor format. The original marker
+remains in the verified checkpoint. If the result is uncertain, inspect the
+current marker; do not retry or start either service on an assumption.
+
+Use `concept create --live-checkout "$CHECKOUT"` with the normal draft, actor
+and routes arguments only after adoption is verified. Use the same explicit
+checkout argument with `concept recover` for an interrupted Create.
