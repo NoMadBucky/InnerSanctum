@@ -86,9 +86,17 @@ relocation or supersede later writes.
   resend it. None had a confirmed action-bound Clerk receipt. The five
   current canonical Transcripts and their existing receipts matched
   Personal's records. Two Transcripts contain the exact final response;
-  three do not contain it verbatim. Before scheduling, review an exact
-  no-resend recovery or preservation disposition for these original actions.
-  Do not edit the journals or reuse the old, deferred session-fence preview.
+  three do not contain it verbatim or after whitespace normalization. The
+  private no-resend review pins the five original actions, response bytes,
+  canonical preimages and receipts. All ten retained files passed read-back.
+  Review digest:
+  `cb052855625991ebc34f0782c89ea21c9793e087c179ffe8538e87633ebf991a`.
+  Recommended: leave the two matching Transcripts unchanged and preserve
+  the other three responses privately with their preimages. Before scheduling,
+  Barry must confirm preservation-only or request separately qualified
+  canonical recovery. In either case, ensure these old sessions cannot settle
+  during the window. Do not edit journals, infer a new receipt, or reuse the
+  old, deferred session-fence preview.
   One old Briefing recovery manifest remains `paired` even though its day
   is `ready` with both publications confirmed; treat that as bookkeeping, not
   permission to republish. The sampled concept operation marked `uncertain`
