@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 from .schema import LIMIT, Refused, read_text, resolve_route
-from .handover import adopt, live_checkout
+from .handover import SUCCESSOR, adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, receipt_status, recover
 from . import concept, journal
 
@@ -34,6 +34,8 @@ def parser():
         action.add_argument("selector", metavar="PATH_OR_ID", help="Exact bundle-relative path or bho: ID")
     update.add_argument("--from", dest="source", required=True, help="Full replacement Markdown file or - for stdin")
     update.add_argument("--expect-path", help="For ID selection, require this exact bundle-relative path")
+    for action in (receipt, update):
+        action.add_argument("--expect-adoption", help="Require the adopted checkpoint's exact receipt SHA-256")
     ledger = groups.add_parser("journal", help="Read and manage personal journal entries")
     journal_actions = ledger.add_subparsers(dest="action", required=True)
     entry = journal_actions.add_parser("add", help="Add an entry to a date-named Journal concept")
@@ -120,6 +122,9 @@ def main(argv=None):
             target = (live_checkout(Path(args.live_checkout).expanduser().absolute()) if args.live_checkout
                       else nullcontext((open_bundle(args.bundle, checkout), None)))
             with target as (root, successor):
+                expected = getattr(args, "expect_adoption", None)
+                if expected is not None and (successor is None or SUCCESSOR.fullmatch(successor)[2].decode() != expected):
+                    raise Refused("The adopted checkout does not match the expected checkpoint receipt.")
                 if args.action == "recover":
                     result = recover(root, successor=successor)
                 elif args.action == "receipt":

@@ -173,6 +173,13 @@ Reusing an ID with different arguments is refused. Dry runs do not reserve
 the ID or write a receipt. Keep receipts with the bundle's writer state;
 removing one loses the retry guarantee for that ID.
 
+Clients of the adopted checkout can inspect an ID with `concept receipt`.
+This does not recover anything or return source. It reports `pending` if
+any canonical write is pending; otherwise it reports `missing` or a
+`completed` historical receipt and its argument fingerprint. An ID-based
+`concept update` can also require the original `--expect-path`. Clients can
+pin the adoption receipt digest with `--expect-adoption` on either command.
+
 The [publisher migration record](create-cutover.md#journal-client-source-slice)
 distinguishes the journal adapters from the publishers that are still held.
 

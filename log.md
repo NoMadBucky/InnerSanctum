@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **Notes Save migration**: Added receipt lookup and path/adoption pins for
+  client updates. Prepared a Notes-only Personal adapter that retains draft
+  checks and supports the existing BHO Source wire contract. No live activation.
+
 * **Read-only project hub**: Added the [seven-target project registry](project-registry.md)
   and project-local OpenCode status and planning commands. No global configuration,
   live service, or store changes.

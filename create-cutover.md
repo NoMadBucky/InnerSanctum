@@ -143,3 +143,27 @@ The next source work can proceed without enabling any publisher:
 Native document/event writers, lifecycle markers, moves and distribution
 are outside this slice. Do not replay old requests into new operations to
 rebuild missing receipts.
+
+## Notes Save client source slice
+
+MatterKeep Personal can now select a Notes-only adapter for the adopted
+checkout. The two existing save surfaces—Personal's owner editor and
+BHO's delegated Source editor—keep their authentication, source revision,
+draft generation, and response formats. The old Personal writer remains
+ineligible. Only InnerSanctum publishes the canonical note, parent index
+if the title changed, and audit log. No BHO client code change is needed.
+
+The adapter verifies the stopped checkpoint named in the successor marker
+and requires the original Notes database and active owner. It keeps old
+delegated receipts readable under their original, still-valid grant. A
+new Save freezes its request privately. If interrupted, the adapter checks
+the matching InnerSanctum receipt before advancing the draft generation.
+It never recovers a canonical write itself, uses a new request to guess
+the outcome of an old one, or replays a request after revocation.
+
+This is source work on disposable data, not a live Note compatibility
+check or release approval. Before rollout, verify the exact checkpoint,
+runtime, Note schemas and indexes, owner binding, and BHO grant and hold.
+Keep Clerk, managed publishers, and the Work socket disabled. Preserve
+the current Notes database and InnerSanctum receipts if rolling back the
+client; do not restore the legacy writer or overwrite current data.

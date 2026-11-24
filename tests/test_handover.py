@@ -128,6 +128,9 @@ def test_receipt_lookup_is_passive_and_update_can_pin_identity_and_path(selectio
     live = ["--live-checkout", str(checkout)]
     request = "test-notes-request"
     receipt = ["concept", "receipt", request, *live]
+    assert cli.main([*receipt, "--expect-adoption", "0" * 64]) == 2
+    assert "expected checkpoint receipt" in capsys.readouterr().err
+    receipt.extend(("--expect-adoption", selection[3]))
     assert cli.main(receipt) == 0 and json.loads(capsys.readouterr().out) == {"state": "missing"}
     assert not (root / writer.STATE).exists()
     old = "Resources/videos/1234567.md"
