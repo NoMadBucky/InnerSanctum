@@ -1,9 +1,10 @@
 # Personal v0.2 relocation plan
 
-**Status: prepared for review, not authorized to execute.** The destination is
-this checkout's `OKF/` and sibling `SourceFiles/`. The SynologyDrive store
-remains authoritative until verified cutover. This plan does not convert OKF to
-v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
+**Status: stopped and staged, awaiting exact approval to apply.** The
+destination is this checkout's `OKF/` and sibling `SourceFiles/`. The
+SynologyDrive store remains authoritative until verified cutover. This plan
+does not convert OKF to v0.3, change Auth or publisher grants, or retire the
+SynologyDrive copy.
 
 **Checkpoint-only window completed.** The stopped OKF/Notes pair passed
 MatterKeep's offline verifier. Separate local backups of `SourceFiles/` and
@@ -13,6 +14,15 @@ returned on their original launchers and bindings. The retained local
 checkpoint protects against a failed move, not disk loss. Before a later
 cutover, take another fresh stopped checkpoint; this one does not authorize
 relocation or supersede later writes.
+
+**Cutover preparation:** Both jobs were stopped and restart-inhibited. A
+fresh stopped OKF/Notes checkpoint passed offline verification; the local
+Auth, BHO registry, and `SourceFiles/` backups verified, including all 84
+cataloged attachments. The prior checkout trees were retained separately,
+and their verified replacements are in the final ignored paths. The frozen
+relocation plan and companion selection manifest are private. No Notes
+binding, live writer marker, service runtime, config, registry row or
+selector has changed. Keep writers and inbound sync paused.
 
 ## Before scheduling downtime
 
