@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 import fcntl
 from hashlib import sha256
+import json
 import os
 from pathlib import Path
 import re
@@ -15,6 +16,10 @@ from .schema import Refused
 LIMIT = 8 * 1024 * 1024
 SESSION = re.compile(r"[0-9a-f]{32}")
 REFERENCE = re.compile(r"clerk-archive:([0-9a-f]{32})/([0-9a-f]{64})")
+BINDING = ".owner-binding.json"
+OWNER = re.compile(r"[!-~]{1,256}")
+NAMESPACE = re.compile(r"[A-Za-z0-9._-]{1,80}")
+SHA = re.compile(r"[0-9a-f]{64}")
 
 
 @dataclass(frozen=True)
@@ -117,10 +122,83 @@ def read_snapshot(directory, snapshot, *, name=None, links=1, durable=False):
     return raw
 
 
-def read(bundle, uri):
+def binding_bytes(bundle, directory, successor, owner, namespace):
+    from .handover import SUCCESSOR
+    from .writer import bundle_identity, check_authority, json_bytes
+
+    check_authority(bundle, successor)
+    marker = SUCCESSOR.fullmatch(successor or b"")
+    if marker is None or not OWNER.fullmatch(owner) or not NAMESPACE.fullmatch(namespace):
+        raise Refused("An adopted archive requires an explicit owner and publisher namespace.")
+    archive = os.fstat(directory)
+    return json_bytes({"version": 1, "owner": owner, "namespace": namespace, "adoption": marker[2].decode(),
+                       "bundle": bundle_identity(bundle), "archive": [archive.st_dev, archive.st_ino]})
+
+
+def check_binding(bundle, directory, successor, pin):
+    if type(pin) is not str or not SHA.fullmatch(pin) or not exact_member(directory, BINDING):
+        raise Refused("The exact adopted archive binding is required.")
+    fd = os.open(BINDING, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+    with os.fdopen(fd, "rb") as stream:
+        before = os.fstat(fd)
+        if not private(before) or before.st_size > 4096:
+            raise Refused("The adopted archive binding must be a private regular file.")
+        raw = stream.read(4097)
+        if (stamp(os.fstat(fd)) != stamp(before)
+                or stamp(os.stat(BINDING, dir_fd=directory, follow_symlinks=False)) != stamp(before)
+                or sha256(raw).hexdigest() != pin):
+            raise Refused("The adopted archive binding changed.")
+    try:
+        value = json.loads(raw)
+        if raw != binding_bytes(bundle, directory, successor, value["owner"], value["namespace"]):
+            raise ValueError
+    except (ValueError, KeyError, TypeError, RecursionError):
+        raise Refused("The adopted archive does not match its owner binding.") from None
+    return {"owner": value["owner"], "namespace": value["namespace"], "archive_sha256": pin}
+
+
+def bind(bundle, successor, owner, namespace):
+    """One-time explicit operator provision of an already private, empty archive."""
+    from .writer import require_idle
+
+    require_idle(bundle)
+    with archive_directory(bundle) as directory:
+        lock(directory, fcntl.LOCK_EX)
+        raw = binding_bytes(bundle, directory, successor, owner, namespace)
+        pin = sha256(raw).hexdigest()
+        if os.listdir(directory):
+            if os.listdir(directory) != [BINDING]:
+                raise Refused("Archive provisioning requires an empty directory; do not rebind it.")
+            return check_binding(bundle, directory, successor, pin)
+        fd = os.open(BINDING, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.fsync(directory)
+        return check_binding(bundle, directory, successor, pin)
+
+
+def selected(bundle, directory, successor, pin):
+    if successor is not None:
+        return check_binding(bundle, directory, successor, pin)
+    if pin is not None:
+        raise Refused("An archive binding pin requires the adopted checkout.")
+    standalone(bundle)
+    return None
+
+
+def inspect(bundle, successor, pin):
+    with archive_directory(bundle) as directory:
+        lock(directory, fcntl.LOCK_SH)
+        return check_binding(bundle, directory, successor, pin)
+
+
+def read(bundle, uri, *, successor=None, pin=None):
     snapshot = reference(uri)
     with archive_directory(bundle) as directory:
         lock(directory, fcntl.LOCK_SH)
+        selected(bundle, directory, successor, pin)
         return read_snapshot(directory, snapshot)
 
 
@@ -131,17 +209,16 @@ def lock(directory, kind):
         raise Refused("Another Clerk archive store is in progress.") from None
 
 
-def store(bundle, session, raw):
-    """Store a snapshot only next to a standalone bundle, never in the live tree."""
-    # Repeat the standalone check at the write boundary; a live marker, checkout,
-    # or SynologyDrive tree cannot be selected even through the Python function.
-    bundle = standalone(bundle)
+def store(bundle, session, raw, *, successor=None, pin=None):
+    """Store a snapshot only for a standalone or explicitly bound adopted archive."""
+    bundle = Path(bundle).absolute()
     if type(session) is not str or not SESSION.fullmatch(session):
         raise Refused("Choose a stable opaque session ID of 32 lowercase hex characters.")
     validate_source(raw)
     snapshot = Snapshot(session, sha256(raw).hexdigest())
     with archive_directory(bundle) as directory:
         lock(directory, fcntl.LOCK_EX)
+        selected(bundle, directory, successor, pin)
         existed = exact_member(directory, snapshot.filename)
         stage = ".pending-" + snapshot.filename
         staged = exact_member(directory, stage)

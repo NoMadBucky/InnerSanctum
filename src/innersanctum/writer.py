@@ -473,13 +473,18 @@ def read_changes(root, state):
         data = json.loads(read_file(state / PENDING, limit=PLAN_LIMIT))
         if type(data) is not dict or type(data.get("version")) is not int:
             raise ValueError
-        request, clerk_session = None, None
-        if data["version"] in {4, 5}:
+        request, clerk_session, archive_pin = None, None, None
+        if data["version"] in {4, 5, 6}:
             expected = {"version", "plan", "request"}
-            if data["version"] == 5:
+            if data["version"] in {5, 6}:
                 expected.add("clerk_session")
                 from .clerk_archive import reference
                 clerk_session = reference(data["clerk_session"]).uri
+            if data["version"] == 6:
+                expected.add("archive_sha256")
+                archive_pin = data["archive_sha256"]
+                if not REVISION.fullmatch(archive_pin):
+                    raise ValueError
             if set(data) != expected or not valid_request(data["request"]):
                 raise ValueError
             request, data = data["request"], data["plan"]
@@ -515,21 +520,21 @@ def read_changes(root, state):
             verify_edit_changes(changes, operation, identity)
             if clerk_session is not None:
                 verify_clerk_log(changes, operation, clerk_session)
-            return changes, operation, directory, identity, request, clerk_session
+            return changes, operation, directory, identity, request, clerk_session, archive_pin
         if clerk_session is not None:
             raise ValueError
         if any(c.after is None for c in changes):
             raise ValueError
         if operation == "journal-add":
             verify_journal_changes(changes, directory)
-            return changes, operation, directory, identity, request, None
+            return changes, operation, directory, identity, request, None, None
         record, index, audit = changes
         target = PurePosixPath(record.path)
         if (not re.fullmatch(r"[0-9]{7}\.md", target.name) or record.before is not None
                 or index.path != str(target.with_name("index.md")) or audit.path != "log.md"
                 or index.before is None or audit.before is None):
             raise ValueError
-        return changes, operation, directory, identity, request, None
+        return changes, operation, directory, identity, request, None, None
     except (Refused, OSError, ValueError, TypeError, KeyError):
         raise Refused("Pending write journal is invalid; retain it for inspection.") from None
 
@@ -604,14 +609,14 @@ def verify_clerk_log(changes, operation, session):
 
 
 def publish(root, state, changes, *, recovering=False, operation="create", directory=None, identity=None,
-            request=None, clerk_session=None):
+            request=None, clerk_session=None, successor=None, archive_pin=None):
     status = {"create": "created", "journal-add": "added"}.get(operation)
     result = describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
                       operation=operation, directory=directory, identity=identity, clerk_session=clerk_session)
     if clerk_session is not None:
         from .clerk_archive import read
         verify_clerk_log(changes, operation, clerk_session)
-        read(root, clerk_session)
+        read(root, clerk_session, successor=successor, pin=archive_pin)
     retained = replay(root, state, request)
     if request is not None:
         result["request_id"] = request[0]
@@ -693,7 +698,7 @@ def describe(changes, status, *, operation="create", directory=None, identity=No
 
 
 def freeze(root, state, changes, *, operation="create", directory=None, identity=None, request=None,
-           clerk_session=None):
+           clerk_session=None, archive_pin=None):
     data = {"version": 1, "bundle": bundle_identity(root), "changes": [vars(change) for change in changes]}
     if operation == "journal-add":
         data.update(version=2, operation=operation, directory=directory)
@@ -705,6 +710,8 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
         if request is None:
             raise Refused("Clerk attribution requires a durable request ID.")
         data.update(version=5, clerk_session=clerk_session)
+        if archive_pin is not None:
+            data.update(version=6, archive_sha256=archive_pin)
     raw = json.dumps(data, ensure_ascii=False).encode()
     if len(raw) > PLAN_LIMIT:
         raise Refused("The pending write journal is too large.")
@@ -730,21 +737,22 @@ def create(root, routes, raw, actor, *, dry_run=False, successor=None, request_i
         return publish(root, state, changes, request=request)
 
 
-def recover(root, *, successor=None):
+def recover(root, *, successor=None, archive_pin=None):
     check_authority(root, successor)
     if not present(root / STATE / PENDING):
         raise Refused("No Create, concept edit or journal write is pending.")
     with locked(root, successor) as state:
-        changes, operation, directory, identity, request, clerk_session = read_changes(root, state)
-        if clerk_session is not None and successor is not None:
-            raise Refused("Clerk-attributed writes are not enabled for the live checkout.")
+        changes, operation, directory, identity, request, clerk_session, retained_pin = read_changes(root, state)
+        if retained_pin != archive_pin or (clerk_session is not None and (successor is None) != (archive_pin is None)):
+            raise Refused("Recovery requires the original archive binding.")
         return publish(root, state, changes, recovering=True, operation=operation,
-                       directory=directory, identity=identity, request=request, clerk_session=clerk_session)
+                       directory=directory, identity=identity, request=request, clerk_session=clerk_session,
+                       successor=successor, archive_pin=archive_pin)
 
 
-def edit(root, operation, prepare, *, dry_run=False, successor=None, request=None, clerk_session=None):
+def edit(root, operation, prepare, *, dry_run=False, successor=None, request=None, clerk_session=None, archive_pin=None):
     check_authority(root, successor)
-    if clerk_session is not None:
+    if clerk_session is not None and successor is None:
         from .clerk_archive import standalone
         standalone(root)
 
@@ -758,7 +766,7 @@ def edit(root, operation, prepare, *, dry_run=False, successor=None, request=Non
         if clerk_session is not None:
             from .clerk_archive import read
             verify_clerk_log(changes, operation, clerk_session)
-            read(root, clerk_session)
+            read(root, clerk_session, successor=successor, pin=archive_pin)
         return changes, identity
 
     if dry_run:
@@ -771,6 +779,6 @@ def edit(root, operation, prepare, *, dry_run=False, successor=None, request=Non
             return retained
         changes, identity = checked_plan()
         freeze(root, state, changes, operation=operation, identity=identity, request=request,
-               clerk_session=clerk_session)
+               clerk_session=clerk_session, archive_pin=archive_pin)
         return publish(root, state, changes, operation=operation, identity=identity, request=request,
-                       clerk_session=clerk_session)
+                       clerk_session=clerk_session, successor=successor, archive_pin=archive_pin)

@@ -165,6 +165,30 @@ def test_receipt_lookup_is_passive_and_update_can_pin_identity_and_path(selectio
     assert source not in str(observed)
 
 
+def test_archive_binding_cannot_be_reassigned_or_copied_to_a_different_directory(selection, capsys):
+    checkout, root, _, seal = selection
+    directory = checkout / "SourceFiles/ClerkArchive"
+    directory.mkdir(mode=0o700)
+    transfer(selection)
+    before = snapshot(root)
+    target = ["--live-checkout", str(checkout), "--expect-adoption", seal]
+    bind = ["clerk-archive", "bind", *target, "--namespace", "clerk"]
+    assert cli.main([*bind, "--owner", "fixture"]) == 0
+    record = json.loads(capsys.readouterr().out)
+    assert record["owner"] == "fixture" and record["namespace"] == "clerk"
+    pin = record["archive_sha256"]
+    assert cli.main([*bind, "--owner", "someone-else"]) == 2
+    capsys.readouterr()
+    inspect = ["clerk-archive", "binding", *target, "--expect-archive", pin]
+    assert cli.main(inspect) == 0 and json.loads(capsys.readouterr().out) == record
+    archived = directory.with_name("CopiedOriginal")
+    directory.rename(archived)
+    shutil.copytree(archived, directory)
+    assert cli.main(inspect) == 2
+    assert "does not match its owner binding" in capsys.readouterr().err
+    assert snapshot(root) == before
+
+
 @pytest.mark.parametrize("failure", ["checkpoint", "drift", "notes", "sha", "tracked", "wrong-checkout", "lock"])
 def test_handover_refuses_until_evidence_matches(selection, failure, monkeypatch):
     checkout, root, checkpoint, approved = selection

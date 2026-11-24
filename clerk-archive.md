@@ -1,7 +1,7 @@
 # Clerk archive and edit provenance
 
-**Implemented for disposable bundles only.** A Clerk session is not an
-OKF concept. Its conversation export lives in the sibling
+**Qualified on disposable standalone and adopted bundles, not deployed.**
+A Clerk session is not an OKF concept. Its conversation export lives in the sibling
 `SourceFiles/ClerkArchive/` tree. A session with no canonical edits does
 not add anything to `log.md`.
 
@@ -67,13 +67,32 @@ is interrupted, use `concept recover` with the same target; it refuses
 to publish an audit link if the frozen snapshot is missing or changed.
 Recovery is roll-forward, not atomic visibility to readers.
 
+Use `concept receipt "$REQUEST_ID" --bundle "$DISPOSABLE_OKF"` to check
+the original request without retrying or running recovery. The disposable
+BHO review lane uses this to settle interrupted acknowledgements.
+
 ## Live boundary
 
-The CLI refuses archive creation and attributed updates for the live
-bundle. This slice does not change BHO or MatterKeep Personal, grant
-Clerk access to `SourceFiles/`, import historical transcripts, automate
-native-history capture, or enable any held publisher. A later rollout
-needs an owner-bound history exporter, backup and retention decisions, and
-an authenticated reader if browser opening is required. Keep the existing
-review, source-revision and draft checks when wiring Clerk to the writer;
-an archive reference by itself confers no write authority.
+An adopted bundle requires a separate, explicitly provisioned
+`SourceFiles/ClerkArchive/.owner-binding.json`. `clerk-archive bind`
+requires the exact adoption digest, an existing private empty archive,
+the Personal owner, and a publisher namespace. The resulting digest
+pins that owner, namespace, adoption, bundle identity and archive
+directory identity. `clerk-archive binding`, `store` and `read` require
+both pins. Adopted `concept update` additionally pins the Note ID and
+path, uses the bound namespace, and requires an exact archived session.
+An archive reference or digest is not a credential.
+
+Recovery of an interrupted adopted Clerk write requires
+`concept recover` with both original pins and the unchanged snapshot.
+Older un-attributed writes retain their existing recovery format.
+If an archive is moved or restored into a different directory inode,
+the old pin will not authorize it; do not recreate the binding or
+restore an older database over accepted edits.
+
+Only disposable adopted checkouts were provisioned. The default-off BHO
+handoff can archive and review an edit from a finished Personal Clerk
+session without using the old Transcript publisher. It does not resume
+prompt admission. Live `SourceFiles/`, Notes Save, other publishers and
+historical Transcripts were untouched. Approve the exact session, custody,
+retention, backups, publisher grant and backout before live rollout.

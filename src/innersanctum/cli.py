@@ -26,7 +26,6 @@ def parser():
     recovery = actions.add_parser("recover", help="Finish an interrupted write without replanning")
     receipt = actions.add_parser("receipt", help="Observe a request receipt without recovering or publishing")
     receipt.add_argument("request_id")
-    receipt.add_argument("--live-checkout", required=True, help="Exact adopted InnerSanctum checkout")
     read = actions.add_parser("read", help="Read one concept's Markdown and revision as JSON")
     update = actions.add_parser("update", help="Replace an existing concept without changing its identity")
     delete = actions.add_parser("delete", help="Remove one concept and its parent listing")
@@ -34,9 +33,11 @@ def parser():
         action.add_argument("selector", metavar="PATH_OR_ID", help="Exact bundle-relative path or bho: ID")
     update.add_argument("--from", dest="source", required=True, help="Full replacement Markdown file or - for stdin")
     update.add_argument("--expect-path", help="For ID selection, require this exact bundle-relative path")
-    update.add_argument("--clerk-session", help="Archived Clerk snapshot for a standalone body-only edit")
-    for action in (receipt, update):
+    update.add_argument("--clerk-session", help="Archived Clerk snapshot for a body-only edit")
+    for action in (receipt, update, recovery):
         action.add_argument("--expect-adoption", help="Require the adopted checkpoint's exact receipt SHA-256")
+    for action in (update, recovery):
+        action.add_argument("--expect-archive", help="Require the original adopted archive binding SHA-256")
     ledger = groups.add_parser("journal", help="Read and manage personal journal entries")
     journal_actions = ledger.add_subparsers(dest="action", required=True)
     entry = journal_actions.add_parser("add", help="Add an entry to a date-named Journal concept")
@@ -71,7 +72,7 @@ def parser():
     for action in (new, update, delete, entry, journal_update, journal_delete):
         action.add_argument("--request-id", help="Client-assigned ID for a durable write receipt")
     journal_recovery = journal_actions.add_parser("recover", help="Finish the bundle's pending write")
-    for action in (template, new, recovery, read, update, delete,
+    for action in (template, new, recovery, receipt, read, update, delete,
                    entry, journal_read, journal_update, journal_delete, journal_recovery):
         target = action.add_mutually_exclusive_group(required=True)
         target.add_argument("--bundle", help="Explicit standalone bundle directory")
@@ -93,8 +94,22 @@ def parser():
     archived = archive_actions.add_parser("read", help="Resolve a retained archive reference to exact source bytes")
     archived.set_defaults(action="clerk-read")
     archived.add_argument("reference")
+    bind = archive_actions.add_parser("bind", help="Provision one owner-bound archive on an adopted checkout")
+    bind.set_defaults(action="clerk-bind")
+    bind.add_argument("--owner", required=True)
+    bind.add_argument("--namespace", required=True)
+    info = archive_actions.add_parser("binding", help="Read back the pinned adopted owner binding")
+    info.set_defaults(action="clerk-binding")
+    for action in (bind, info):
+        action.add_argument("--live-checkout", required=True)
     for action in (store, archived):
-        action.add_argument("--bundle", required=True, help="Disposable standalone OKF next to SourceFiles")
+        target = action.add_mutually_exclusive_group(required=True)
+        target.add_argument("--bundle", help="Disposable standalone OKF next to SourceFiles")
+        target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
+    for action in (store, archived, info):
+        action.add_argument("--expect-archive")
+    for action in (store, archived, info, bind):
+        action.add_argument("--expect-adoption")
     return command
 
 
@@ -135,16 +150,23 @@ def main(argv=None):
                       else nullcontext((open_bundle(args.bundle, checkout), None)))
             with target as (root, successor):
                 expected = getattr(args, "expect_adoption", None)
+                archive_pin = getattr(args, "expect_archive", None)
                 if expected is not None and (successor is None or SUCCESSOR.fullmatch(successor)[2].decode() != expected):
                     raise Refused("The adopted checkout does not match the expected checkpoint receipt.")
-                if args.action == "clerk-store":
+                if successor is not None and (args.action.startswith("clerk-") or archive_pin is not None) and expected is None:
+                    raise Refused("Pin the exact adoption checkpoint for an adopted Clerk operation.")
+                if args.action == "clerk-bind":
+                    result = clerk_archive.bind(root, successor, args.owner, args.namespace)
+                elif args.action == "clerk-binding":
+                    result = clerk_archive.inspect(root, successor, archive_pin)
+                elif args.action == "clerk-store":
                     raw = input_bytes(args.source, limit=clerk_archive.LIMIT)
-                    result = clerk_archive.store(root, args.session, raw)
+                    result = clerk_archive.store(root, args.session, raw, successor=successor, pin=archive_pin)
                 elif args.action == "clerk-read":
-                    sys.stdout.buffer.write(clerk_archive.read(root, args.reference))
+                    sys.stdout.buffer.write(clerk_archive.read(root, args.reference, successor=successor, pin=archive_pin))
                     return 0
                 elif args.action == "recover":
-                    result = recover(root, successor=successor)
+                    result = recover(root, successor=successor, archive_pin=archive_pin)
                 elif args.action == "receipt":
                     result = receipt_status(root, args.request_id, successor=successor)
                 elif args.action == "read":
@@ -155,7 +177,7 @@ def main(argv=None):
                                             replacement=replacement, dry_run=args.dry_run, successor=successor,
                                             request_id=args.request_id,
                                              expected_path=getattr(args, "expect_path", None),
-                                             clerk_session=getattr(args, "clerk_session", None))
+                                              clerk_session=getattr(args, "clerk_session", None), archive_pin=archive_pin)
                 elif args.action == "journal-read":
                     result = journal.read(root, args.day, successor=successor)
                 elif args.action in {"journal-update", "journal-delete"}:

@@ -95,20 +95,29 @@ def revise_listing(text, index, path, title):
 
 
 def change(root, selector, revision, actor, *, replacement=None, dry_run=False, successor=None,
-           request_id=None, expected_path=None, clerk_session=None):
+           request_id=None, expected_path=None, clerk_session=None, archive_pin=None):
     writer.validate_actor(actor)
     operation = "concept-delete" if replacement is None else "concept-update"
     if clerk_session is not None:
         clerk_archive.reference(clerk_session)
-        if successor is not None or replacement is None or request_id is None:
-            raise Refused("Clerk-attributed updates require a standalone bundle, replacement and request ID.")
+        if replacement is None or request_id is None or (successor is None) != (archive_pin is None):
+            raise Refused("Clerk-attributed updates require a replacement, request ID and the selected archive binding.")
+        if successor is not None:
+            binding = clerk_archive.inspect(root, successor, archive_pin)
+            if actor != "process:clerk-concepts/" + binding["namespace"] or expected_path is None:
+                raise Refused("The adopted archive requires its exact publisher and record path.")
+    elif archive_pin is not None:
+        raise Refused("An archive binding is only valid for a Clerk-attributed update.")
     request = writer.write_request(request_id, operation, selector, revision, actor,
                                    None if replacement is None else writer.digest(replacement),
                                    *(() if expected_path is None else (expected_path,)),
-                                   *(() if clerk_session is None else (["clerk-session", clerk_session],)))
+                                   *(() if clerk_session is None else (["clerk-session", clerk_session],)),
+                                   *(() if archive_pin is None else (["clerk-archive", archive_pin],)))
 
     def prepare():
         old = load(root, selector)
+        if archive_pin is not None and old["type"] != "Note":
+            raise Refused("The adopted Clerk archive supports existing Notes only.")
         writer.require_revision(revision, old["revision"])
         path, identity = old["path"], old["id"]
         if expected_path is not None and (not ID.fullmatch(selector) or path != expected_path):
@@ -150,4 +159,4 @@ def change(root, selector, revision, actor, *, replacement=None, dry_run=False, 
         return [*changes, writer.Change("log.md", writer.digest(log), audit)], identity
 
     return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor, request=request,
-                       clerk_session=clerk_session)
+                       clerk_session=clerk_session, archive_pin=archive_pin)

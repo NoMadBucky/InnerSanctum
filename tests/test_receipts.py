@@ -11,6 +11,18 @@ from test_journal import DAY, STAMP, TEXT, ledgers  # noqa: F401
 KEY = "operation-unique-01"
 
 
+def test_standalone_cli_receipt_is_passive(ledgers, capsys):
+    args = ["concept", "receipt", KEY, "--bundle", str(ledgers)]
+    assert cli.main(args) == 0
+    assert json.loads(capsys.readouterr().out) == {"state": "missing"}
+    assert not (ledgers / writer.STATE).exists()
+    saved = journal.add(ledgers, TEXT, ACTOR, at=STAMP, request_id=KEY)
+    before = snapshot(ledgers)
+    assert cli.main(args) == 0
+    assert json.loads(capsys.readouterr().out)["receipt"] == saved
+    assert snapshot(ledgers) == before
+
+
 def test_cli_replays_original_create_after_update_and_delete(ledgers, tmp_path, capsys):
     draft, routes = tmp_path / "draft", tmp_path / "routes"
     draft.write_text(DRAFT)
