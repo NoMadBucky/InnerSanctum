@@ -12,15 +12,21 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
   serving host's CPython 3.14.6. The four former Auth/receipt concurrency
   failures passed on both this candidate and the pre-relocation baseline on
   that interpreter. This was not a full-suite or live acceptance run.
-- [ ] Select a deployment release. The tested wheel is **not** a drop-in for
-  the two installed Personal consumers. It changes 10 package files outside
-  the relocation commits, including Auth, managed publishers, workspace
-  handling and Work-pilot modules. Installed dependency versions matched.
-  Prefer a relocation-only candidate built and tested against the installed
-  baseline. Review `app.py`, `cli.py`, `configuration.py`, `notes.py` and
-  `recovery.py` explicitly: the installed baseline already differs in each
-  of those relocation-touched modules. A broader release needs its own
-  approval. Keep the tested wheel and comparison as evidence only.
+- [x] Build a relocation-only release candidate from the matching installed
+  serving and operator package payloads. The broader `d33c4ff` wheel is
+  evidence only; it differs in 10 unrelated files. The replacement candidate
+  changes or adds only 12 relocation files and leaves the other 30 byte
+  identical. It passed 941 focused tests on CPython 3.14.6 with matching
+  installed dependency versions and byte-identical first-party dependency
+  packages. An independent patch replay built the same wheel bytes.
+- [ ] Select the relocation-only wheel for both Personal consumers during
+  an approved window. Its SHA-256 is
+  `258602f4e4a452af26c3136d7bb6b7a6cb7adc9d0dd617040e66e47c9260f064`.
+  The private qualification packet holds the wheel, replay patch, and
+  baseline and candidate hashes. Recheck both installed baselines immediately
+  before selection and preserve their dependency payloads. Do not install the
+  broader wheel or replace the deployed OKF validator with a same-version
+  source build: two validator files differ.
 - [ ] Identify the serving configuration, the independent local Personal
   operator configuration, and any registration or reader that still resolves
   the old path. Keep existing owner/actor, Notes and Auth locations, route,
