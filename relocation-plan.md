@@ -1,10 +1,10 @@
 # Personal v0.2 relocation plan
 
-**Status: stopped and staged, awaiting exact approval to apply.** The
-destination is this checkout's `OKF/` and sibling `SourceFiles/`. The
-SynologyDrive store remains authoritative until verified cutover. This plan
-does not convert OKF to v0.3, change Auth or publisher grants, or retire the
-SynologyDrive copy.
+**Status: both services running on the relocated selection; test write and
+final handback pending.** The selected destination is this checkout's `OKF/`
+and sibling `SourceFiles/`. This move does not convert OKF to v0.3 or change
+Auth or publisher grants. Retain the former SynologyDrive tree unchanged and
+inactive.
 
 **Checkpoint-only window completed.** The stopped OKF/Notes pair passed
 MatterKeep's offline verifier. Separate local backups of `SourceFiles/` and
@@ -19,10 +19,15 @@ relocation or supersede later writes.
 fresh stopped OKF/Notes checkpoint passed offline verification; the local
 Auth, BHO registry, and `SourceFiles/` backups verified, including all 84
 cataloged attachments. The prior checkout trees were retained separately,
-and their verified replacements are in the final ignored paths. The frozen
-relocation plan and companion selection manifest are private. No Notes
-binding, live writer marker, service runtime, config, registry row or
-selector has changed. Keep writers and inbound sync paused.
+and their verified replacements are in the final ignored paths.
+
+**Approved apply:** The exact Personal plan installed the rebound Notes
+database and target writer marker. The original source marker is unchanged.
+The qualified runtime and shared config are selected, and the BHO source,
+selector and Barry-only registry update passed stopped read-back. Other
+registry rows, grants, Auth, and shared OpenCode were not changed. Both
+services restarted on their original launchers. Keep writers and inbound
+sync paused.
 
 ## Before scheduling downtime
 
@@ -38,7 +43,7 @@ selector has changed. Keep writers and inbound sync paused.
   identical. It passed 941 focused tests on CPython 3.14.6 with matching
   installed dependency versions and byte-identical first-party dependency
   packages. An independent patch replay built the same wheel bytes.
-- [ ] Select the relocation-only wheel for both Personal consumers during
+- [x] Select the relocation-only wheel for both Personal consumers during
   an approved window. Its SHA-256 is
   `258602f4e4a452af26c3136d7bb6b7a6cb7adc9d0dd617040e66e47c9260f064`.
   The private qualification packet holds the wheel, replay patch, and
@@ -193,13 +198,19 @@ selector has changed. Keep writers and inbound sync paused.
 
 ## Acceptance and handback
 
-- [ ] Verify the serving and operator selections against the approved artifact
-  and config digests. Read a known note and a catalog-backed attachment through
-  their normal consumers. Check that the original note ID, draft, and a known
-  completed receipt remain available without resending its request.
-- [ ] Verify the BHO and independent Clerk brokered reads at the new path
-  and verify that the relocated workspace refuses native BHO writes. Do not
-  restart shared OpenCode or alter existing grants for these checks.
+- [x] Verify the serving and operator selections against the approved artifact
+  and config digests. A live Personal read matched a retained note ID,
+  revision, and draft version. The fresh checkpoint contained no active
+  drafts, and all draft rows and 121 completed receipts matched after
+  restart. The installed catalog reader and all 84 attachment digests
+  verified. The old tree still matches the fresh checkpoint.
+- [x] Verify the BHO and independent Clerk brokered reads at the new path
+  and verify that the relocated workspace refuses native BHO writes.
+  BHO's installed broker read one record and attachment and refused the
+  native write authorization and raw writer lock. The independent installed
+  Clerk bridge read a record using an existing managed read-only session,
+  without a prompt or shared OpenCode restart. This was not a tool
+  invocation through the running OpenCode plugin.
 - [ ] Make one owner-approved write through the normal Personal interface.
   Verify the exact resulting record and expected index/log updates at the new
   path, no changes at the old path, and no unresolved publication. Record a
