@@ -33,14 +33,24 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
   `innersanctum_checkout`. The original config and wrapper were verified
   unchanged. Runtime validation waits for the private replacement trees;
   the root-owned launcher still needs owner-local byte comparison.
-- [ ] Resolve the BHO registry dependency before scheduling downtime. The
-  running BHO uses `<personal_root>/<owner-id>/OKF` and rejects any registry
-  row that does not match the derived root. The selected owner row is ready
-  at SynologyDrive. Neither a global root setting nor editing that row alone
-  can select `InnerSanctum/OKF`; a symlink also fails its custody guard. Qualify
-  an owner-specific binding for BHO and its independent Clerk readers, or
-  explicitly approve holding those consumers through a Personal-only move.
-  Do not let BHO keep using the old tree as a current copy after cutover.
+- [x] Build and rehearse the Barry-only BHO binding. The candidate keeps
+  the existing registry rules for all other owners and leaves BHO's runtime
+  state where it is. A matching private selector and Barry's existing
+  registry row are both required to read `InnerSanctum/OKF`. A partial
+  transition fails closed. Brokered record and attachment reads use the
+  new paths; direct BHO writes and new native Clerk path access are denied.
+  Existing managed Personal API grants are not changed. On CPython 3.14.6,
+  451 focused and 81 managed-reader checks passed (the groups overlap).
+  The legacy Clerk Desk suite had the same 96 failing cases on the
+  unchanged baseline and candidate, with no candidate-only failures.
+- [ ] Prepare the coordinated BHO selection for the maintenance window.
+  The candidate is a private, unapplied source patch. Recheck the serving
+  and independent Clerk reader preimages, then freeze a stopped transition
+  for only Barry's registry row and `system/innersanctum-barry.json`
+  selector. Neither the global
+  Personal content base nor other owner rows may change. Keep existing
+  sessions and publisher journals; do not let a process with the old
+  binding continue reading or writing the retired tree.
 - [ ] Use `MatterKeep/Personal/publisher-coverage.md` and the latest deployment
   record to identify active publishers. Check ordinary Clerk Transcripts,
   Daily Briefing (which publishes both a Note and a Transcript), and BHO's
