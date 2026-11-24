@@ -14,7 +14,7 @@ import stat
 import tempfile
 import unicodedata
 
-from .schema import ID, LIMIT, MANAGED, MD, Refused, document, path_parts, read_text, resolve_route
+from .schema import LIMIT, MANAGED, MD, Refused, document, existing_identity, path_parts, read_text, resolve_route
 
 
 STATE = ".innersanctum"
@@ -87,8 +87,7 @@ def inventory(root, *, collect_ids):
         if path.name == "index.md":
             indexes[relative] = read_text(read_file(path))
         elif collect_ids and path.name not in STRUCTURAL:
-            data, _, _ = document(read_text(read_file(path)), required=False)
-            identity = data.get("id")
+            identity = existing_identity(read_text(read_file(path)))
             if identity is None:
                 continue
             if type(identity) is not str or not identity.strip() or identity in identities:
@@ -140,22 +139,24 @@ def edit_log(text, path, title, actor, now):
     sections = headings(text)
     if not sections or sections[0][0] != "h1" or sum(tag == "h1" for tag, *_ in sections) != 1:
         raise Refused("Root log needs one level-one title.")
+    day = now.date()
     dated = []
     for tag, heading, line, markup in sections:
         if tag != "h2":
             continue
         try:
-            day = date.fromisoformat(heading)
-            if day.isoformat() != heading or markup != "##":
+            section_day = date.fromisoformat(heading)
+            if section_day.isoformat() != heading or markup != "##":
                 raise ValueError
         except ValueError:
             raise Refused("Root log needs unambiguous ## YYYY-MM-DD sections.") from None
-        if dated and dated[-1][0] <= day:
-            raise Refused("Root log dates must be unique and newest first.")
-        dated.append((day, line))
+        if dated and dated[-1][0] < section_day:
+            raise Refused("Root log dates must be newest first.")
+        dated.append((section_day, line))
+    if sum(section_day == day for section_day, _ in dated) > 1:
+        raise Refused("Root log has more than one section for the Create date.")
     entry = (f"* **Create** ({now.isoformat(timespec='seconds')}) — "
              f"[{escape_label(title)}]({encoded_path(path)}) · {escape_label(actor)}")
-    day = now.date()
     for existing, line in dated:
         if existing == day:
             pos, insertion = line + 1, ["", entry]

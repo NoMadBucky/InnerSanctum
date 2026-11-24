@@ -1,4 +1,5 @@
 import fcntl
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -170,6 +171,57 @@ def test_refuses_duplicate_declaration_and_reuses_no_ids(bundle, monkeypatch):
     result = writer.create(bundle, ROUTES, DRAFT.encode(), ACTOR)
     assert result["id"] == "bho:1234568"
     assert (bundle / "Resources/videos/1234567.md").exists()
+
+
+def test_id_scan_preserves_opaque_legacy_metadata(bundle, monkeypatch):
+    existing = bundle / "Resources/videos/1234567.md"
+    legacy = b"---\n'id': 'bho:1234567'\ntype: Video\nlegacy: !private opaque\n---\n"
+    existing.write_bytes(legacy)
+    picks = iter([234567, 234568])
+    monkeypatch.setattr(writer.secrets, "randbelow", lambda _: next(picks))
+    result = writer.create(bundle, ROUTES, DRAFT.encode(), ACTOR)
+    assert result["id"] == "bho:1234568"
+    assert existing.read_bytes() == legacy
+
+
+@pytest.mark.parametrize("field", [
+    "id: !private bho:1234567",
+    "id: bho:1234567\n'id': bho:2345678",
+    "id: &identity bho:1234567",
+    'id: bho:1234567\n"<<": {id: bho:2345678}',
+])
+def test_id_scan_refuses_ambiguous_id_or_merge(bundle, field):
+    (bundle / "Resources/videos/1234567.md").write_text(f"---\n{field}\n---\n")
+    before = snapshot(bundle)
+    with pytest.raises(Refused):
+        writer.create(bundle, ROUTES, DRAFT.encode(), ACTOR)
+    assert snapshot(bundle) == before
+
+
+def test_preserves_repeated_historical_log_sections(bundle):
+    audit = bundle / "log.md"
+    history = audit.read_text() + "\n## 2000-01-01\n\n* Another historical entry.\n"
+    audit.write_text(history)
+    changes = writer.plan_create(bundle, ROUTES, DRAFT.encode(), ACTOR,
+                                 now=datetime(2026, 11, 24, tzinfo=timezone.utc))
+    after = changes[-1].after
+    assert "## 2026-11-24" in after
+    assert after[after.index("## 2000-01-01"):] == history[history.index("## 2000-01-01"):]
+    with pytest.raises(Refused, match="more than one section for the Create date"):
+        writer.plan_create(bundle, ROUTES, DRAFT.encode(), ACTOR,
+                           now=datetime(2000, 1, 1, tzinfo=timezone.utc))
+
+
+def test_integrates_into_existing_unique_log_section(bundle):
+    audit = bundle / "log.md"
+    today = "## 2026-11-24"
+    old = audit.read_text().replace("# History\n\n", f"# History\n\n{today}\n\n* Current entry.\n\n")
+    audit.write_text(old)
+    changes = writer.plan_create(bundle, ROUTES, DRAFT.encode(), ACTOR,
+                                 now=datetime(2026, 11, 24, tzinfo=timezone.utc))
+    after = changes[-1].after
+    assert after.count(today) == 1
+    assert after.index(today) < after.index("**Create**") < after.index("* Current entry.")
 
 
 @pytest.mark.parametrize("after", [writer.PENDING, "record", "index.md", "log.md"])

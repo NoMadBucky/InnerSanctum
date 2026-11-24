@@ -10,6 +10,7 @@ import tomllib
 from markdown_it import MarkdownIt
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
+from ruamel.yaml.nodes import MappingNode, ScalarNode
 from ruamel.yaml.tokens import AliasToken, AnchorToken, DirectiveToken, TagToken
 
 
@@ -44,15 +45,23 @@ def path_parts(value):
     return parts
 
 
-def mapping(text):
+def yaml_reader(text, *, allow_opaque_tags=False):
     yaml = YAML(typ="safe", pure=True)
     yaml.allow_duplicate_keys = False
     yaml.max_depth = 32
+    unsupported = (AliasToken, AnchorToken, DirectiveToken)
+    if not allow_opaque_tags:
+        unsupported += (TagToken,)
+    for count, token in enumerate(yaml.scan(text), 1):
+        if count > 40_000 or isinstance(token, unsupported):
+            features = "directives, anchors or aliases" if allow_opaque_tags else "tags, directives, anchors or aliases"
+            raise Refused(f"YAML exceeds the supported profile (no {features}).")
+    return yaml
+
+
+def mapping(text):
     try:
-        for count, token in enumerate(yaml.scan(text), 1):
-            if count > 40_000 or isinstance(token, (AliasToken, AnchorToken, DirectiveToken, TagToken)):
-                raise Refused("YAML exceeds the supported profile (no tags, directives, anchors or aliases).")
-        data = yaml.load(text)
+        data = yaml_reader(text).load(text)
     except (YAMLError, ValueError, TypeError, RecursionError, OverflowError):
         raise Refused("Invalid YAML mapping or duplicate key.") from None
     if type(data) is not dict or any(type(key) is not str for key in data):
@@ -60,16 +69,48 @@ def mapping(text):
     return data
 
 
-def document(text, *, required=True):
+def split_document(text, *, required=True):
     lines = text.split("\n")
     if lines[0] not in {"---", "---\r"}:
         if not required:
-            return {}, text, 0
+            return None, text, 0
         raise Refused("Concept input needs YAML frontmatter.")
     for i in range(1, len(lines)):
         if lines[i] in {"---", "---\r"}:
-            return mapping("\n".join(lines[1:i]) + "\n"), "\n".join(lines[i + 1:]), i + 1
+            return "\n".join(lines[1:i]) + "\n", "\n".join(lines[i + 1:]), i + 1
     raise Refused("YAML frontmatter is not closed.")
+
+
+def document(text, *, required=True):
+    frontmatter, body, offset = split_document(text, required=required)
+    return mapping(frontmatter) if frontmatter is not None else {}, body, offset
+
+
+def existing_identity(text):
+    """Read an existing ID without constructing tagged legacy field values."""
+    frontmatter, _, _ = split_document(text, required=False)
+    if frontmatter is None:
+        return None
+    try:
+        node = yaml_reader(frontmatter, allow_opaque_tags=True).compose(frontmatter)
+    except (YAMLError, ValueError, TypeError, RecursionError, OverflowError):
+        raise Refused("An existing concept has invalid YAML.") from None
+    prefix = "tag:yaml.org,2002:"
+    string = prefix + "str"
+    if not isinstance(node, MappingNode) or node.tag != prefix + "map":
+        raise Refused("An existing concept needs ordinary mapping frontmatter.")
+    seen = set()
+    identity = None
+    for key, value in node.value:
+        if (not isinstance(key, ScalarNode) or key.tag != string or key.value == "<<"
+                or key.value in seen):
+            raise Refused("An existing concept has ambiguous frontmatter keys.")
+        seen.add(key.value)
+        if key.value == "id":
+            if not isinstance(value, ScalarNode) or value.tag != string or not value.value.strip():
+                raise Refused("An existing concept has an invalid ID.")
+            identity = value.value
+    return identity
 
 
 def declarations(text):

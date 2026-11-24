@@ -12,6 +12,7 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 * [Personal relocation plan](relocation-plan.md) - Stopped-writer cutover and acceptance for the v0.2 store.
 * [Change log](log.md) - History of changes to the project.
 * [Concept creation routes](concept-routes.toml) - Explicit authoring destinations for the standalone writer.
+* [Live Create cutover](create-cutover.md) - Compatibility checks and writer handover gates.
 * [OKF specification and license](OKF_SPEC/index.md) - Vendored OKF v0.3 reference.
 * [Git ignore rules](.gitignore) - Keep local Personal content out of Git.
 * [Markdown lint configuration](.markdownlint.json) - Repository formatting rules.

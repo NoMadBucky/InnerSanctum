@@ -24,6 +24,8 @@ browser. This first version is for **disposable, standalone bundles outside the
 checkout**. It refuses repository paths, SynologyDrive and bundles carrying
 Personal's writer marker. Do not remove a marker to make a bundle eligible.
 The live bundle still belongs to MatterKeep Personal.
+See the [live Create cutover plan](create-cutover.md) for the compatibility
+checks and remaining writer handover gates.
 
 Use an existing bundle with a root `index.md` and `log.md`, a declaring index
 with a fenced `okf_schema` block, and a destination index with a
