@@ -23,9 +23,9 @@ InnerSanctum can create an ordinary Markdown concept without MatterKeep or a
 browser. During development, use **disposable, standalone bundles outside the
 checkout**. Standalone mode refuses repository paths, SynologyDrive and
 bundles carrying Personal's writer marker. Do not remove a marker to make
-a bundle eligible. The live bundle still belongs to MatterKeep Personal.
-See the [live Create cutover plan](create-cutover.md) for the compatibility
-checks and remaining writer handover gates.
+a bundle eligible. The [live Create cutover](create-cutover.md) verified that
+InnerSanctum is now the sole writer of `OKF/`. Personal and BHO remain offline
+until a separate reader-only or publisher handback is approved.
 
 Use an existing bundle with a root `index.md` and `log.md`, a declaring index
 with a fenced `okf_schema` block, and a destination index with a
@@ -42,6 +42,9 @@ uv run --locked innersanctum concept template Video \
 uv run --locked innersanctum concept create --from "$DRAFT" \
   --bundle "$DISPOSABLE_OKF" --routes concept-routes.toml --actor "human:your-name"
 ```
+
+For real records in the adopted checkout, use `--live-checkout "$CHECKOUT"`
+instead of `--bundle`. Use standalone mode for tests and examples.
 
 Supply the actual producer as `--actor`. The draft supplies `type`, `title`,
 other schema fields and any Markdown body. The command allocates a seven-digit

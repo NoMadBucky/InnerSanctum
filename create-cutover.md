@@ -2,19 +2,25 @@
 
 ## Status
 
-The InnerSanctum writer is **not live**. MatterKeep Personal still owns
-`OKF/`, its writer marker is present, and the CLI refuses live Create under
-that marker. A candidate for an exact-checkout handover has been rehearsed
-on a disposable checkout.
-This is separate from the completed [Personal relocation](relocation-plan.md)
-and does not change the bundle's OKF v0.2 format or the `SourceFiles/` binding.
+**Cutover complete.** InnerSanctum owns write authority for the live `OKF/`
+bundle. The former installed Personal runtime refused the new marker before
+opening Notes. Both Personal and BHO remain stopped and restart-disabled;
+no reader-only configuration or replacement publishers were enabled.
+
+A fresh stopped Personal checkpoint of OKF and Notes verified independently
+before and after the marker change. Separate private Auth and `SourceFiles/`
+backups passed byte-for-byte checks, and all 91 catalog entries verified.
+The first real Video Create read back exactly the new concept, one parent
+index insertion, and one root audit entry. No other canonical bytes or
+attachments changed, and no publication was left pending. Retained evidence
+is outside Git. This does not change the OKF v0.2 format or move `SourceFiles/`.
 
 A November 24 read-only check resolved `Video` to `Resources/videos` from
 116 indexes and found 1,008 unique IDs. In-memory formatting checks passed
 for the videos index and the root audit log. The implementation now preserves
 repeated historical date sections and reads legacy IDs without interpreting
 tagged metadata. It still refuses an ambiguous target date or ID. These checks
-do not establish writer exclusion, service readiness, or live publication.
+were preparation, not evidence of the later writer transfer.
 
 ## Decide what stays running
 
@@ -31,7 +37,7 @@ the Personal writer stopped and keep its publishers held.
 | Personal browsing, search and attachments | Keep offline for the first handover unless a reader-only configuration is verified unable to write, recover, provision or take over authority. |
 | Inbound sync and manual writes | Keep excluded. A local lock cannot enforce remote or noncooperating writer exclusion. |
 
-## Handover gates
+## Handover sequence
 
 1. **Prepare a candidate on disposable data.** The candidate introduces an explicit
    exact-checkout opt-in for `InnerSanctum/OKF`, an InnerSanctum writer binding,
@@ -63,7 +69,7 @@ restart. After an InnerSanctum write, do not reactivate Personal against the
 new state or restore an old checkpoint without separately approving how the
 new records, drafts and receipts will be preserved.
 
-## Candidate commands
+## Adoption command reference
 
 Only after writer and publisher exclusion, backup preservation, and independent
 verification with the installed Personal offline checkpoint verifier:
@@ -86,3 +92,4 @@ current marker; do not retry or start either service on an assumption.
 Use `concept create --live-checkout "$CHECKOUT"` with the normal draft, actor
 and routes arguments only after adoption is verified. Use the same explicit
 checkout argument with `concept recover` for an interrupted Create.
+Do not rerun `adopt` for the current live bundle.

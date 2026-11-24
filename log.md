@@ -2,6 +2,11 @@
 
 ## 2026-11-24
 
+* **Live writer handover**: Transferred `OKF/` authority to InnerSanctum
+  after verifying the stopped checkpoint and separate backups. Verified
+  the first ordinary Video Create and its index and audit updates. The
+  former writer and BHO remain offline; attachments were unchanged.
+
 * **Writer handover candidate**: Added and rehearsed exact-checkout adoption
   with a stopped Personal checkpoint. No live marker or service changes.
 

@@ -4,8 +4,8 @@
 
 * This is a repository for a personal OKF bundle. The root [index.md](index.md) describes the project at OKF v0.3; it does not declare the version of the Personal bundle.
 * `OKF/` is the live Personal v0.2 bundle. Its sibling `SourceFiles/` holds native attachments and the source catalog **outside** that bundle. Both are Git-ignored and absent from fresh clones. Never force-add or publish their contents, or save synthetic data to the Personal store.
-* MatterKeep Personal remains the sole writer **of the live bundle** until a separate cutover is approved. Do not edit the live trees directly, file into the old SynologyDrive store, or change a binding without explicit operational approval. Keep inbound sync excluded. See the [relocation plan](relocation-plan.md) for the verified cutover and recovery boundaries. Any v0.3 conversion is separate.
-* The standalone InnerSanctum writer is for external, disposable bundles during development. Do not test it on live data or remove another writer's marker to make a bundle eligible.
+* InnerSanctum is the sole writer of the live `OKF/` bundle after the [Create cutover](create-cutover.md). File real concepts through its guarded CLI, not by editing live files directly. Do not restart the former Personal writer or its held publishers, change a binding, file into the old SynologyDrive store, or allow inbound sync without separate operational approval. Any v0.3 conversion is separate.
+* Test the CLI on external, disposable bundles, never on live data. Do not remove a writer marker to make a bundle eligible. `SourceFiles/` was not handed over for writing.
 
 ## Edit and verify
 

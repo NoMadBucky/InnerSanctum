@@ -1,5 +1,10 @@
 # Personal v0.2 relocation plan
 
+**Historical operation.** This records the move of Personal's bundle, not
+current writer authority. The later [Create cutover](create-cutover.md)
+transferred write authority to InnerSanctum; do not use this plan to restart
+the former writer.
+
 **Status: cutover and handback verification complete.** This checkout's
 `OKF/` and sibling `SourceFiles/` are the live Personal store at OKF v0.2.
 The move did not change Auth or publisher grants. Retain the former
