@@ -7,15 +7,20 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
 
 ## Before scheduling downtime
 
-- [ ] Pin the MatterKeep release to qualify. The relocation and checkout
-  opt-in are present at MatterKeep commit `d33c4ff`. Build a noneditable wheel
-  and verify the exact artifact, locked dependencies, and approved deployment
-  interpreter on disposable data. Test relocation, interruption and retry,
-  catalog lookup, a write at the new root, and a verified checkpoint from the
-  relocated pair. The earlier broader run timed out; four Auth/receipt
-  concurrency tests also failed on the unchanged baseline. Recheck those
-  cases in the deployment environment and record their disposition before
-  selecting a release.
+- [x] Qualify the relocation source on disposable data. The candidate
+  noneditable wheel from MatterKeep `d33c4ff` passed 481 focused tests on the
+  serving host's CPython 3.14.6. The four former Auth/receipt concurrency
+  failures passed on both this candidate and the pre-relocation baseline on
+  that interpreter. This was not a full-suite or live acceptance run.
+- [ ] Select a deployment release. The tested wheel is **not** a drop-in for
+  the two installed Personal consumers. It changes 10 package files outside
+  the relocation commits, including Auth, managed publishers, workspace
+  handling and Work-pilot modules. Installed dependency versions matched.
+  Prefer a relocation-only candidate built and tested against the installed
+  baseline. Review `app.py`, `cli.py`, `configuration.py`, `notes.py` and
+  `recovery.py` explicitly: the installed baseline already differs in each
+  of those relocation-touched modules. A broader release needs its own
+  approval. Keep the tested wheel and comparison as evidence only.
 - [ ] Identify the serving configuration, the independent local Personal
   operator configuration, and any registration or reader that still resolves
   the old path. Keep existing owner/actor, Notes and Auth locations, route,
@@ -43,6 +48,15 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
   retain the differing local movie record without merging it during cutover.
   Confirm an independent backup destination for `OKF/` and `SourceFiles/`
   before making this checkout their permanent home.
+
+### Read-only control map
+
+| Surface | Verified or documented boundary |
+| --- | --- |
+| Personal server | `system/com.matterkeep.personal.barry` owns the loopback `5564` listener. The loaded selection invokes `matterkeep_personal.cli` with a private config on CPython 3.14.6. The root-owned `0600` launcher was not readable to this session; compare its exact bytes in the owner's Terminal before control. |
+| Personal operator | The independent `~/.local/share/matterkeep-personal-log-operator/bin/personal-log-entry` wrapper selects CPython 3.14.6 and passes a config to the CLI. Bind its exact runtime and config alongside serving. |
+| BHO / Clerk | `gui/501/com.matterkeep.dashboard` owns the loopback `5555` listener. The documented drain order is BHO before Personal if a BHO stop is approved. Shared OpenCode can host Clerk tools independently of that service: a BHO stop alone is not proof of exclusion. |
+| Publisher and sync controls | Confirm the existing owner-specific application hold and independent client, Briefing, manual, local-operator, and inbound-sync exclusions. No journal, hold, sync task, or publisher was changed or verified drained in this preflight. Never use a legacy `allow-write` to resume the coordinated clients. |
 
 ## Stopped-writer window
 
