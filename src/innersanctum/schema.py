@@ -145,7 +145,7 @@ def date_value(value):
 def datetime_value(value):
     if type(value) is str:
         if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
-                            r"(?:\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})", value):
+                            r"(?:\.[0-9]+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])", value):
             return False
         try:
             value = datetime.fromisoformat(value)
@@ -218,7 +218,7 @@ def matches(value, rule):
             return all(type(item) is str and ID.fullmatch(item) for item in value)
         return type(value) is str and bool(ID.fullmatch(value))
     if kind == "date":
-        return date_value(value)
+        return date_value(value) or datetime_value(value)
     if kind == "datetime":
         return datetime_value(value)
     if kind == "enum":

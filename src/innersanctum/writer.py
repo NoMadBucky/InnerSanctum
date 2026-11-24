@@ -1,4 +1,4 @@
-"""Recoverable, single-writer Create for explicitly selected standalone bundles."""
+"""Recoverable concept and journal publication for explicitly selected bundles."""
 
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -14,12 +14,16 @@ import stat
 import tempfile
 import unicodedata
 
-from .schema import LIMIT, MANAGED, MD, Refused, document, existing_identity, path_parts, read_text, resolve_route
+from .schema import (
+    DATE, ID, LIMIT, MANAGED, MD, Refused, date_value, document, existing_identity, path_parts,
+    read_text, resolve_route,
+)
 
 
 STATE = ".innersanctum"
 PENDING = "pending-create.json"
 MARKER = ".personal-writer.lock"
+JOURNAL_ROOT = "Documents/journal"
 STRUCTURAL = {"index.md", "log.md", "AGENTS.md", "SPEC.md"}
 PLAN_LIMIT = 12 * LIMIT
 REVISION = re.compile(r"[0-9a-f]{64}")
@@ -138,7 +142,7 @@ def edit_index(text, filename, title):
     return text if text.endswith(newline) else text + newline
 
 
-def edit_log(text, path, title, actor, now):
+def edit_log(text, path, title, actor, now, *, action="Create"):
     lines, newline = lines_for(text)
     sections = headings(text)
     if not sections or sections[0][0] != "h1" or sum(tag == "h1" for tag, *_ in sections) != 1:
@@ -158,8 +162,8 @@ def edit_log(text, path, title, actor, now):
             raise Refused("Root log dates must be newest first.")
         dated.append((section_day, line))
     if sum(section_day == day for section_day, _ in dated) > 1:
-        raise Refused("Root log has more than one section for the Create date.")
-    entry = (f"* **Create** ({now.isoformat(timespec='seconds')}) — "
+        raise Refused(f"Root log has more than one section for the {action} date.")
+    entry = (f"* **{action}** ({now.isoformat(timespec='seconds')}) — "
              f"[{escape_label(title)}]({encoded_path(path)}) · {escape_label(actor)}")
     for existing, line in dated:
         if existing == day:
@@ -196,9 +200,21 @@ def digest(data):
     return sha256(data).hexdigest()
 
 
-def plan_create(root, routes, raw, actor, *, now=None):
+def validate_actor(actor):
     if not actor.strip() or not actor.isprintable() or len(actor) > 256:
         raise Refused("Provide the actual producer as a single-line actor.")
+
+
+def allocate_id(ids, available=lambda _: True):
+    for _ in range(64):
+        identity = f"bho:{1_000_000 + secrets.randbelow(9_000_000)}"
+        if identity not in ids and available(identity):
+            return identity
+    raise Refused("Could not allocate an unused concept ID.")
+
+
+def plan_create(root, routes, raw, actor, *, now=None):
+    validate_actor(actor)
     text = read_text(raw)
     lines, newline = lines_for(text)
     data, _, _ = document(text)
@@ -207,16 +223,14 @@ def plan_create(root, routes, raw, actor, *, now=None):
     kind = data.get("type")
     if type(kind) is not str or not kind.strip() or not kind.isprintable():
         raise Refused("Concept input needs a nonblank type.")
+    if kind == "Journal":
+        raise Refused("Use journal add for date-named Journal records.")
     indexes, ids = inventory(root, collect_ids=True)
     route = resolve_route(kind, routes, indexes)
-    for _ in range(64):
-        identity = f"bho:{1_000_000 + secrets.randbelow(9_000_000)}"
-        path = route.target(identity)
-        filename = PurePosixPath(path).name
-        if identity not in ids and folded(filename) not in map(folded, os.listdir((root / path).parent)):
-            break
-    else:
-        raise Refused("Could not allocate an unused concept ID.")
+    names = {folded(name) for name in os.listdir((root / route.index).parent)}
+    identity = allocate_id(ids, lambda id_: folded(f"{id_[4:]}.md") not in names)
+    path = route.target(identity)
+    filename = PurePosixPath(path).name
     now = now or datetime.now().astimezone()
     generated = {"by": actor, "at": now.isoformat(timespec="seconds")}
     route.validate({**data, "id": identity, "generated": generated})
@@ -324,25 +338,78 @@ def bundle_identity(root):
 def read_changes(root, state):
     try:
         data = json.loads(read_file(state / PENDING, limit=PLAN_LIMIT))
-        if (set(data) != {"version", "bundle", "changes"} or type(data["version"]) is not int
-                or data["version"] != 1 or data["bundle"] != bundle_identity(root)):
+        if (type(data) is not dict or type(data.get("version")) is not int
+                or data.get("bundle") != bundle_identity(root) or type(data.get("changes")) is not list):
             raise ValueError
-        if type(data["changes"]) is not list or len(data["changes"]) != 3:
+        version = data["version"]
+        if version == 1:
+            if set(data) != {"version", "bundle", "changes"} or len(data["changes"]) != 3:
+                raise ValueError
+            journal, directory = False, None
+        elif version == 2:
+            if (set(data) != {"version", "bundle", "changes", "operation", "directory"}
+                    or data["operation"] != "journal-add" or not 2 <= len(data["changes"]) <= 4):
+                raise ValueError
+            journal, directory = True, data["directory"]
+        else:
             raise ValueError
-        record, index, audit = changes = [Change(**item) for item in data["changes"]]
-        path_parts(record.path)
+        changes = [Change(**item) for item in data["changes"]]
+        for change in changes:
+            path_parts(change.path)
+            if (type(change.after) is not str or len(change.after.encode()) > LIMIT
+                    or change.before is not None
+                    and (type(change.before) is not str or not REVISION.fullmatch(change.before))):
+                raise ValueError
+        if journal:
+            verify_journal_changes(changes, directory)
+            return changes, True, directory
+        record, index, audit = changes
         target = PurePosixPath(record.path)
         if (not re.fullmatch(r"[0-9]{7}\.md", target.name) or record.before is not None
                 or index.path != str(target.with_name("index.md")) or audit.path != "log.md"
-                or any(type(c.before) is not str or not REVISION.fullmatch(c.before) for c in (index, audit))
-                or any(type(c.after) is not str or len(c.after.encode()) > LIMIT for c in changes)):
+                or index.before is None or audit.before is None):
             raise ValueError
-        return changes
-    except (OSError, ValueError, TypeError, KeyError):
-        raise Refused("Create journal is invalid; retain it for inspection.") from None
+        return changes, False, None
+    except (Refused, OSError, ValueError, TypeError, KeyError):
+        raise Refused("Pending write journal is invalid; retain it for inspection.") from None
 
 
-def publish(root, state, changes, *, recovering=False):
+def verify_journal_changes(changes, directory):
+    record, audit = changes[0], changes[-1]
+    day = PurePosixPath(record.path).stem
+    month = f"{JOURNAL_ROOT}/{day[:7]}"
+    if (not DATE.fullmatch(day) or not date_value(day) or record.path != f"{month}/{day}.md"
+            or audit.path != "log.md" or audit.before is None):
+        raise ValueError
+    meta, _, _ = document(record.after)
+    if meta.get("type") != "Journal" or type(meta.get("id")) is not str or not ID.fullmatch(meta["id"]):
+        raise ValueError
+    if record.before is not None:
+        if len(changes) != 2 or directory is not None:
+            raise ValueError
+        return
+    if directory not in (None, month):
+        raise ValueError
+    monthly, parent = f"{month}/index.md", f"{JOURNAL_ROOT}/index.md"
+    paths = [c.path for c in changes[1:-1]]
+    if (paths != [p for p in (monthly, parent) if p in paths]
+            or (directory is not None and monthly not in paths)
+            or any((c.before is None) != (directory is not None and c.path == monthly)
+                   for c in changes[1:-1])):
+        raise ValueError
+
+
+def publish(root, state, changes, *, recovering=False, journal=False, directory=None):
+    month = safe_target(root, directory, missing=True) if directory is not None else None
+    month_absent = month is not None and not present(month)
+    if month is not None and not month_absent:
+        info = month.lstat()
+        planned = {PurePosixPath(c.path).name for c in changes if PurePosixPath(c.path).parent.as_posix() == directory}
+        if (not recovering or not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+                or stat.S_IMODE(info.st_mode) != 0o700 or info.st_dev != root.stat().st_dev
+                or not set(os.listdir(month)) <= planned):
+            raise Refused("A journal month changed; retain the original write journal.")
+
     def current(change):
         target = safe_target(root, change.path, missing=change.before is None)
         before = digest(read_file(target)) if present(target) else None
@@ -350,10 +417,18 @@ def publish(root, state, changes, *, recovering=False):
 
     # Preflight every member before changing another; recovery never rebases.
     for change in changes:
-        _, observed = current(change)
+        if month_absent and PurePosixPath(change.path).parent.as_posix() == directory:
+            observed = None
+        else:
+            _, observed = current(change)
         after = digest(change.after.encode())
         if observed != change.before and not (recovering and observed == after):
-            raise Refused("A Create target changed; retain the original journal and do not overwrite it.")
+            raise Refused("A write target changed; retain the original journal and do not overwrite it.")
+    if month_absent:
+        month.mkdir(mode=0o700)
+        sync_directory(month.parent)
+    elif month is not None:
+        sync_directory(month.parent)
     for change in changes:
         target, observed = current(change)
         data = change.after.encode()
@@ -361,46 +436,56 @@ def publish(root, state, changes, *, recovering=False):
             sync_directory(target.parent)
             continue
         if observed != change.before:
-            raise Refused("A Create target changed during publication; retain the journal.")
+            raise Refused("A target changed during publication; retain the write journal.")
         install(state, target, data, absent=change.before is None)
     for change in changes:
         target = safe_target(root, change.path)
         if read_file(target) != change.after.encode():
-            raise Refused("Create read-back did not match; retain the journal.")
+            raise Refused("Write read-back did not match; retain the journal.")
     (state / PENDING).unlink()
     sync_directory(state)
-    return describe(changes, "created")
+    return describe(changes, "added" if journal else "created", journal=journal, directory=directory)
 
 
-def describe(changes, status):
+def describe(changes, status, *, journal=False, directory=None):
     record = changes[0]
-    return {"status": status, "path": record.path, "id": f"bho:{PurePosixPath(record.path).stem}",
-            "revision": digest(record.after.encode()), "files": [change.path for change in changes]}
+    result = {"status": status, "path": record.path, "id": f"bho:{PurePosixPath(record.path).stem}",
+              "revision": digest(record.after.encode()), "files": [change.path for change in changes]}
+    if journal:
+        result.update(id=existing_identity(record.after), date=PurePosixPath(record.path).stem,
+                      created=record.before is None, directories=[directory] if directory else [])
+    return result
+
+
+def freeze(root, state, changes, *, journal=False, directory=None):
+    data = {"version": 1, "bundle": bundle_identity(root), "changes": [vars(change) for change in changes]}
+    if journal:
+        data.update(version=2, operation="journal-add", directory=directory)
+    raw = json.dumps(data, ensure_ascii=False).encode()
+    if len(raw) > PLAN_LIMIT:
+        raise Refused("The pending write journal is too large.")
+    install(state, state / PENDING, raw, absent=True)
 
 
 def create(root, routes, raw, actor, *, dry_run=False, successor=None):
     check_authority(root, successor)
     if dry_run:
         if present(root / STATE / PENDING):
-            raise Refused("A Create is pending; recover it before planning another.")
+            raise Refused("A write is pending; recover it before planning another.")
         return describe(plan_create(root, routes, raw, actor), "planned")
     with locked(root, successor) as state:
         if present(state / PENDING):
-            raise Refused("A Create is pending; run concept recover before trying another.")
+            raise Refused("A write is pending; run concept recover before trying another.")
         changes = plan_create(root, routes, raw, actor)
-        data = json.dumps({"version": 1, "bundle": bundle_identity(root),
-                           "changes": [vars(change) for change in changes]},
-                          ensure_ascii=False).encode()
-        if len(data) > PLAN_LIMIT:
-            raise Refused("The Create journal is too large.")
         # Freeze all before revisions and after bytes before the first canonical mutation.
-        install(state, state / PENDING, data, absent=True)
+        freeze(root, state, changes)
         return publish(root, state, changes)
 
 
 def recover(root, *, successor=None):
     check_authority(root, successor)
     if not present(root / STATE / PENDING):
-        raise Refused("No Create is pending.")
+        raise Refused("No Create or journal entry is pending.")
     with locked(root, successor) as state:
-        return publish(root, state, read_changes(root, state), recovering=True)
+        changes, journal, directory = read_changes(root, state)
+        return publish(root, state, changes, recovering=True, journal=journal, directory=directory)

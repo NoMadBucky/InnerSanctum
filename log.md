@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **Personal journal command**: Added guarded, date-addressed entry creation
+  and insertion, with index updates for new days and shared write recovery.
+  Tested on disposable bundles only.
+
 * **BHO dashboard restored**: Verified the dashboard and its existing brokered
   Personal read path with Personal publisher selections disabled. MatterKeep
   Personal remains offline; sampled canonical files and journals did not change.

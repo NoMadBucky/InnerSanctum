@@ -1,4 +1,4 @@
-"""Schema-driven Create commands for a standalone OKF bundle."""
+"""Guarded concept and personal journal commands for an OKF bundle."""
 
 import argparse
 from contextlib import nullcontext
@@ -9,11 +9,13 @@ import sys
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, recover
+from . import journal
 
 
 def parser():
     command = argparse.ArgumentParser(prog="innersanctum", description=__doc__)
-    concepts = command.add_subparsers(required=True).add_parser("concept")
+    groups = command.add_subparsers(required=True)
+    concepts = groups.add_parser("concept")
     actions = concepts.add_subparsers(dest="action", required=True)
     template = actions.add_parser("template", help="Print a draft from a declared type schema")
     template.add_argument("type")
@@ -21,8 +23,20 @@ def parser():
     new.add_argument("--from", dest="source", required=True, help="UTF-8 draft file, or - for stdin")
     new.add_argument("--actor", required=True, help="Actual producer for provenance and audit")
     new.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
-    recovery = actions.add_parser("recover", help="Finish an interrupted Create without replanning")
-    for action in (template, new, recovery):
+    recovery = actions.add_parser("recover", help="Finish an interrupted write without replanning")
+    ledger = groups.add_parser("journal", help="Add a personal journal entry")
+    journal_actions = ledger.add_subparsers(dest="action", required=True)
+    entry = journal_actions.add_parser("add", help="Add an entry to a date-named Journal concept")
+    entry.set_defaults(action="journal-add")
+    entry.add_argument("--from", dest="source", default="-", help="Entry file or - for stdin (default)")
+    entry.add_argument("--actor", required=True, help="Actual author for the entry and audit")
+    entry.add_argument("--date", help="YYYY-MM-DD; defaults to the date of the entry timestamp")
+    entry.add_argument("--at", help="ISO timestamp with seconds and UTC offset; defaults to local now")
+    entry.add_argument("--category", choices=("Personal", "Work"), default="Personal")
+    entry.add_argument("--subject", help="Optional one-line subject")
+    entry.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
+    journal_recovery = journal_actions.add_parser("recover", help="Finish the bundle's pending write")
+    for action in (template, new, recovery, entry, journal_recovery):
         target = action.add_mutually_exclusive_group(required=True)
         target.add_argument("--bundle", help="Explicit standalone bundle directory")
         target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
@@ -50,6 +64,12 @@ def main(argv=None):
             with target as (root, successor):
                 if args.action == "recover":
                     result = recover(root, successor=successor)
+                elif args.action == "journal-add":
+                    raw = (sys.stdin.buffer.read(journal.MAX_ENTRY + 1) if args.source == "-"
+                           else read_file(Path(args.source).expanduser(), limit=journal.MAX_ENTRY))
+                    result = journal.add(root, raw, args.actor, day=args.date, at=args.at,
+                                         subject=args.subject, category=args.category,
+                                         dry_run=args.dry_run, successor=successor)
                 else:
                     routes = read_text(read_file(Path(args.routes).expanduser()))
                     if args.action == "template":
@@ -64,11 +84,11 @@ def main(argv=None):
         print(f"innersanctum: {error}", file=sys.stderr)
         return 2
     except (OSError, UnicodeError):
-        print("innersanctum: I/O failed. If a Create is pending, recover it before retrying.",
+        print("innersanctum: I/O failed. If a write is pending, recover it before retrying.",
               file=sys.stderr)
         return 2
     except KeyboardInterrupt:
-        print("innersanctum: interrupted. If a Create is pending, recover it before retrying.",
+        print("innersanctum: interrupted. If a write is pending, recover it before retrying.",
               file=sys.stderr)
         return 130
     return 0

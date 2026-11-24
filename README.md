@@ -68,6 +68,35 @@ one host, not readers, sync, or another writer. If an interrupted command has
 no pending journal, check the concept index and audit log before resubmitting:
 the write may have finished before the command could report success.
 
+## Personal journal
+
+For a real entry, provide a Markdown file or pipe the text on stdin. Use the
+actual author for `--actor`. For examples and development, substitute
+`--bundle "$DISPOSABLE_OKF"` and use a standalone fixture.
+
+```sh
+uv run --locked innersanctum journal add --live-checkout "$CHECKOUT" \
+  --from "$ENTRY_FILE" --actor "human:your-name" --subject "Optional subject"
+```
+
+The command defaults to the current local timestamp and `Personal` category.
+To record a different time or day, pass `--at` with an ISO 8601 timestamp
+including seconds and a UTC offset; `--date`, if supplied, must match that
+timestamp's calendar date. Entries accept paragraphs with inline Markdown.
+
+`journal add` uses the Journal schema and the date-named layout
+`Documents/journal/YYYY-MM/YYYY-MM-DD.md`. It inserts the entry in timestamp
+order, without rewriting earlier entries or frontmatter. If the day is new,
+it creates and links it in the monthly and journal indexes, creating the
+month and its index if needed. It refuses an ambiguous existing ledger or an
+existing month with no index. The root audit log records the operation but
+not the entry text or subject.
+
+`--dry-run` validates and reports the proposed paths without writing. After
+an interruption, use `journal recover` with the same target instead of
+submitting the entry again. Journal and concept operations share one pending
+write and one recovery mechanism.
+
 ## Format requirements
 
 The v0.3 target uses:
