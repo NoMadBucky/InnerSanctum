@@ -136,9 +136,10 @@ The next source work can proceed without enabling any publisher:
    receipts resolvable; a fresh InnerSanctum revision is not draft clearance.
 2. **Clerk concept changes:** preserve owner review of the exact change,
    including the index and deletion protections, before replacing Apply.
-3. **Managed publishing:** give Clerk Transcripts and Daily Briefing
-   separate typed operations with stable identities and exact receipts.
-   Reconcile both halves of each Briefing before admitting another run.
+3. **Clerk history:** use the [private archive](clerk-archive.md) and link
+   edits from the canonical audit, rather than restoring automatic Transcript
+   concepts. Daily Briefing remains held; any future Briefing change must
+   reconcile retained attempts separately.
 
 Native document/event writers, lifecycle markers, moves and distribution
 are outside this slice. Do not replay old requests into new operations to

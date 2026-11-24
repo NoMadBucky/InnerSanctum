@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import PurePosixPath
 import re
 
-from . import writer
+from . import clerk_archive, writer
 from .schema import ID, MANAGED, MD, Refused, document, existing_fields, read_text, resolve_schema, same
 
 
@@ -95,12 +95,17 @@ def revise_listing(text, index, path, title):
 
 
 def change(root, selector, revision, actor, *, replacement=None, dry_run=False, successor=None,
-           request_id=None, expected_path=None):
+           request_id=None, expected_path=None, clerk_session=None):
     writer.validate_actor(actor)
     operation = "concept-delete" if replacement is None else "concept-update"
+    if clerk_session is not None:
+        clerk_archive.reference(clerk_session)
+        if successor is not None or replacement is None or request_id is None:
+            raise Refused("Clerk-attributed updates require a standalone bundle, replacement and request ID.")
     request = writer.write_request(request_id, operation, selector, revision, actor,
                                    None if replacement is None else writer.digest(replacement),
-                                   *(() if expected_path is None else (expected_path,)))
+                                   *(() if expected_path is None else (expected_path,)),
+                                   *(() if clerk_session is None else (["clerk-session", clerk_session],)))
 
     def prepare():
         old = load(root, selector)
@@ -115,8 +120,11 @@ def change(root, selector, revision, actor, *, replacement=None, dry_run=False, 
         if replacement is not None:
             after = read_text(replacement)
             writer.lines_for(after)
-            previous = document(old["markdown"])[0]
-            fields = document(after)[0]
+            previous, _, previous_offset = document(old["markdown"])
+            fields, _, replacement_offset = document(after)
+            if clerk_session is not None and (old["markdown"].splitlines(keepends=True)[:previous_offset]
+                                               != after.splitlines(keepends=True)[:replacement_offset]):
+                raise Refused("Clerk-attributed updates must keep the exact original frontmatter.")
             keys = MANAGED.intersection(previous.keys() | fields.keys()) | {"type"}
             if any(key not in previous or key not in fields or not same(previous[key], fields[key]) for key in keys):
                 raise Refused("Keep the existing type and all managed fields (id, generated, verified, owner, scope).")
@@ -137,7 +145,9 @@ def change(root, selector, revision, actor, *, replacement=None, dry_run=False, 
         log = writer.read_file(writer.safe_target(root, "log.md"))
         audit = writer.edit_log(read_text(log), path, title if title is not None else identity, actor,
                                 datetime.now().astimezone(), action="Delete" if after is None else "Update",
-                                link=after is not None)
+                                link=after is not None, clerk_session=clerk_session,
+                                revision=changes[0].revision)
         return [*changes, writer.Change("log.md", writer.digest(log), audit)], identity
 
-    return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor, request=request)
+    return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor, request=request,
+                       clerk_session=clerk_session)

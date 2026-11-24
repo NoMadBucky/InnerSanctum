@@ -100,6 +100,10 @@ refuse missing, duplicate or nonstandard
 parent listing entries rather than guessing which text to change. Update and
 Delete both refuse a stale revision: read the current version before retrying.
 
+For Clerk edits, the [Clerk archive workflow](clerk-archive.md) shows how
+to keep conversation exports outside OKF and link their exact snapshots
+from the edit audit. It is available for standalone rehearsals only.
+
 ## Personal journal
 
 For a real entry, provide a Markdown file or pipe the text on stdin. Use the

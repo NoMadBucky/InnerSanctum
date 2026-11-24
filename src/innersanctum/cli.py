@@ -9,7 +9,7 @@ import sys
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import SUCCESSOR, adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, receipt_status, recover
-from . import concept, journal
+from . import clerk_archive, concept, journal
 
 
 def parser():
@@ -34,6 +34,7 @@ def parser():
         action.add_argument("selector", metavar="PATH_OR_ID", help="Exact bundle-relative path or bho: ID")
     update.add_argument("--from", dest="source", required=True, help="Full replacement Markdown file or - for stdin")
     update.add_argument("--expect-path", help="For ID selection, require this exact bundle-relative path")
+    update.add_argument("--clerk-session", help="Archived Clerk snapshot for a standalone body-only edit")
     for action in (receipt, update):
         action.add_argument("--expect-adoption", help="Require the adopted checkpoint's exact receipt SHA-256")
     ledger = groups.add_parser("journal", help="Read and manage personal journal entries")
@@ -83,6 +84,17 @@ def parser():
     transfer.add_argument("--sha256", required=True, help="Retained approval digest for the checkpoint receipt")
     transfer.add_argument("--writers-stopped", action="store_true", required=True,
                           help="Assert writers and publishers are excluded; this does not stop them")
+    archive = groups.add_parser("clerk-archive", help="Keep or reopen a private Clerk snapshot outside OKF")
+    archive_actions = archive.add_subparsers(required=True)
+    store = archive_actions.add_parser("store", help="Store an immutable UTF-8 conversation export")
+    store.set_defaults(action="clerk-store")
+    store.add_argument("--session", required=True, help="Stable opaque session ID (32 lowercase hex digits)")
+    store.add_argument("--from", dest="source", required=True, help="Private Markdown export, or - for stdin")
+    archived = archive_actions.add_parser("read", help="Resolve a retained archive reference to exact source bytes")
+    archived.set_defaults(action="clerk-read")
+    archived.add_argument("reference")
+    for action in (store, archived):
+        action.add_argument("--bundle", required=True, help="Disposable standalone OKF next to SourceFiles")
     return command
 
 
@@ -119,13 +131,19 @@ def main(argv=None):
             result = adopt(Path(args.live_checkout).expanduser().absolute(), args.checkpoint,
                            args.sha256, writers_stopped=args.writers_stopped)
         else:
-            target = (live_checkout(Path(args.live_checkout).expanduser().absolute()) if args.live_checkout
+            target = (live_checkout(Path(args.live_checkout).expanduser().absolute()) if getattr(args, "live_checkout", None)
                       else nullcontext((open_bundle(args.bundle, checkout), None)))
             with target as (root, successor):
                 expected = getattr(args, "expect_adoption", None)
                 if expected is not None and (successor is None or SUCCESSOR.fullmatch(successor)[2].decode() != expected):
                     raise Refused("The adopted checkout does not match the expected checkpoint receipt.")
-                if args.action == "recover":
+                if args.action == "clerk-store":
+                    raw = input_bytes(args.source, limit=clerk_archive.LIMIT)
+                    result = clerk_archive.store(root, args.session, raw)
+                elif args.action == "clerk-read":
+                    sys.stdout.buffer.write(clerk_archive.read(root, args.reference))
+                    return 0
+                elif args.action == "recover":
                     result = recover(root, successor=successor)
                 elif args.action == "receipt":
                     result = receipt_status(root, args.request_id, successor=successor)
@@ -136,7 +154,8 @@ def main(argv=None):
                     result = concept.change(root, args.selector, args.revision, args.actor,
                                             replacement=replacement, dry_run=args.dry_run, successor=successor,
                                             request_id=args.request_id,
-                                            expected_path=getattr(args, "expect_path", None))
+                                             expected_path=getattr(args, "expect_path", None),
+                                             clerk_session=getattr(args, "clerk_session", None))
                 elif args.action == "journal-read":
                     result = journal.read(root, args.day, successor=successor)
                 elif args.action in {"journal-update", "journal-delete"}:

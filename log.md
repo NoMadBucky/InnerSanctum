@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **Clerk archive**: Added private conversation snapshots and recoverable
+  audit links for body edits on disposable bundles. Saving a conversation
+  does not create a concept or audit entry. No live changes.
+
 * **Notes Save rollout preparation**: Qualified the installed Personal
   entrypoint on a disposable `/barry` mount, with the existing BHO Source
   client held live. Recorded artifact pins and a separate preflight gate.

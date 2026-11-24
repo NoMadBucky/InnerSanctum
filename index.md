@@ -15,6 +15,7 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 * [Concept creation routes](concept-routes.toml) - Explicit authoring destinations for the standalone writer.
 * [Live Create cutover](create-cutover.md) - Compatibility checks and writer handover gates.
 * [Notes Save rollout](notes-save-rollout.md) - Rehearsed candidate, live gates, and backout.
+* [Clerk archive](clerk-archive.md) - Private conversation snapshots and edit audit links.
 * [OKF specification and license](OKF_SPEC/index.md) - Vendored OKF v0.3 reference.
 * [Git ignore rules](.gitignore) - Keep local Personal content out of Git.
 * [Markdown lint configuration](.markdownlint.json) - Repository formatting rules.
