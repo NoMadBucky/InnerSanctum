@@ -1,10 +1,9 @@
 # Personal v0.2 relocation plan
 
-**Status: both services running on the relocated selection; test write
-verified, final checkpoint and handback pending.** The destination is this checkout's `OKF/`
-and sibling `SourceFiles/`. This move does not convert OKF to v0.3 or change
-Auth or publisher grants. Retain the former SynologyDrive tree unchanged and
-inactive.
+**Status: cutover and handback verification complete.** This checkout's
+`OKF/` and sibling `SourceFiles/` are the live Personal store at OKF v0.2.
+The move did not change Auth or publisher grants. Retain the former
+SynologyDrive tree unchanged and inactive.
 
 **Checkpoint-only window completed.** The stopped OKF/Notes pair passed
 MatterKeep's offline verifier. Separate local backups of `SourceFiles/` and
@@ -26,8 +25,7 @@ database and target writer marker. The original source marker is unchanged.
 The qualified runtime and shared config are selected, and the BHO source,
 selector and Barry-only registry update passed stopped read-back. Other
 registry rows, grants, Auth, and shared OpenCode were not changed. Both
-services restarted on their original launchers. Keep writers and inbound
-sync paused.
+services restarted on their original launchers.
 
 ## Before scheduling downtime
 
@@ -214,14 +212,21 @@ sync paused.
 - [x] Make one owner-approved write through Personal. The exact Note body,
   one audit entry and the one completed receipt matched. No index, other
   record, attachment, or old tree changed. No publication was left pending.
-- [ ] Record a fresh clean checkpoint at the new path. Stop Personal again,
-  verify the checkpoint offline, then restore the approved service selection
-  before handback. Keep BHO running but its publishers held. Only then
-  resume approved publishers through their existing controls; keep the old
-  tree intact and inbound sync excluded.
-- [ ] Retain the old checkpoint, old source as read-only evidence, the displaced
-  copies, decision on the local movie record, and the new backup separately
-  from Git. Any future v0.3 conversion is a separate operation.
+- [x] Record a fresh clean checkpoint at the new path. Personal stopped
+  while BHO stayed running and publishers remained held. Offline read-back
+  matched the exact test edit, its audit entry and all 122 completed receipts.
+  The original checkpoint still verifies.
+- [x] Restore Personal on the approved selection and verify it running.
+  BHO stayed on the same generation during the final checkpoint. A live
+  Personal read matched the test edit and its exact receipt. Both
+  checkpoints reverified after restart. Approved publishers may resume
+  through their usual controls; no publisher was resumed by this check.
+  Keep inbound sync excluded and the five historical Clerk sessions
+  preservation-only.
+- [x] Retain both verified checkpoints, the old source, and the displaced
+  checkout copies outside Git. The differing local movie record remains
+  preserved in the displaced copy and was not merged. A future decision
+  about that record or any v0.3 conversion is separate from this move.
 
 ## If something fails
 

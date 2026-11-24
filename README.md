@@ -6,17 +6,16 @@ for its Personal bundle is [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
 
 ## Local Personal store
 
-* [`OKF/`](OKF/index.md) holds the copied MatterKeep Personal v0.2 bundle,
+* [`OKF/`](OKF/index.md) holds the live MatterKeep Personal v0.2 bundle,
   including its own indexes and log.
 * [`SourceFiles/`](SourceFiles/) is the sibling store for native attachments and
   the source catalog. It is outside the OKF bundle.
 
 Both folders are local to this checkout and intentionally ignored by Git. They
-do not come with a clone and need their own backup. MatterKeep still uses the
-registered SynologyDrive store; the local folders are migration copies, not a
-second filing destination. The [relocation plan](relocation-plan.md) covers the
-stopped-writer checkpoint, exact binding approval, and acceptance checks. Relocate
-as v0.2 first; validate the v0.3 conversion separately.
+do not come with a clone and need their own backup. MatterKeep Personal is the
+sole writer; the former SynologyDrive store is retained but inactive. Keep
+inbound sync excluded. The [relocation plan](relocation-plan.md) records the
+binding change and verification. Any v0.3 conversion is separate.
 
 ## Format requirements
 

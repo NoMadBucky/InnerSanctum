@@ -14,5 +14,5 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 * [OKF specification and license](OKF_SPEC/index.md) - Vendored OKF v0.3 reference.
 * [Git ignore rules](.gitignore) - Keep local Personal content out of Git.
 * [Markdown lint configuration](.markdownlint.json) - Repository formatting rules.
-* [Personal OKF](OKF/index.md) - Local-only copy of the MatterKeep v0.2 bundle; not yet the registered store.
-* [Personal source files](SourceFiles/) - Local-only copy of the native files and source catalog.
+* [Personal OKF](OKF/index.md) - Live, local-only MatterKeep Personal v0.2 bundle.
+* [Personal source files](SourceFiles/) - Live, local-only native files and source catalog.

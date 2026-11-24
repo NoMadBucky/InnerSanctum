@@ -3,8 +3,8 @@
 ## Keep the stores separate
 
 * This is a repository for a personal OKF bundle. The root [index.md](index.md) describes the project at OKF v0.3; it does not declare the version of the Personal bundle.
-* `OKF/` is a local migration copy of the Personal v0.2 bundle. Its sibling `SourceFiles/` holds native attachments and the source catalog **outside** that bundle. Both are Git-ignored and absent from fresh clones. Never force-add or publish their contents, or save synthetic data to the Personal store.
-* MatterKeep still files to the registered SynologyDrive store. Do not file into the migration copies or change a binding without explicit operational approval. Follow the [relocation plan](relocation-plan.md) for the stopped checkpoint, checkout opt-in, and binding approval. Keep the live bundle at v0.2 through the move.
+* `OKF/` is the live Personal v0.2 bundle. Its sibling `SourceFiles/` holds native attachments and the source catalog **outside** that bundle. Both are Git-ignored and absent from fresh clones. Never force-add or publish their contents, or save synthetic data to the Personal store.
+* MatterKeep Personal is the sole writer. Do not edit the live trees directly, file into the old SynologyDrive store, or change a binding without explicit operational approval. Keep inbound sync excluded. See the [relocation plan](relocation-plan.md) for the verified cutover and recovery boundaries. Any v0.3 conversion is separate.
 
 ## Edit and verify
 
