@@ -1,7 +1,7 @@
 # Personal v0.2 relocation plan
 
-**Status: both services running on the relocated selection; test write and
-final handback pending.** The selected destination is this checkout's `OKF/`
+**Status: both services running on the relocated selection; test write
+verified, final checkpoint and handback pending.** The destination is this checkout's `OKF/`
 and sibling `SourceFiles/`. This move does not convert OKF to v0.3 or change
 Auth or publisher grants. Retain the former SynologyDrive tree unchanged and
 inactive.
@@ -211,13 +211,14 @@ sync paused.
   Clerk bridge read a record using an existing managed read-only session,
   without a prompt or shared OpenCode restart. This was not a tool
   invocation through the running OpenCode plugin.
-- [ ] Make one owner-approved write through the normal Personal interface.
-  Verify the exact resulting record and expected index/log updates at the new
-  path, no changes at the old path, and no unresolved publication. Record a
-  fresh clean checkpoint at the new path: stop the writer again after the
-  canary, verify offline, then restore the approved service selection before
-  handback. Only then resume approved publishers through their existing
-  controls; keep the old tree intact and inactive.
+- [x] Make one owner-approved write through Personal. The exact Note body,
+  one audit entry and the one completed receipt matched. No index, other
+  record, attachment, or old tree changed. No publication was left pending.
+- [ ] Record a fresh clean checkpoint at the new path. Stop Personal again,
+  verify the checkpoint offline, then restore the approved service selection
+  before handback. Keep BHO running but its publishers held. Only then
+  resume approved publishers through their existing controls; keep the old
+  tree intact and inbound sync excluded.
 - [ ] Retain the old checkpoint, old source as read-only evidence, the displaced
   copies, decision on the local movie record, and the new backup separately
   from Git. Any future v0.3 conversion is a separate operation.
