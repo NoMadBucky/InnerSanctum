@@ -5,6 +5,12 @@ this checkout's `OKF/` and sibling `SourceFiles/`. The SynologyDrive store
 remains authoritative until verified cutover. This plan does not convert OKF to
 v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
 
+**Checkpoint window:** Barry chose an attended, checkpoint-only window and
+owner-managed backup. The date, time zone, and exact backup destination are not
+yet confirmed. The private handoff pins the existing candidate artifacts; both
+services were still running when checked. It does not authorize a stop or
+application of the new binding.
+
 ## Before scheduling downtime
 
 - [x] Qualify the relocation source on disposable data. The candidate
@@ -102,10 +108,11 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
    does not establish it. Retain the current Auth authority separately under
    its existing backup procedure, and independently back up `SourceFiles/`
    (the OKF/Notes checkpoint covers neither). Inventory hidden files as well.
-   The latest inventory found one Finder `.DS_Store` file with mode `0644` in
-   the source `OKF/`. Checkpoint custody requires `0600` even for hidden files.
-   Recheck and seek approval for any exact mode repair; do not bulk `chmod`,
-   delete, or omit files merely to get a checkpoint.
+   The latest inventory found one Finder `.DS_Store` with mode `0644` at the
+   root of the source `OKF/`. Barry approved changing only that file to `0600`
+   during the stopped window, if it is still an owner-owned, single-link
+   regular file at the exact path. Verify the change without editing its
+   bytes. Stop on drift; no other mode repair, deletion, or omission is approved.
 3. **Replace only the destination copies.** Preserve both current InnerSanctum
    trees in the private hold directory before installing anything. Prepare a
    fresh, byte-for-byte OKF copy from the stopped checkpoint, including the old
