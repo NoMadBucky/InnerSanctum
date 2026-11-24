@@ -66,13 +66,18 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
   plan directory passed the same-filesystem check; the existing data roots
   still have mode `0755`. Pause Git operations that can move, stage, or
   remove ignored files throughout the maintenance window.
-- [ ] Set aside a private `0700` directory outside Git to retain the existing
-  InnerSanctum copies as-is. They are incomplete and their current permissions
-  do not qualify. Keep the earlier verified stage and private diff for
-  reference only, not as the final source. Use source bytes as the baseline;
-  retain the differing local movie record without merging it during cutover.
-  Confirm an independent backup destination for `OKF/` and `SourceFiles/`
-  before making this checkout their permanent home.
+- [x] Preserve both existing InnerSanctum copies outside Git. The private
+  archive has 459 OKF files and 85 source files, all independently verified
+  by SHA-256; it retains the differing movie record and leaves both originals
+  in place. This is a backup of the incomplete local copies, not a stopped
+  checkpoint or a backup of the authoritative store.
+- [ ] Confirm an independent backup destination for the authoritative
+  `OKF/` and `SourceFiles/`. A read-only comparison found one new live
+  Markdown file, a changed nested index, and an updated root log since the
+  earlier stage. Live `SourceFiles/` still matched that stage, and the
+  previously reviewed local differences were unchanged. Retain the earlier
+  stage for reference only; build the cutover copies from a fresh stopped
+  checkpoint and stopped source inventory.
 
 ### Read-only control map
 
@@ -97,10 +102,10 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
    does not establish it. Retain the current Auth authority separately under
    its existing backup procedure, and independently back up `SourceFiles/`
    (the OKF/Notes checkpoint covers neither). Inventory hidden files as well.
-   The earlier inventory saw one `0644` file in the source `OKF/`; recheck
-   rather than assuming it has been corrected. A custody refusal is a stop:
-   identify exact offending paths and seek approval for any source repair;
-   do not bulk `chmod` or omit files merely to get a checkpoint.
+   The latest inventory found one Finder `.DS_Store` file with mode `0644` in
+   the source `OKF/`. Checkpoint custody requires `0600` even for hidden files.
+   Recheck and seek approval for any exact mode repair; do not bulk `chmod`,
+   delete, or omit files merely to get a checkpoint.
 3. **Replace only the destination copies.** Preserve both current InnerSanctum
    trees in the private hold directory before installing anything. Prepare a
    fresh, byte-for-byte OKF copy from the stopped checkpoint, including the old
