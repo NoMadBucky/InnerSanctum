@@ -1,6 +1,6 @@
 # Notes Save rollout
 
-**2026-11-24T19:38:30Z · Stopped backup verified; attended start prepared.**
+**2026-11-24T20:16:54Z · First BHO Notes Source Save independently verified.**
 The [project registry](project-registry.md) resolves `barry` and `bho`.
 The [cutover record](create-cutover.md) remains the source for writer authority.
 The November 24 record is not a fresh observation of either service.
@@ -127,6 +127,89 @@ protected launcher, and changes only the Personal job. The backup sources
 still matched at runbook preparation. No privileged command ran, no
 service was started, and no Save was performed. The owner must run the
 reviewed Terminal step before signed-in read verification.
+
+The owner subsequently ran the Terminal step and reported the staged
+launcher started. Independent read-back matched the selected runtime
+arguments and UID, configuration digest, and sole Personal loopback
+listener. Public HTTPS sign-in responded; both Notes API paths refused
+anonymous access. The adoption marker and lack of pending canonical
+writes were verified. BHO remained running on its existing listener
+with its publisher selectors absent. An attended browser opened the
+Personal sign-in page without submitting it. No Save has been performed.
+
+The owner reported that a note loaded correctly after sign-in. This
+established owner-reported read acceptance before the Save.
+
+For the first live Save, the owner selected one existing Note and
+authorized a minimal body-only change. The source matched the stopped
+backup and no private draft existed before editing. The signed-in Source
+editor added one terminating newline and submitted Save once. Independent
+read-back confirmed the exact revised bytes, one audit entry, one
+completed InnerSanctum receipt and a cleared private draft. Only the note,
+audit log, and new receipt changed within the canonical directory; title,
+frontmatter and indexes were unchanged. No write remained pending. The
+signed-in editor reopened the exact published revision after reload.
+
+Personal remains on the Notes-only candidate. No BHO selector or hold
+changed during this Save. The stopped backup is historical, not a
+rollback target.
+
+### BHO Notes Source activation
+
+After the owner approved proceeding, read-only checks matched the
+retained selector and authenticated grant to the current binding. The
+completed BHO Save reconciled against its matching historical Personal
+receipt. Its one unsent draft remains unchanged; there were no unsettled
+submissions. The owner hold remains on.
+
+The inactive selections change only the Personal delegated Notes flag
+and the BHO Notes Source selector. The owner Terminal step verifies the
+existing protected launcher, stops BHO before Personal, takes a fresh
+verified backup of the stopped post-Save pair, then starts Personal
+before BHO. The backup method was rehearsed against a changed disposable
+Notes generation. The start step leaves the broad owner hold in place
+and sends no Save or replay. On failure it requests containment of the
+two exact jobs and stops; do not rerun or restore a database.
+
+The owner ran the activation step. Its immediate stopped check did not
+confirm the boundary, so containment exited before copying the pair or
+changing either launcher. Independent read-back subsequently found both
+exact jobs absent and disabled, no listeners, the held BHO launcher and
+owner hold unchanged, and no pending canonical publication. The precise
+transient condition at the failed stop check is not known.
+
+The fresh stopped backup then verified, including the first Personal
+Save. A separate check matched the live canonical inventory, Notes and
+Auth bytes to that backup, with the retained BHO operation journal still
+unchanged. The new Terminal continuation begins at that verified boundary;
+it does not replay the original stop sequence or recopy either database.
+The owner then ran the continuation and reported Notes Source selected
+with no Save or replay. Independent checks matched the exact two running
+selections, their loopback listeners, the original grant, the unchanged
+BHO operation journal and the owner hold. Public sign-in responded and
+unauthenticated requests did not reach Notes content. The existing signed-in
+BHO session opened its Notes Source listing with 123 eligible Notes. No
+individual Source editor was opened: that would create a BHO operation.
+Separate owner approval for the exact test Note and edit is still required.
+Do not use the existing unsent draft for the test.
+
+The initially proposed test Note was excluded because the retained unsent
+BHO draft belonged to it. The owner approved one blank line at the end
+of a different existing Note, with no private draft or BHO operation.
+The signed-in BHO Source editor submitted the edit once and acknowledged it.
+Independent read-back matched the exact revised bytes, BHO acknowledgement,
+Personal's completed Save, and one InnerSanctum receipt and audit entry.
+Only the note, audit log and receipt changed in the canonical directory;
+the title, metadata and indexes stayed unchanged. The old BHO operations,
+including the unsent draft, were unchanged, and no write remained pending.
+The original-request receipt recheck produced no second publication.
+Both the acknowledged BHO Source and the reopened Personal editor
+matched the published revision.
+
+Both Notes lanes remain available under their existing owner and grant
+controls. Other BHO publishers and Work writing remain held. The stopped
+post-Personal backup predates the accepted BHO Save and must not be
+restored over it.
 
 **Backout:** On any mismatch, stop and restart-inhibit only the
 candidate Personal host if it was started. If the BHO Source selector
