@@ -8,11 +8,10 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 
 ## Directory Listing
 
-* [README](README.md) - Project overview and format requirements.
-* [Change log](log.md) - History of changes to the bundle.
+* [README](README.md) - Project layout, migration status, and format requirements.
+* [Change log](log.md) - History of changes to the project.
+* [OKF specification and license](OKF_SPEC/index.md) - Vendored OKF v0.3 reference.
+* [Git ignore rules](.gitignore) - Keep local Personal content out of Git.
 * [Markdown lint configuration](.markdownlint.json) - Repository formatting rules.
-* [References](references/) - Vendored [OKF v0.3 specification and license](references/okf/README.md).
-
-## External bundles
-
-* [MatterKeep personal bundle](file:///Users/badgernomad/SynologyDrive/MatterKeep/personal/2627252/OKF/index.md) - Local OKF v0.2 bundle, maintained in place outside this repository.
+* [Personal OKF](OKF/index.md) - Local-only copy of the MatterKeep v0.2 bundle; not yet the registered store.
+* [Personal source files](SourceFiles/) - Local-only copy of the native files and source catalog.

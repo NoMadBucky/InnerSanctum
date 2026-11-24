@@ -1,12 +1,27 @@
 # InnerSanctum
 
-InnerSanctum is a local-first personal knowledge bundle for collecting notes and
-finding their sources. Start with the [bundle index](index.md). The bundle follows
-[Open Knowledge Format (OKF) v0.3](references/okf/SPEC.md).
+InnerSanctum is a local-first personal knowledge project for collecting notes and
+finding their sources. Start with the [project index](index.md). The target format
+for its Personal bundle is [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
+
+## Local Personal store
+
+* [`OKF/`](OKF/index.md) holds the copied MatterKeep Personal v0.2 bundle,
+  including its own indexes and log.
+* [`SourceFiles/`](SourceFiles/) is the sibling store for native attachments and
+  the source catalog. It is outside the OKF bundle.
+
+Both folders are local to this checkout and intentionally ignored by Git. They
+do not come with a clone and need their own backup. MatterKeep still uses the
+registered SynologyDrive store; the local folders are migration copies, not a
+second filing destination. Before switching, verify that both copies match the
+source, that ownership and modes meet MatterKeep's requirements (`0700` for
+directories, `0600` for files), and that MatterKeep can read and write through the
+new registry binding. Relocate as v0.2 first; validate the v0.3 conversion separately.
 
 ## Format requirements
 
-Reading and writing bundle files requires only:
+The v0.3 target uses:
 
 * [YAML 1.2](https://yaml.org/spec/1.2.2/) with the core schema for frontmatter.
 * CommonMark with [GitHub Flavored Markdown (GFM) tables](https://github.github.com/gfm/#tables-extension-)
@@ -15,3 +30,11 @@ Reading and writing bundle files requires only:
 * [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) for dates and timestamps.
   Date-times include `Z` or an explicit UTC offset; date-only values use
   `YYYY-MM-DD` where allowed.
+
+## Specification source
+
+[`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the
+[upstream specification](https://github.com/open-knowledge-format/open-knowledge-format/blob/527e81aff55992be21507e97004286789126f88c/SPEC.md)
+at commit `527e81aff55992be21507e97004286789126f88c`. The upstream
+[Apache License 2.0](OKF_SPEC/SPEC-LICENSE.txt) applies to the vendored specification,
+not to the rest of this repository.
