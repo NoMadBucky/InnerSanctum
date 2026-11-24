@@ -99,6 +99,29 @@ def test_handover_then_create_from_exact_checkout(selection, tmp_path, capsys):
     assert {path for path, value in snapshot(root).items() if before.get(path) != value} == set(dto["files"])
 
 
+def test_crud_requires_the_adopted_checkout(selection, tmp_path, capsys):
+    checkout, root, _, _ = selection
+    selector = "bho:1234567"
+    live = ["--live-checkout", str(checkout)]
+    assert cli.main(["concept", "read", selector, *live]) == 2
+    assert "does not own" in capsys.readouterr().err
+    transfer(selection)
+    marker = (root / writer.MARKER).read_bytes()
+    assert cli.main(["concept", "read", selector, "--bundle", str(root)]) == 2
+    assert cli.main(["concept", "read", selector, *live]) == 0
+    record = json.loads(capsys.readouterr().out)
+    draft = tmp_path / "revision.md"
+    draft.write_text(record["markdown"].replace("type: Video", "type: Video\ntitle: Revised"))
+    assert cli.main(["concept", "update", selector, *live, "--from", str(draft),
+                     "--revision", record["revision"], "--actor", ACTOR]) == 0
+    updated = json.loads(capsys.readouterr().out)
+    assert cli.main(["concept", "delete", selector, *live,
+                     "--revision", updated["revision"], "--actor", ACTOR]) == 0
+    assert not (root / record["path"]).exists()
+    assert (root / writer.MARKER).read_bytes() == marker
+    assert (checkout / "SourceFiles/original.bin").read_bytes() == b"synthetic attachment"
+
+
 @pytest.mark.parametrize("failure", ["checkpoint", "drift", "notes", "sha", "tracked", "wrong-checkout", "lock"])
 def test_handover_refuses_until_evidence_matches(selection, failure, monkeypatch):
     checkout, root, checkpoint, approved = selection

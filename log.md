@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **Personal CRUD**: Added guarded reads, revision-checked updates and deletes
+  for concepts and journal entries. New writes use the shared audit log and
+  recovery mechanism. Tested on disposable bundles only.
+
 * **Personal journal command**: Added guarded, date-addressed entry creation
   and insertion, with index updates for new days and shared write recovery.
   Tested on disposable bundles only.

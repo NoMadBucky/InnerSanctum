@@ -8,15 +8,17 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import secrets
 import stat
 import tempfile
 import unicodedata
+from urllib.parse import quote, unquote, urlsplit
 
 from .schema import (
-    DATE, ID, LIMIT, MANAGED, MD, Refused, date_value, document, existing_identity, path_parts,
-    read_text, resolve_route,
+    DATE, ID, LIMIT, MANAGED, MD, Refused, date_value, document, existing_fields, existing_identity,
+    path_parts, read_text, resolve_route,
 )
 
 
@@ -24,9 +26,11 @@ STATE = ".innersanctum"
 PENDING = "pending-create.json"
 MARKER = ".personal-writer.lock"
 JOURNAL_ROOT = "Documents/journal"
-STRUCTURAL = {"index.md", "log.md", "AGENTS.md", "SPEC.md"}
+STRUCTURAL = {"index.md", "log.md", "agents.md", "spec.md"}
 PLAN_LIMIT = 12 * LIMIT
 REVISION = re.compile(r"[0-9a-f]{64}")
+EDITS = {"concept-update", "concept-delete", "journal-update", "journal-delete"}
+DELETED_ID = re.compile(r"^\* \*\*Delete\*\* \([^\r\n]+\) — bho\\:([0-9]{7}) · ", re.M)
 
 
 def present(path):
@@ -35,6 +39,11 @@ def present(path):
 
 def folded(name):
     return unicodedata.normalize("NFC", name).casefold()
+
+
+def concept_path(path):
+    parts = path_parts(path)
+    return parts[-1].lower().endswith(".md") and folded(parts[-1]) not in STRUCTURAL
 
 
 def check_authority(root, successor=None):
@@ -94,7 +103,7 @@ def inventory(root, *, collect_ids):
     for relative, path in visible_files(root):
         if path.name == "index.md":
             indexes[relative] = read_text(read_file(path))
-        elif collect_ids and path.name not in STRUCTURAL:
+        elif collect_ids and concept_path(relative):
             identity = existing_identity(read_text(read_file(path)))
             if identity is None:
                 continue
@@ -142,7 +151,7 @@ def edit_index(text, filename, title):
     return text if text.endswith(newline) else text + newline
 
 
-def edit_log(text, path, title, actor, now, *, action="Create"):
+def edit_log(text, path, title, actor, now, *, action="Create", link=True):
     lines, newline = lines_for(text)
     sections = headings(text)
     if not sections or sections[0][0] != "h1" or sum(tag == "h1" for tag, *_ in sections) != 1:
@@ -163,8 +172,10 @@ def edit_log(text, path, title, actor, now, *, action="Create"):
         dated.append((section_day, line))
     if sum(section_day == day for section_day, _ in dated) > 1:
         raise Refused(f"Root log has more than one section for the {action} date.")
+    record = (f"[{escape_label(title)}]({encoded_path(path)})" if link
+              else f"{escape_label(title)} · {escape_label(path)}")
     entry = (f"* **{action}** ({now.isoformat(timespec='seconds')}) — "
-             f"[{escape_label(title)}]({encoded_path(path)}) · {escape_label(actor)}")
+             f"{record} · {escape_label(actor)}")
     for existing, line in dated:
         if existing == day:
             pos, insertion = line + 1, ["", entry]
@@ -184,16 +195,30 @@ def edit_log(text, path, title, actor, now, *, action="Create"):
 
 
 def encoded_path(path):
-    from urllib.parse import quote
-
     return quote(path, safe="/")
+
+
+def link_destination(href, index):
+    try:
+        value = urlsplit(href)
+    except ValueError:
+        return None
+    if value.scheme or value.netloc or not value.path:
+        return None
+    clean = unquote(value.path)
+    return (posixpath.normpath(clean.lstrip("/")) if clean.startswith("/") else
+            posixpath.normpath(str(PurePosixPath(index).parent / clean)))
 
 
 @dataclass(frozen=True)
 class Change:
     path: str
     before: str | None
-    after: str
+    after: str | None
+
+    @property
+    def revision(self):
+        return None if self.after is None else digest(self.after.encode())
 
 
 def digest(data):
@@ -205,12 +230,29 @@ def validate_actor(actor):
         raise Refused("Provide the actual producer as a single-line actor.")
 
 
+def require_revision(expected, observed):
+    if not REVISION.fullmatch(expected):
+        raise Refused("Provide the SHA-256 revision returned by read.")
+    if expected != observed:
+        raise Refused("The revision is stale; read the current record before retrying.")
+
+
+def require_idle(root):
+    if present(root / STATE / PENDING):
+        raise Refused("A write is pending; recover it before continuing.")
+
+
 def allocate_id(ids, available=lambda _: True):
     for _ in range(64):
         identity = f"bho:{1_000_000 + secrets.randbelow(9_000_000)}"
         if identity not in ids and available(identity):
             return identity
     raise Refused("Could not allocate an unused concept ID.")
+
+
+def retired_ids(log):
+    # Delete keeps the ID in the audit log so old references cannot acquire a new meaning.
+    return {"bho:" + number for number in DELETED_ID.findall(log)}
 
 
 def plan_create(root, routes, raw, actor, *, now=None):
@@ -227,8 +269,11 @@ def plan_create(root, routes, raw, actor, *, now=None):
         raise Refused("Use journal add for date-named Journal records.")
     indexes, ids = inventory(root, collect_ids=True)
     route = resolve_route(kind, routes, indexes)
+    if in_journal(route.index):
+        raise Refused("Use journal commands for the journal directory.")
     names = {folded(name) for name in os.listdir((root / route.index).parent)}
-    identity = allocate_id(ids, lambda id_: folded(f"{id_[4:]}.md") not in names)
+    log = read_text(read_file(root / "log.md"))
+    identity = allocate_id(ids | retired_ids(log), lambda id_: folded(f"{id_[4:]}.md") not in names)
     path = route.target(identity)
     filename = PurePosixPath(path).name
     now = now or datetime.now().astimezone()
@@ -239,7 +284,6 @@ def plan_create(root, routes, raw, actor, *, now=None):
                   f'  at: "{generated["at"]}"']
     source = newline.join(lines)
     index = indexes[route.index]
-    log = read_text(read_file(root / "log.md"))
     changes = [Change(path, None, source),
                Change(route.index, digest(index.encode()), edit_index(index, filename, data["title"])),
                Change("log.md", digest(log.encode()), edit_log(log, path, data["title"], actor, now))]
@@ -345,41 +389,87 @@ def read_changes(root, state):
         if version == 1:
             if set(data) != {"version", "bundle", "changes"} or len(data["changes"]) != 3:
                 raise ValueError
-            journal, directory = False, None
+            operation, directory, identity = "create", None, None
         elif version == 2:
             if (set(data) != {"version", "bundle", "changes", "operation", "directory"}
                     or data["operation"] != "journal-add" or not 2 <= len(data["changes"]) <= 4):
                 raise ValueError
-            journal, directory = True, data["directory"]
+            operation, directory, identity = "journal-add", data["directory"], None
+        elif version == 3:
+            if (set(data) != {"version", "bundle", "changes", "operation", "identity"}
+                    or data["operation"] not in EDITS):
+                raise ValueError
+            operation, directory, identity = data["operation"], None, data["identity"]
         else:
             raise ValueError
         changes = [Change(**item) for item in data["changes"]]
         for change in changes:
             path_parts(change.path)
-            if (type(change.after) is not str or len(change.after.encode()) > LIMIT
-                    or change.before is not None
-                    and (type(change.before) is not str or not REVISION.fullmatch(change.before))):
+            if (change.after is not None and
+                    (type(change.after) is not str or len(change.after.encode()) > LIMIT)
+                    or change.before is not None and
+                    (type(change.before) is not str or not REVISION.fullmatch(change.before))):
                 raise ValueError
-        if journal:
+        if operation in EDITS:
+            verify_edit_changes(changes, operation, identity)
+            return changes, operation, directory, identity
+        if any(c.after is None for c in changes):
+            raise ValueError
+        if operation == "journal-add":
             verify_journal_changes(changes, directory)
-            return changes, True, directory
+            return changes, operation, directory, identity
         record, index, audit = changes
         target = PurePosixPath(record.path)
         if (not re.fullmatch(r"[0-9]{7}\.md", target.name) or record.before is not None
                 or index.path != str(target.with_name("index.md")) or audit.path != "log.md"
                 or index.before is None or audit.before is None):
             raise ValueError
-        return changes, False, None
+        return changes, operation, directory, identity
     except (Refused, OSError, ValueError, TypeError, KeyError):
         raise Refused("Pending write journal is invalid; retain it for inspection.") from None
+
+
+def journal_path(day):
+    if not DATE.fullmatch(day) or not date_value(day):
+        raise Refused("Journal date must be YYYY-MM-DD.")
+    return f"{JOURNAL_ROOT}/{day[:7]}/{day}.md"
+
+
+def in_journal(path):
+    return folded(path).startswith(folded(JOURNAL_ROOT) + "/")
+
+
+def verify_edit_changes(changes, operation, identity):
+    record, *middle, audit = changes
+    if (type(identity) is not str or not ID.fullmatch(identity) or any(c.before is None for c in changes)
+            or audit.path != "log.md" or any(c.after is None for c in changes[1:])):
+        raise ValueError
+    if operation.startswith("journal-"):
+        if middle or record.after is None or journal_path(PurePosixPath(record.path).stem) != record.path:
+            raise ValueError
+    else:
+        index = str(PurePosixPath(record.path).with_name("index.md"))
+        if (not concept_path(record.path) or in_journal(record.path)
+                or (record.after is None) != (operation == "concept-delete")
+                or [c.path for c in middle] not in ([], [index])
+                or operation == "concept-delete" and not middle):
+            raise ValueError
+    if record.after is not None:
+        verify_edit_record(record.after, operation, identity)
+
+
+def verify_edit_record(text, operation, identity):
+    fields = existing_fields(text, {"id", "type"}, required=True)
+    if (fields.get("id") != identity or "type" not in fields
+            or (fields["type"] == "Journal") != operation.startswith("journal-")):
+        raise Refused("The record does not match the planned edit.")
 
 
 def verify_journal_changes(changes, directory):
     record, audit = changes[0], changes[-1]
     day = PurePosixPath(record.path).stem
     month = f"{JOURNAL_ROOT}/{day[:7]}"
-    if (not DATE.fullmatch(day) or not date_value(day) or record.path != f"{month}/{day}.md"
-            or audit.path != "log.md" or audit.before is None):
+    if (record.path != journal_path(day) or audit.path != "log.md" or audit.before is None):
         raise ValueError
     meta, _, _ = document(record.after)
     if meta.get("type") != "Journal" or type(meta.get("id")) is not str or not ID.fullmatch(meta["id"]):
@@ -399,7 +489,7 @@ def verify_journal_changes(changes, directory):
         raise ValueError
 
 
-def publish(root, state, changes, *, recovering=False, journal=False, directory=None):
+def publish(root, state, changes, *, recovering=False, operation="create", directory=None, identity=None):
     month = safe_target(root, directory, missing=True) if directory is not None else None
     month_absent = month is not None and not present(month)
     if month is not None and not month_absent:
@@ -411,7 +501,7 @@ def publish(root, state, changes, *, recovering=False, journal=False, directory=
             raise Refused("A journal month changed; retain the original write journal.")
 
     def current(change):
-        target = safe_target(root, change.path, missing=change.before is None)
+        target = safe_target(root, change.path, missing=change.before is None or change.after is None)
         before = digest(read_file(target)) if present(target) else None
         return target, before
 
@@ -421,8 +511,7 @@ def publish(root, state, changes, *, recovering=False, journal=False, directory=
             observed = None
         else:
             _, observed = current(change)
-        after = digest(change.after.encode())
-        if observed != change.before and not (recovering and observed == after):
+        if observed != change.before and not (recovering and observed == change.revision):
             raise Refused("A write target changed; retain the original journal and do not overwrite it.")
     if month_absent:
         month.mkdir(mode=0o700)
@@ -431,36 +520,51 @@ def publish(root, state, changes, *, recovering=False, journal=False, directory=
         sync_directory(month.parent)
     for change in changes:
         target, observed = current(change)
-        data = change.after.encode()
-        if recovering and observed == digest(data):
+        if recovering and observed == change.revision:
             sync_directory(target.parent)
             continue
         if observed != change.before:
             raise Refused("A target changed during publication; retain the write journal.")
-        install(state, target, data, absent=change.before is None)
+        if change.after is None:
+            raw = read_file(target)
+            if digest(raw) != change.before:
+                raise Refused("A target changed during publication; retain the write journal.")
+            verify_edit_record(read_text(raw), operation, identity)
+            target.unlink()
+            sync_directory(target.parent)
+        else:
+            install(state, target, change.after.encode(), absent=change.before is None)
     for change in changes:
-        target = safe_target(root, change.path)
-        if read_file(target) != change.after.encode():
+        _, observed = current(change)
+        if observed != change.revision:
             raise Refused("Write read-back did not match; retain the journal.")
     (state / PENDING).unlink()
     sync_directory(state)
-    return describe(changes, "added" if journal else "created", journal=journal, directory=directory)
+    status = {"create": "created", "journal-add": "added"}.get(operation)
+    return describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
+                    operation=operation, directory=directory, identity=identity)
 
 
-def describe(changes, status, *, journal=False, directory=None):
+def describe(changes, status, *, operation="create", directory=None, identity=None):
     record = changes[0]
-    result = {"status": status, "path": record.path, "id": f"bho:{PurePosixPath(record.path).stem}",
-              "revision": digest(record.after.encode()), "files": [change.path for change in changes]}
-    if journal:
+    result = {"status": status, "path": record.path, "id": identity or f"bho:{PurePosixPath(record.path).stem}",
+              "revision": record.revision, "files": [change.path for change in changes]}
+    if operation == "journal-add":
         result.update(id=existing_identity(record.after), date=PurePosixPath(record.path).stem,
                       created=record.before is None, directories=[directory] if directory else [])
+    elif operation.startswith("journal-"):
+        result["date"] = PurePosixPath(record.path).stem
+    if operation in EDITS:
+        result["previous_revision"] = record.before
     return result
 
 
-def freeze(root, state, changes, *, journal=False, directory=None):
+def freeze(root, state, changes, *, operation="create", directory=None, identity=None):
     data = {"version": 1, "bundle": bundle_identity(root), "changes": [vars(change) for change in changes]}
-    if journal:
-        data.update(version=2, operation="journal-add", directory=directory)
+    if operation == "journal-add":
+        data.update(version=2, operation=operation, directory=directory)
+    elif operation in EDITS:
+        data.update(version=3, operation=operation, identity=identity)
     raw = json.dumps(data, ensure_ascii=False).encode()
     if len(raw) > PLAN_LIMIT:
         raise Refused("The pending write journal is too large.")
@@ -485,7 +589,29 @@ def create(root, routes, raw, actor, *, dry_run=False, successor=None):
 def recover(root, *, successor=None):
     check_authority(root, successor)
     if not present(root / STATE / PENDING):
-        raise Refused("No Create or journal entry is pending.")
+        raise Refused("No Create, concept edit or journal write is pending.")
     with locked(root, successor) as state:
-        changes, journal, directory = read_changes(root, state)
-        return publish(root, state, changes, recovering=True, journal=journal, directory=directory)
+        changes, operation, directory, identity = read_changes(root, state)
+        return publish(root, state, changes, recovering=True, operation=operation,
+                       directory=directory, identity=identity)
+
+
+def edit(root, operation, prepare, *, dry_run=False, successor=None):
+    check_authority(root, successor)
+
+    def checked_plan():
+        require_idle(root)
+        changes, identity = prepare()
+        for change in changes:
+            if change.after is not None:
+                read_text(change.after.encode())
+        verify_edit_changes(changes, operation, identity)
+        return changes, identity
+
+    if dry_run:
+        changes, identity = checked_plan()
+        return describe(changes, "planned", operation=operation, identity=identity)
+    with locked(root, successor) as state:
+        changes, identity = checked_plan()
+        freeze(root, state, changes, operation=operation, identity=identity)
+        return publish(root, state, changes, operation=operation, identity=identity)

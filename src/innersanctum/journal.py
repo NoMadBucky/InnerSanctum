@@ -1,23 +1,36 @@
-"""Add one date-addressed entry using the bundle's shared writer."""
+"""Read and edit date-addressed entries using the bundle's shared writer."""
 
+from dataclasses import dataclass
 from datetime import date, datetime
-from pathlib import PurePosixPath
 import json
-import posixpath
 import re
-from urllib.parse import unquote, urlsplit
 
 from . import writer
-from .schema import ID, MD, Refused, date_value, datetime_value, document, read_text, resolve_route
+from .schema import (
+    ID, MD, Refused, date_value, datetime_value, document, existing_fields, read_text, resolve_route,
+    split_document,
+)
 
 
 ROOT = writer.JOURNAL_ROOT
 ROUTE = f'[types.Journal]\nschema = "{ROOT}/index.md"\ndirectory = "{ROOT}"\n'
 LEDGER = {"Journal Entries", "Entries"}
 TIME = re.compile(r"^ {0,3}[*+-][ \t]+\*\*(?:Time|Timestamp)(?::\*\*|\*\*:)[ \t]+(\S+)[ \t]*$")
-ENTRY = re.compile(r"^ {2,4}\*\*Entry(?::\*\*|\*\*:)(?:[ \t]|$)")
+ENTRY = re.compile(r"^( {2,4})\*\*Entry(?::\*\*|\*\*:)(?=[ \t]|$)")
 MARKER = re.compile(r"(?<!\\)\*\*(?:Time|Timestamp|Entry)(?::\*\*|\*\*:)", re.I)
 MAX_ENTRY = 32 * 1024
+
+
+@dataclass(frozen=True)
+class Item:
+    stamp: str
+    first: int
+    last: int
+    entry: int
+
+    @property
+    def time(self):
+        return datetime.fromisoformat(self.stamp)
 
 
 def local_times(now, day, at):
@@ -31,7 +44,7 @@ def local_times(now, day, at):
     return entry_time
 
 
-def entry_lines(raw, actor, category, subject, at):
+def entry_paragraphs(raw):
     if len(raw) > MAX_ENTRY:
         raise Refused("Journal entry exceeds 32 KiB.")
     text = read_text(raw)
@@ -47,22 +60,39 @@ def entry_lines(raw, actor, category, subject, at):
                 or any(token.type == "html_inline" for token in tokens[1].children or [])
                 or MARKER.search(paragraph)):
             raise Refused("Use paragraphs with inline Markdown, not block markup or journal field markers.")
-    if category not in {"Personal", "Work"}:
-        raise Refused("Journal category must be Personal or Work.")
-    literal_actor = re.sub(r"([\\`*_\[\]<>~&])", r"\\\1", actor)
-    result = [f"* **Time:** {at.isoformat()}  ",
-              f"  **Author:** {literal_actor}  ", f"  **Category:** {category}  "]
-    if subject is not None:
-        if not subject.strip() or not subject.isprintable() or len(subject) > 256:
-            raise Refused("Journal subject must be a nonblank single line of at most 256 characters.")
-        result.append(f"  **Subject:** {writer.escape_label(subject)}  ")
-    result.append(f"  **Entry:** {paragraphs[0]}")
+    return paragraphs
+
+
+def entry_body(paragraphs, marker, indent):
+    result = [f"{marker} {paragraphs[0]}"]
     for paragraph in paragraphs[1:]:
-        result.extend(("", f"  {paragraph}"))
+        result.extend(("", f"{indent}{paragraph}"))
     return result
 
 
-def add_to_ledger(text, body, offset, entries, at):
+def category_label(category):
+    if category not in {"Personal", "Work"}:
+        raise Refused("Journal category must be Personal or Work.")
+    return f"**Category:** {category}  "
+
+
+def subject_label(subject):
+    if not subject.strip() or not subject.isprintable() or len(subject) > 256:
+        raise Refused("Journal subject must be a nonblank single line of at most 256 characters.")
+    return f"**Subject:** {writer.escape_label(subject)}  "
+
+
+def entry_lines(raw, actor, category, subject, at):
+    paragraphs = entry_paragraphs(raw)
+    literal_actor = re.sub(r"([\\`*_\[\]<>~&])", r"\\\1", actor)
+    result = [f"* **Time:** {at.isoformat()}  ",
+              f"  **Author:** {literal_actor}  ", f"  {category_label(category)}"]
+    if subject is not None:
+        result.append(f"  {subject_label(subject)}")
+    return [*result, *entry_body(paragraphs, "  **Entry:**", "  ")]
+
+
+def ledger_items(body):
     headings = writer.headings(body)
     ledgers = [pos for tag, heading, pos, markup in headings
                if tag == "h2" and markup == "##" and heading in LEDGER]
@@ -78,17 +108,24 @@ def add_to_ledger(text, body, offset, entries, at):
             continue
         first, last = token.map
         match = TIME.fullmatch(body_lines[first])
-        if (not match or not datetime_value(match[1])
-                or not any(ENTRY.match(line) for line in body_lines[first + 1:last])):
+        markers = [i for i in range(first + 1, last) if ENTRY.match(body_lines[i])]
+        if not match or not datetime_value(match[1]) or len(markers) != 1:
             raise Refused("An existing journal entry could not be placed safely.")
-        stamp = datetime.fromisoformat(match[1])
-        if items and stamp > items[-1][0]:
+        while last > markers[0] + 1 and not body_lines[last - 1].strip():
+            last -= 1
+        item = Item(match[1], first, last, markers[0])
+        if items and item.time > items[-1].time:
             raise Refused("Existing journal entries are not newest first.")
-        items.append((stamp, first, last))
-    by_line = {first for _, first, _ in items}
+        items.append(item)
+    by_line = {item.first for item in items}
     if any(TIME.fullmatch(body_lines[i]) and i not in by_line for i in range(start, stop)):
         raise Refused("Journal ledger contains an ambiguous timestamp marker.")
-    position = (next((first for stamp, first, _ in items if at >= stamp), items[-1][2])
+    return start, items
+
+
+def add_to_ledger(text, body, offset, entries, at):
+    start, items = ledger_items(body)
+    position = (next((item.first for item in items if at >= item.time), items[-1].last)
                 if items else start)
     lines, newline = writer.lines_for(text)
     position += offset
@@ -98,24 +135,12 @@ def add_to_ledger(text, body, offset, entries, at):
     return newline.join(lines)
 
 
-def link_destination(href, index):
-    try:
-        value = urlsplit(href)
-    except ValueError:
-        return None
-    if value.scheme or value.netloc or not value.path:
-        return None
-    clean = unquote(value.path)
-    return (posixpath.normpath(clean.lstrip("/")) if clean.startswith("/") else
-            posixpath.normpath(str(PurePosixPath(index).parent / clean)))
-
-
 def ensure_links(text, index, links):
     _, body, offset = document(text, required=False)
-    linked = {link_destination(child.attrGet("href") or "", index)
+    linked = {writer.link_destination(child.attrGet("href") or "", index)
               for token in MD.parse(body) for child in token.children or [] if child.type == "link_open"}
     additions = [f"* [{writer.escape_label(label)}]({href})"
-                 for label, href in links if link_destination(href, index) not in linked]
+                 for label, href in links if writer.link_destination(href, index) not in linked]
     if not additions:
         return text
     headings = [(position, markup) for tag, heading, position, markup in writer.headings(body)
@@ -142,7 +167,7 @@ def plan_add(root, raw, actor, *, day=None, at=None, subject=None, category="Per
     new_month = not writer.present(directory)
     if not new_month and (directory.is_symlink() or not directory.is_dir()):
         raise Refused("Journal month is not a physical directory.")
-    path = f"{month}/{day}.md"
+    path = writer.journal_path(day)
     monthly, parent = f"{month}/index.md", f"{ROOT}/index.md"
     indexes, identities = writer.inventory(root, collect_ids=True)
     route = resolve_route("Journal", ROUTE, indexes)
@@ -164,7 +189,7 @@ def plan_add(root, raw, actor, *, day=None, at=None, subject=None, category="Per
         after = add_to_ledger(text, body, offset, entries, entry_time)
         return [writer.Change(path, writer.digest(old), after), audit], None
 
-    identity = writer.allocate_id(identities)
+    identity = writer.allocate_id(identities | writer.retired_ids(log))
     initial = "\n".join(("---", f'id: "{identity}"', "type: Journal", f'title: "{title}"',
                          "generated:", f"  by: {json.dumps(actor, ensure_ascii=False)}",
                          f'  at: "{now.isoformat(timespec="seconds")}"', "---", "",
@@ -195,10 +220,94 @@ def add(root, raw, actor, *, day=None, at=None, subject=None, category="Personal
         if writer.present(root / writer.STATE / writer.PENDING):
             raise Refused("A write is pending; recover it before planning another.")
         changes, directory = prepare()
-        return writer.describe(changes, "planned", journal=True, directory=directory)
+        return writer.describe(changes, "planned", operation="journal-add", directory=directory)
     with writer.locked(root, successor) as state:
         if writer.present(state / writer.PENDING):
             raise Refused("A write is pending; run journal recover before trying another.")
         changes, directory = prepare()
-        writer.freeze(root, state, changes, journal=True, directory=directory)
-        return writer.publish(root, state, changes, journal=True, directory=directory)
+        writer.freeze(root, state, changes, operation="journal-add", directory=directory)
+        return writer.publish(root, state, changes, operation="journal-add", directory=directory)
+
+
+def load(root, day):
+    path = writer.journal_path(day)
+    raw = writer.read_file(writer.safe_target(root, path))
+    text = read_text(raw)
+    fields = existing_fields(text, {"id", "type"}, required=True)
+    identity = fields.get("id", "")
+    if fields.get("type") != "Journal" or not ID.fullmatch(identity):
+        raise Refused("Existing day is not an identified Journal concept.")
+    return {"path": path, "id": identity, "date": day, "revision": writer.digest(raw)}, text
+
+
+def ledger_source(text):
+    _, body, offset = split_document(text)
+    _, items = ledger_items(body)
+    lines, newline = writer.lines_for(text)
+    return lines, newline, offset, items
+
+
+def read(root, day, *, successor=None):
+    writer.check_authority(root, successor)
+    writer.require_idle(root)
+    result, text = load(root, day)
+    lines, newline, offset, items = ledger_source(text)
+    result["entries"] = [{"entry": index, "at": item.stamp,
+                          "markdown": newline.join(lines[offset + item.first:offset + item.last])}
+                         for index, item in enumerate(items, 1)]
+    writer.require_idle(root)
+    return result
+
+
+def set_label(lines, field, label, indent):
+    marker = re.compile(rf"^( {{2,4}})\*\*{field}(?::\*\*|\*\*:)(?=[ \t]|$)")
+    matches = [(i, match[1]) for i, line in enumerate(lines) if (match := marker.match(line))]
+    if len(matches) > 1:
+        raise Refused(f"Journal entry has more than one {field} field.")
+    if matches:
+        index, padding = matches[0]
+        lines[index:index + 1] = [] if label is None else [padding + label]
+    elif label is not None:
+        lines.append(indent + label)
+
+
+def change(root, day, entry, revision, actor, *, replacement=None, category=None, subject=None,
+           clear_subject=False, dry_run=False, successor=None):
+    writer.validate_actor(actor)
+    operation = "journal-delete" if replacement is None else "journal-update"
+
+    def prepare():
+        record, old = load(root, day)
+        writer.require_revision(revision, record["revision"])
+        lines, newline, offset, items = ledger_source(old)
+        if not 1 <= entry <= len(items):
+            raise Refused("Select an entry number from journal read.")
+        item = items[entry - 1]
+        first, last = offset + item.first, offset + item.last
+        expected = [lines[offset + i.first:offset + i.last] for i in items]
+        replaced = []
+        if replacement is not None:
+            marker = ENTRY.match(lines[offset + item.entry])
+            indent = marker[1]
+            headers = lines[first + 1:offset + item.entry]
+            if category is not None:
+                set_label(headers, "Category", category_label(category), indent)
+            if subject is not None or clear_subject:
+                set_label(headers, "Subject", None if clear_subject else subject_label(subject), indent)
+            replaced = [lines[first], *headers, *entry_body(entry_paragraphs(replacement), marker[0], indent)]
+        lines[first:last] = replaced
+        expected[entry - 1:entry] = [replaced] if replaced else []
+        after = newline.join(lines)
+        if old == after:
+            raise Refused("The replacement is unchanged.")
+        new_lines, _, new_offset, new_items = ledger_source(after)
+        if [new_lines[new_offset + i.first:new_offset + i.last] for i in new_items] != expected:
+            raise Refused("The edit would change how other journal content is parsed.")
+        path = record["path"]
+        log = writer.read_file(writer.safe_target(root, "log.md"))
+        audit = writer.edit_log(read_text(log), path, f"Journal for {day}", actor,
+                                datetime.now().astimezone(),
+                                action="Journal entry delete" if replacement is None else "Journal entry update")
+        return [writer.Change(path, revision, after), writer.Change("log.md", writer.digest(log), audit)], record["id"]
+
+    return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor)

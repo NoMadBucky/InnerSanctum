@@ -86,11 +86,11 @@ def document(text, *, required=True):
     return mapping(frontmatter) if frontmatter is not None else {}, body, offset
 
 
-def existing_identity(text):
-    """Read an existing ID without constructing tagged legacy field values."""
-    frontmatter, _, _ = split_document(text, required=False)
+def existing_fields(text, fields, *, required=False):
+    """Read selected string fields without constructing tagged legacy values."""
+    frontmatter, _, _ = split_document(text, required=required)
     if frontmatter is None:
-        return None
+        return {}
     try:
         node = yaml_reader(frontmatter, allow_opaque_tags=True).compose(frontmatter)
     except (YAMLError, ValueError, TypeError, RecursionError, OverflowError):
@@ -100,17 +100,21 @@ def existing_identity(text):
     if not isinstance(node, MappingNode) or node.tag != prefix + "map":
         raise Refused("An existing concept needs ordinary mapping frontmatter.")
     seen = set()
-    identity = None
+    result = {}
     for key, value in node.value:
         if (not isinstance(key, ScalarNode) or key.tag != string or key.value == "<<"
                 or key.value in seen):
             raise Refused("An existing concept has ambiguous frontmatter keys.")
         seen.add(key.value)
-        if key.value == "id":
+        if key.value in fields:
             if not isinstance(value, ScalarNode) or value.tag != string or not value.value.strip():
-                raise Refused("An existing concept has an invalid ID.")
-            identity = value.value
-    return identity
+                raise Refused(f"An existing concept has an invalid {key.value} field.")
+            result[key.value] = value.value
+    return result
+
+
+def existing_identity(text):
+    return existing_fields(text, {"id"}).get("id")
 
 
 def declarations(text):
@@ -294,9 +298,13 @@ def resolve_route(kind, route_text, indexes):
         raise Refused("Creation route must name an index.md declaration.")
     if directory != "/":
         path_parts(directory)
+    return resolve_schema(kind, directory, indexes, declaring=declaring)
+
+
+def resolve_schema(kind, directory, indexes, *, declaring=None):
     found = [(path, schema) for path, text in indexes.items() for name, schema in declarations(text)
              if name == kind]
-    if len(found) != 1 or found[0][0] != declaring:
+    if len(found) != 1 or declaring is not None and found[0][0] != declaring:
         raise Refused("The routed type must have one matching declaration in the specified index.")
     schema = found[0][1]
     if set(schema) - {"type", "directory", "required", "fields", "variants", "legacy", "never"}:
@@ -306,7 +314,7 @@ def resolve_route(kind, route_text, indexes):
         if scope != "/":
             path_parts(scope)
         if directory != scope and (scope == "/" or not directory.startswith(scope + "/")):
-            raise Refused("The creation destination is outside the schema's directory scope.")
+            raise Refused("The destination is outside the schema's directory scope.")
     required, variants, legacy = (schema.get(key, []) for key in ("required", "variants", "legacy"))
     forbidden, fields = schema.get("never", {}), schema.get("fields", {})
     if (not all(names(value) for value in (required, variants, legacy))

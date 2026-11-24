@@ -9,7 +9,7 @@ import sys
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, recover
-from . import journal
+from . import concept, journal
 
 
 def parser():
@@ -24,7 +24,13 @@ def parser():
     new.add_argument("--actor", required=True, help="Actual producer for provenance and audit")
     new.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
     recovery = actions.add_parser("recover", help="Finish an interrupted write without replanning")
-    ledger = groups.add_parser("journal", help="Add a personal journal entry")
+    read = actions.add_parser("read", help="Read one concept's Markdown and revision as JSON")
+    update = actions.add_parser("update", help="Replace an existing concept without changing its identity")
+    delete = actions.add_parser("delete", help="Remove one concept and its parent listing")
+    for action in (read, update, delete):
+        action.add_argument("selector", metavar="PATH_OR_ID", help="Exact bundle-relative path or bho: ID")
+    update.add_argument("--from", dest="source", required=True, help="Full replacement Markdown file or - for stdin")
+    ledger = groups.add_parser("journal", help="Read and manage personal journal entries")
     journal_actions = ledger.add_subparsers(dest="action", required=True)
     entry = journal_actions.add_parser("add", help="Add an entry to a date-named Journal concept")
     entry.set_defaults(action="journal-add")
@@ -35,8 +41,26 @@ def parser():
     entry.add_argument("--category", choices=("Personal", "Work"), default="Personal")
     entry.add_argument("--subject", help="Optional one-line subject")
     entry.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
+    journal_read = journal_actions.add_parser("read", help="Read a day's numbered entries and revision as JSON")
+    journal_update = journal_actions.add_parser("update", help="Replace one entry's text, keeping its time and author")
+    journal_delete = journal_actions.add_parser("delete", help="Remove one entry without removing its day")
+    for action, name in ((journal_read, "read"), (journal_update, "update"), (journal_delete, "delete")):
+        action.set_defaults(action=f"journal-{name}")
+        action.add_argument("day", metavar="DATE", help="Journal day (YYYY-MM-DD)")
+    for action in (journal_update, journal_delete):
+        action.add_argument("--entry", type=int, required=True, help="Entry number returned by journal read")
+    journal_update.add_argument("--from", dest="source", required=True, help="Entry text file or - for stdin")
+    journal_update.add_argument("--category", choices=("Personal", "Work"), help="Replace the entry's category")
+    subject = journal_update.add_mutually_exclusive_group()
+    subject.add_argument("--subject", help="Replace the entry's subject")
+    subject.add_argument("--clear-subject", action="store_true", help="Remove the entry's subject")
+    for action in (update, delete, journal_update, journal_delete):
+        action.add_argument("--revision", required=True, help="Exact SHA-256 revision returned by read")
+        action.add_argument("--actor", required=True, help="Actual editor for the audit")
+        action.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
     journal_recovery = journal_actions.add_parser("recover", help="Finish the bundle's pending write")
-    for action in (template, new, recovery, entry, journal_recovery):
+    for action in (template, new, recovery, read, update, delete,
+                   entry, journal_read, journal_update, journal_delete, journal_recovery):
         target = action.add_mutually_exclusive_group(required=True)
         target.add_argument("--bundle", help="Explicit standalone bundle directory")
         target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
@@ -49,6 +73,11 @@ def parser():
     transfer.add_argument("--writers-stopped", action="store_true", required=True,
                           help="Assert writers and publishers are excluded; this does not stop them")
     return command
+
+
+def input_bytes(source, *, limit=LIMIT):
+    return (sys.stdin.buffer.read(limit + 1) if source == "-"
+            else read_file(Path(source).expanduser(), limit=limit))
 
 
 def main(argv=None):
@@ -64,9 +93,23 @@ def main(argv=None):
             with target as (root, successor):
                 if args.action == "recover":
                     result = recover(root, successor=successor)
+                elif args.action == "read":
+                    result = concept.read(root, args.selector, successor=successor)
+                elif args.action in {"update", "delete"}:
+                    replacement = input_bytes(args.source) if args.action == "update" else None
+                    result = concept.change(root, args.selector, args.revision, args.actor,
+                                            replacement=replacement, dry_run=args.dry_run, successor=successor)
+                elif args.action == "journal-read":
+                    result = journal.read(root, args.day, successor=successor)
+                elif args.action in {"journal-update", "journal-delete"}:
+                    edits = {}
+                    if args.action == "journal-update":
+                        edits = dict(replacement=input_bytes(args.source, limit=journal.MAX_ENTRY),
+                                     category=args.category, subject=args.subject, clear_subject=args.clear_subject)
+                    result = journal.change(root, args.day, args.entry, args.revision, args.actor,
+                                            dry_run=args.dry_run, successor=successor, **edits)
                 elif args.action == "journal-add":
-                    raw = (sys.stdin.buffer.read(journal.MAX_ENTRY + 1) if args.source == "-"
-                           else read_file(Path(args.source).expanduser(), limit=journal.MAX_ENTRY))
+                    raw = input_bytes(args.source, limit=journal.MAX_ENTRY)
                     result = journal.add(root, raw, args.actor, day=args.date, at=args.at,
                                          subject=args.subject, category=args.category,
                                          dry_run=args.dry_run, successor=successor)
@@ -76,8 +119,7 @@ def main(argv=None):
                         indexes, _ = inventory(root, collect_ids=False)
                         print(resolve_route(args.type, routes, indexes).template(), end="")
                         return 0
-                    raw = (sys.stdin.buffer.read(LIMIT + 1) if args.source == "-"
-                           else read_file(Path(args.source).expanduser()))
+                    raw = input_bytes(args.source)
                     result = create(root, routes, raw, args.actor, dry_run=args.dry_run, successor=successor)
         print(json.dumps(result, sort_keys=True))
     except Refused as error:

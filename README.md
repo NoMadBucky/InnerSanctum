@@ -17,10 +17,10 @@ writer; the former SynologyDrive store is retained but inactive. Keep inbound
 sync excluded. The [cutover record](create-cutover.md) records current writer
 authority. Any v0.3 conversion is separate.
 
-## Standalone concept creation
+## Concepts
 
-InnerSanctum can create an ordinary Markdown concept without MatterKeep or a
-browser. During development, use **disposable, standalone bundles outside the
+InnerSanctum can create, read, update and delete ordinary Markdown concepts
+without MatterKeep or a browser. Use **disposable, standalone bundles outside the
 checkout**. Standalone mode refuses repository paths, SynologyDrive and
 bundles carrying Personal's writer marker. Do not remove a marker to make
 a bundle eligible. The [live Create cutover](create-cutover.md) verified that
@@ -55,18 +55,32 @@ forbidden, and refuses unsupported schema rules. It writes the new concept
 without overwriting an existing file, adds the parent index entry and audit
 entry, then verifies all three. It returns a JSON path, ID and source revision.
 Create does not deduplicate by title or external URL, create directories, or
-fetch attachments. Full bundle validation, Read, Update and Delete are future work.
+fetch attachments.
 
-Use `--dry-run` to validate and preview the affected paths without writing; it
-does not reserve the proposed ID. During Create, the private
-`.innersanctum/` directory holds a local lock and a pending journal. If
-interrupted, use `concept recover --bundle "$DISPOSABLE_OKF"` rather than
-submitting another Create. Recovery finishes the original changes or stops if
-it encounters unexpected bytes. It does not roll back or merge changes. File
-replacements are sequential: the lock coordinates InnerSanctum commands on
-one host, not readers, sync, or another writer. If an interrupted command has
-no pending journal, check the concept index and audit log before resubmitting:
-the write may have finished before the command could report success.
+Read by exact bundle-relative path or `bho:` ID. Read returns JSON with the
+original `markdown` and a SHA-256 `revision`. For Update, start from that
+Markdown (for example, extract it with `jq -j .markdown`), then supply the full
+edited document. Keep the type, ID and other managed fields (`generated`,
+`verified`, `owner`, `scope`). Update validates against the existing type
+declaration and changes the parent index label if the title changes. It does
+not move the concept. Updates requiring unsupported legacy YAML are refused.
+
+```sh
+uv run --locked innersanctum concept read "$SELECTOR" --bundle "$DISPOSABLE_OKF"
+
+uv run --locked innersanctum concept update "$SELECTOR" --bundle "$DISPOSABLE_OKF" \
+  --from "$EDITED_MARKDOWN" --revision "$REVISION" --actor "human:your-name"
+
+uv run --locked innersanctum concept delete "$SELECTOR" --bundle "$DISPOSABLE_OKF" \
+  --revision "$REVISION" --actor "human:your-name" --dry-run
+```
+
+Delete permanently removes the concept file and its parent listing, leaving
+an audit entry that keeps the ID from being assigned again. It does not remove
+attachments or rewrite other links to the concept. Delete and title changes
+refuse missing, duplicate or nonstandard
+parent listing entries rather than guessing which text to change. Update and
+Delete both refuse a stale revision: read the current version before retrying.
 
 ## Personal journal
 
@@ -92,10 +106,41 @@ month and its index if needed. It refuses an ambiguous existing ledger or an
 existing month with no index. The root audit log records the operation but
 not the entry text or subject.
 
-`--dry-run` validates and reports the proposed paths without writing. After
-an interruption, use `journal recover` with the same target instead of
-submitting the entry again. Journal and concept operations share one pending
-write and one recovery mechanism.
+`journal read DATE` returns JSON with the day's `revision` and a numbered list
+of entries, each with `at` and `markdown`. Use the reported entry number and
+day revision together. Any change to the day, including a new entry, makes
+the old revision stale.
+
+```sh
+uv run --locked innersanctum journal read "$DAY" --bundle "$DISPOSABLE_OKF"
+
+uv run --locked innersanctum journal update "$DAY" --bundle "$DISPOSABLE_OKF" \
+  --entry "$NUMBER" --revision "$REVISION" --from "$ENTRY_FILE" --actor "human:your-name"
+
+uv run --locked innersanctum journal delete "$DAY" --bundle "$DISPOSABLE_OKF" \
+  --entry "$NUMBER" --revision "$REVISION" --actor "human:your-name" --dry-run
+```
+
+Update replaces the entry text and keeps its original time and author.
+Use `--category` or `--subject` to change those fields, or `--clear-subject`
+to remove the subject. Delete removes only the selected entry. The day's
+frontmatter and indexes stay in place, even when you delete the last entry.
+The audit records the operation, not the entry text or subject.
+
+## Preview and recovery
+
+All write commands for concepts and journal entries accept `--dry-run` to
+validate and report affected paths without writing. A Create preview does not
+reserve its proposed ID. Concept and journal operations share one lock and
+one pending write in the private `.innersanctum/` directory.
+
+After an interruption, use `concept recover` or `journal recover` with the
+same target instead of resubmitting. Recovery finishes the original changes
+or stops if it encounters unexpected bytes; it does not roll back or merge.
+Files change one at a time. The lock coordinates InnerSanctum writes on one
+host, not other readers, sync or another writer. If no write is pending,
+check the record and audit log before resubmitting: the command may have
+finished without reporting success.
 
 ## Format requirements
 
