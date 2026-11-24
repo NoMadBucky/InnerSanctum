@@ -27,13 +27,20 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
   before selection and preserve their dependency payloads. Do not install the
   broader wheel or replace the deployed OKF validator with a same-version
   source build: two validator files differ.
-- [ ] Identify the serving configuration, the independent local Personal
-  operator configuration, and any registration or reader that still resolves
-  the old path. Keep existing owner/actor, Notes and Auth locations, route,
-  grants, and publisher holds unchanged. Prepare inactive configs that select
-  the new roots and the explicit catalog. Record the old and candidate config
-  digests and launcher selections privately. Where protected launcher settings
-  need elevation, arrange for the owner to make or verify that selection.
+- [x] Prepare the inactive Personal config. The loaded serving job and local
+  operator wrapper select the same TOML file. A private candidate replaces
+  only `okf`, `source_root`, and `source_catalog`, and adds
+  `innersanctum_checkout`. The original config and wrapper were verified
+  unchanged. Runtime validation waits for the private replacement trees;
+  the root-owned launcher still needs owner-local byte comparison.
+- [ ] Resolve the BHO registry dependency before scheduling downtime. The
+  running BHO uses `<personal_root>/<owner-id>/OKF` and rejects any registry
+  row that does not match the derived root. The selected owner row is ready
+  at SynologyDrive. Neither a global root setting nor editing that row alone
+  can select `InnerSanctum/OKF`; a symlink also fails its custody guard. Qualify
+  an owner-specific binding for BHO and its independent Clerk readers, or
+  explicitly approve holding those consumers through a Personal-only move.
+  Do not let BHO keep using the old tree as a current copy after cutover.
 - [ ] Use `MatterKeep/Personal/publisher-coverage.md` and the latest deployment
   record to identify active publishers. Check ordinary Clerk Transcripts,
   Daily Briefing (which publishes both a Note and a Transcript), and BHO's
@@ -45,8 +52,10 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
   and root ignore rules `/OKF/` and `/SourceFiles/`, with neither tree in the
   Git index or `HEAD`. Relocation staging, target `OKF/`, and private Notes
   storage must be on the same filesystem; plans, checkpoints, and private
-  state must remain outside Git. Pause Git operations that can move, stage,
-  or remove ignored files throughout the maintenance window.
+  state must remain outside Git. The current checkout, Notes, and private
+  plan directory passed the same-filesystem check; the existing data roots
+  still have mode `0755`. Pause Git operations that can move, stage, or
+  remove ignored files throughout the maintenance window.
 - [ ] Set aside a private `0700` directory outside Git to retain the existing
   InnerSanctum copies as-is. They are incomplete and their current permissions
   do not qualify. Keep the earlier verified stage and private diff for
@@ -60,9 +69,9 @@ v0.3, change Auth or publisher grants, or retire the SynologyDrive copy.
 | Surface | Verified or documented boundary |
 | --- | --- |
 | Personal server | `system/com.matterkeep.personal.barry` owns the loopback `5564` listener. The loaded selection invokes `matterkeep_personal.cli` with a private config on CPython 3.14.6. The root-owned `0600` launcher was not readable to this session; compare its exact bytes in the owner's Terminal before control. |
-| Personal operator | The independent `~/.local/share/matterkeep-personal-log-operator/bin/personal-log-entry` wrapper selects CPython 3.14.6 and passes a config to the CLI. Bind its exact runtime and config alongside serving. |
-| BHO / Clerk | `gui/501/com.matterkeep.dashboard` owns the loopback `5555` listener. The documented drain order is BHO before Personal if a BHO stop is approved. Shared OpenCode can host Clerk tools independently of that service: a BHO stop alone is not proof of exclusion. |
-| Publisher and sync controls | Confirm the existing owner-specific application hold and independent client, Briefing, manual, local-operator, and inbound-sync exclusions. No journal, hold, sync task, or publisher was changed or verified drained in this preflight. Never use a legacy `allow-write` to resume the coordinated clients. |
+| Personal operator | The independent `~/.local/share/matterkeep-personal-log-operator/bin/personal-log-entry` wrapper selects CPython 3.14.6 and passes the same TOML as the serving job. Verify both runtime selections against that shared binding. |
+| BHO / Clerk | `gui/501/com.matterkeep.dashboard` owns the loopback `5555` listener. Its deployed registry still selects the old tree. The documented drain order is BHO before Personal if a BHO stop is approved. Shared OpenCode can host Clerk tools independently of that service: a BHO stop alone is not proof of exclusion. |
+| Publisher and sync controls | A read-only sample found the owner-specific BHO maintenance flag **off**; this is not evidence for or against any other write gate. Confirm separate exclusion for Clerk, Briefing, manual and local-operator writers, and inbound sync. No journals were verified drained, and no holds, publishers, or sync tasks were changed. Never use a legacy `allow-write` to resume coordinated clients. |
 
 ## Stopped-writer window
 
