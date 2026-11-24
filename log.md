@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **Read-only project hub**: Added the [seven-target project registry](project-registry.md)
+  and project-local OpenCode status and planning commands. No global configuration,
+  live service, or store changes.
+
 * **Journal client migration**: Added replay-safe write receipts and an
   existing-day append precondition. Prepared MatterKeep Personal's local
   journal operator and a default-off BHO append adapter. No live activation.

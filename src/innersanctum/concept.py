@@ -95,16 +95,19 @@ def revise_listing(text, index, path, title):
 
 
 def change(root, selector, revision, actor, *, replacement=None, dry_run=False, successor=None,
-           request_id=None):
+           request_id=None, expected_path=None):
     writer.validate_actor(actor)
     operation = "concept-delete" if replacement is None else "concept-update"
     request = writer.write_request(request_id, operation, selector, revision, actor,
-                                   None if replacement is None else writer.digest(replacement))
+                                   None if replacement is None else writer.digest(replacement),
+                                   *(() if expected_path is None else (expected_path,)))
 
     def prepare():
         old = load(root, selector)
         writer.require_revision(revision, old["revision"])
         path, identity = old["path"], old["id"]
+        if expected_path is not None and (not ID.fullmatch(selector) or path != expected_path):
+            raise Refused("The selected ID is not at the expected path.")
         index = str(PurePosixPath(path).with_name("index.md"))
         title = None
         after = None

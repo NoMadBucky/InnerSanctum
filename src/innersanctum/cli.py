@@ -8,7 +8,7 @@ import sys
 
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import adopt, live_checkout
-from .writer import create, inventory, open_bundle, read_file, recover
+from .writer import create, inventory, open_bundle, read_file, receipt_status, recover
 from . import concept, journal
 
 
@@ -24,12 +24,16 @@ def parser():
     new.add_argument("--actor", required=True, help="Actual producer for provenance and audit")
     new.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
     recovery = actions.add_parser("recover", help="Finish an interrupted write without replanning")
+    receipt = actions.add_parser("receipt", help="Observe a request receipt without recovering or publishing")
+    receipt.add_argument("request_id")
+    receipt.add_argument("--live-checkout", required=True, help="Exact adopted InnerSanctum checkout")
     read = actions.add_parser("read", help="Read one concept's Markdown and revision as JSON")
     update = actions.add_parser("update", help="Replace an existing concept without changing its identity")
     delete = actions.add_parser("delete", help="Remove one concept and its parent listing")
     for action in (read, update, delete):
         action.add_argument("selector", metavar="PATH_OR_ID", help="Exact bundle-relative path or bho: ID")
     update.add_argument("--from", dest="source", required=True, help="Full replacement Markdown file or - for stdin")
+    update.add_argument("--expect-path", help="For ID selection, require this exact bundle-relative path")
     ledger = groups.add_parser("journal", help="Read and manage personal journal entries")
     journal_actions = ledger.add_subparsers(dest="action", required=True)
     entry = journal_actions.add_parser("add", help="Add an entry to a date-named Journal concept")
@@ -118,13 +122,16 @@ def main(argv=None):
             with target as (root, successor):
                 if args.action == "recover":
                     result = recover(root, successor=successor)
+                elif args.action == "receipt":
+                    result = receipt_status(root, args.request_id, successor=successor)
                 elif args.action == "read":
                     result = concept.read(root, args.selector, successor=successor)
                 elif args.action in {"update", "delete"}:
                     replacement = input_bytes(args.source) if args.action == "update" else None
                     result = concept.change(root, args.selector, args.revision, args.actor,
                                             replacement=replacement, dry_run=args.dry_run, successor=successor,
-                                            request_id=args.request_id)
+                                            request_id=args.request_id,
+                                            expected_path=getattr(args, "expect_path", None))
                 elif args.action == "journal-read":
                     result = journal.read(root, args.day, successor=successor)
                 elif args.action in {"journal-update", "journal-delete"}:

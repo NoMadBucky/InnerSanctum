@@ -4,6 +4,24 @@ InnerSanctum is a local-first personal knowledge project for collecting notes an
 finding their sources. Start with the [project index](index.md). The target format
 for its Personal bundle is [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
 
+## Project hub
+
+Use the [project registry](project-registry.md) to route work for seven sites.
+In OpenCode v2, new sessions in InnerSanctum default to the read-only
+`project-hub` agent. You can name a URL directly or use:
+
+```text
+/project-status
+/project-status https://matterkeep.com/
+/project-plan design review a navigation change
+```
+
+Status is the last recorded evidence, not a health check. Both commands select
+`project-hub` in the current session. Switch to Build for authorized
+InnerSanctum development, or open the owning checkout in a separate session for
+source work there. The hub configuration does not change global permissions,
+other agents, or any deployment.
+
 ## Local Personal store
 
 * [`OKF/`](OKF/index.md) holds the live MatterKeep Personal v0.2 bundle,

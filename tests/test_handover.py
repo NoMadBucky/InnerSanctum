@@ -122,6 +122,46 @@ def test_crud_requires_the_adopted_checkout(selection, tmp_path, capsys):
     assert (checkout / "SourceFiles/original.bin").read_bytes() == b"synthetic attachment"
 
 
+def test_receipt_lookup_is_passive_and_update_can_pin_identity_and_path(selection, tmp_path, capsys, monkeypatch):
+    checkout, root, _, _ = selection
+    transfer(selection)
+    live = ["--live-checkout", str(checkout)]
+    request = "test-notes-request"
+    receipt = ["concept", "receipt", request, *live]
+    assert cli.main(receipt) == 0 and json.loads(capsys.readouterr().out) == {"state": "missing"}
+    assert not (root / writer.STATE).exists()
+    old = "Resources/videos/1234567.md"
+    source = (root / old).read_text()
+    draft = tmp_path / "edit.md"
+    draft.write_text(source.replace("type: Video", "type: Video\ntitle: Revised"))
+    args = ["concept", "update", "bho:1234567", *live, "--request-id", request, "--from", str(draft),
+            "--revision", writer.digest(source.encode()), "--actor", ACTOR]
+    assert cli.main([*args, "--expect-path", "Resources/videos/1234568.md"]) == 2
+    assert "not at the expected path" in capsys.readouterr().err
+    original = writer.install
+
+    def interrupt(state, target, raw, *, absent=False):
+        if target == root / "log.md":
+            raise OSError("synthetic")
+        return original(state, target, raw, absent=absent)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(writer, "install", interrupt)
+        assert cli.main([*args, "--expect-path", old]) == 2
+    capsys.readouterr()
+    before = snapshot(root)
+    assert cli.main(receipt) == 0 and json.loads(capsys.readouterr().out) == {"state": "pending"}
+    assert snapshot(root) == before
+    assert cli.main(["concept", "recover", *live]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert cli.main(receipt) == 0
+    observed = json.loads(capsys.readouterr().out)
+    assert observed == {"state": "completed", "receipt": result, "fingerprint": writer.write_request(
+        request, "concept-update", "bho:1234567", writer.digest(source.encode()), ACTOR,
+        writer.digest(draft.read_bytes()), old)[1]}
+    assert source not in str(observed)
+
+
 @pytest.mark.parametrize("failure", ["checkpoint", "drift", "notes", "sha", "tracked", "wrong-checkout", "lock"])
 def test_handover_refuses_until_evidence_matches(selection, failure, monkeypatch):
     checkout, root, checkpoint, approved = selection

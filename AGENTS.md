@@ -1,5 +1,17 @@
 # InnerSanctum agent guide
 
+## Route project work
+
+* Use the [project registry](project-registry.md) for the seven supported sites.
+  Resolve by alias or exact host and path; do not guess a target or conflate
+  two sites that share a host or checkout.
+* `project-hub` is the read-only routing and planning agent. Use only the
+  registry for those tasks. Report its evidence date and distinguish recorded
+  status from live health. If a route, runbook, or status is unknown, say so.
+* A hub plan is not permission to execute it. For separately requested source
+  work, use the owning checkout and its instructions. Live operations require
+  separate approval of the exact target, action, verification, and rollback.
+
 ## Keep the stores separate
 
 * This is a repository for a personal OKF bundle. The root [index.md](index.md) describes the project at OKF v0.3; it does not declare the version of the Personal bundle.

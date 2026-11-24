@@ -248,10 +248,8 @@ def receipt_bytes(root, request, result):
     return json_bytes({"data": data, "sha256": digest(json_bytes(data))})
 
 
-def replay(root, state, request):
-    if request is None:
-        return None
-    path = receipt_path(state, request[0])
+def read_receipt(root, state, request_id):
+    path = receipt_path(state, request_id)
     if not present(path):
         return None
     try:
@@ -262,14 +260,37 @@ def replay(root, state, request):
         raw = read_file(path, limit=RECEIPT_LIMIT)
         data = json.loads(raw)["data"]
         saved, result = data["request"], data["result"]
-        if (not valid_request(saved) or saved[0] != request[0] or type(result) is not dict
+        if (not valid_request(saved) or saved[0] != request_id or type(result) is not dict
                 or result.get("request_id") != saved[0] or raw != receipt_bytes(root, saved, result)):
             raise ValueError
     except (Refused, OSError, ValueError, TypeError, KeyError, RecursionError):
         raise Refused("The write receipt is invalid; retain it for inspection.") from None
+    return saved, result
+
+
+def replay(root, state, request):
+    retained = read_receipt(root, state, request[0]) if request is not None else None
+    if retained is None:
+        return None
+    saved, result = retained
     if saved != request:
         raise Refused("This request ID was already used with different arguments.")
     return result
+
+
+def receipt_status(root, request_id, *, successor=None):
+    """Observe a write's disposition without recovering or exposing source."""
+    check_authority(root, successor)
+    write_request(request_id, "status")
+    state = root / STATE
+    if present(state):
+        validate_state(root, state)
+        if present(state / PENDING):
+            return {"state": "pending"}
+    receipt = read_receipt(root, state, request_id) if present(state) else None
+    return {"state": "missing"} if receipt is None else {
+        "state": "completed", "fingerprint": receipt[0][1], "receipt": receipt[1],
+    }
 
 
 def valid_request(request):
@@ -353,6 +374,13 @@ def sync_directory(path):
         os.close(fd)
 
 
+def validate_state(root, state):
+    info = state.lstat()
+    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o700 or info.st_dev != root.stat().st_dev):
+        raise Refused("InnerSanctum state must be a private directory on the bundle volume.")
+
+
 @contextmanager
 def locked(root, successor=None):
     check_authority(root, successor)
@@ -361,10 +389,7 @@ def locked(root, successor=None):
         state.mkdir(mode=0o700)
     except FileExistsError:
         pass
-    info = state.lstat()
-    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
-            or stat.S_IMODE(info.st_mode) != 0o700 or info.st_dev != root.stat().st_dev):
-        raise Refused("InnerSanctum state must be a private directory on the bundle volume.")
+    validate_state(root, state)
     sync_directory(root)
     flags = os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK
     with os.fdopen(os.open(state / "lock", flags, 0o600), "rb") as lock:
