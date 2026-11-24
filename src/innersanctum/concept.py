@@ -94,9 +94,12 @@ def revise_listing(text, index, path, title):
     return newline.join(lines)
 
 
-def change(root, selector, revision, actor, *, replacement=None, dry_run=False, successor=None):
+def change(root, selector, revision, actor, *, replacement=None, dry_run=False, successor=None,
+           request_id=None):
     writer.validate_actor(actor)
     operation = "concept-delete" if replacement is None else "concept-update"
+    request = writer.write_request(request_id, operation, selector, revision, actor,
+                                   None if replacement is None else writer.digest(replacement))
 
     def prepare():
         old = load(root, selector)
@@ -134,4 +137,4 @@ def change(root, selector, revision, actor, *, replacement=None, dry_run=False, 
                                 link=after is not None)
         return [*changes, writer.Change("log.md", writer.digest(log), audit)], identity
 
-    return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor)
+    return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor, request=request)

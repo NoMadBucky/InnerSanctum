@@ -267,7 +267,7 @@ def test_recovery_cleans_interrupted_link_stage(bundle, monkeypatch):
 
 def test_recovery_refuses_to_rebase_unknown_bytes(bundle, monkeypatch):
     with monkeypatch.context() as patch:
-        patch.setattr(writer, "publish", lambda *_: pytest.fail("injected before publication"))
+        patch.setattr(writer, "publish", lambda *_, **__: pytest.fail("injected before publication"))
         with pytest.raises(pytest.fail.Exception):
             writer.create(bundle, ROUTES, DRAFT.encode(), ACTOR)
     (bundle / DEST).write_text(SCHEMA + "\nUnrelated edit.\n")
@@ -280,7 +280,7 @@ def test_recovery_refuses_to_rebase_unknown_bytes(bundle, monkeypatch):
 
 def test_recovery_refuses_a_journal_from_a_different_bundle(bundle, monkeypatch):
     with monkeypatch.context() as patch:
-        patch.setattr(writer, "publish", lambda *_: pytest.fail("injected before publication"))
+        patch.setattr(writer, "publish", lambda *_, **__: pytest.fail("injected before publication"))
         with pytest.raises(pytest.fail.Exception):
             writer.create(bundle, ROUTES, DRAFT.encode(), ACTOR)
     copy = bundle.with_name("other-bundle")

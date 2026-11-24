@@ -38,8 +38,11 @@ def parser():
     entry.add_argument("--actor", required=True, help="Actual author for the entry and audit")
     entry.add_argument("--date", help="YYYY-MM-DD; defaults to the date of the entry timestamp")
     entry.add_argument("--at", help="ISO timestamp with seconds and UTC offset; defaults to local now")
+    entry.add_argument("--revision", help="Require an existing day at this exact revision")
     entry.add_argument("--category", choices=("Personal", "Work"), default="Personal")
     entry.add_argument("--subject", help="Optional one-line subject")
+    entry.add_argument("--entry-json", action="store_true",
+                       help="Read an object with markdown and subject from --from instead of raw Markdown")
     entry.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
     journal_read = journal_actions.add_parser("read", help="Read a day's numbered entries and revision as JSON")
     journal_update = journal_actions.add_parser("update", help="Replace one entry's text, keeping its time and author")
@@ -58,6 +61,8 @@ def parser():
         action.add_argument("--revision", required=True, help="Exact SHA-256 revision returned by read")
         action.add_argument("--actor", required=True, help="Actual editor for the audit")
         action.add_argument("--dry-run", action="store_true", help="Validate and preview without writing")
+    for action in (new, update, delete, entry, journal_update, journal_delete):
+        action.add_argument("--request-id", help="Client-assigned ID for a durable write receipt")
     journal_recovery = journal_actions.add_parser("recover", help="Finish the bundle's pending write")
     for action in (template, new, recovery, read, update, delete,
                    entry, journal_read, journal_update, journal_delete, journal_recovery):
@@ -77,7 +82,27 @@ def parser():
 
 def input_bytes(source, *, limit=LIMIT):
     return (sys.stdin.buffer.read(limit + 1) if source == "-"
-            else read_file(Path(source).expanduser(), limit=limit))
+             else read_file(Path(source).expanduser(), limit=limit))
+
+
+def journal_input(args):
+    if not args.entry_json:
+        return input_bytes(args.source, limit=journal.MAX_ENTRY), args.subject
+    limit = 6 * journal.MAX_ENTRY + 4096
+    try:
+        raw = input_bytes(args.source, limit=limit)
+        if len(raw) > limit:
+            raise ValueError
+        pairs = json.loads(raw.decode("utf-8"), object_pairs_hook=tuple)
+        if type(pairs) is not tuple or len(pairs) != 2:
+            raise ValueError
+        data = dict(pairs)
+        if (args.subject is not None or type(data) is not dict or set(data) != {"markdown", "subject"}
+                or type(data["markdown"]) is not str or type(data["subject"]) not in {str, type(None)}):
+            raise ValueError
+        return data["markdown"].encode(), data["subject"]
+    except (ValueError, RecursionError):
+        raise Refused("Expected UTF-8 JSON with markdown and subject, without --subject.") from None
 
 
 def main(argv=None):
@@ -98,7 +123,8 @@ def main(argv=None):
                 elif args.action in {"update", "delete"}:
                     replacement = input_bytes(args.source) if args.action == "update" else None
                     result = concept.change(root, args.selector, args.revision, args.actor,
-                                            replacement=replacement, dry_run=args.dry_run, successor=successor)
+                                            replacement=replacement, dry_run=args.dry_run, successor=successor,
+                                            request_id=args.request_id)
                 elif args.action == "journal-read":
                     result = journal.read(root, args.day, successor=successor)
                 elif args.action in {"journal-update", "journal-delete"}:
@@ -107,12 +133,14 @@ def main(argv=None):
                         edits = dict(replacement=input_bytes(args.source, limit=journal.MAX_ENTRY),
                                      category=args.category, subject=args.subject, clear_subject=args.clear_subject)
                     result = journal.change(root, args.day, args.entry, args.revision, args.actor,
-                                            dry_run=args.dry_run, successor=successor, **edits)
+                                            dry_run=args.dry_run, successor=successor,
+                                            request_id=args.request_id, **edits)
                 elif args.action == "journal-add":
-                    raw = input_bytes(args.source, limit=journal.MAX_ENTRY)
+                    raw, subject = journal_input(args)
                     result = journal.add(root, raw, args.actor, day=args.date, at=args.at,
-                                         subject=args.subject, category=args.category,
-                                         dry_run=args.dry_run, successor=successor)
+                                         subject=subject, category=args.category,
+                                         dry_run=args.dry_run, successor=successor, request_id=args.request_id,
+                                         revision=args.revision)
                 else:
                     routes = read_text(read_file(Path(args.routes).expanduser()))
                     if args.action == "template":
@@ -120,7 +148,8 @@ def main(argv=None):
                         print(resolve_route(args.type, routes, indexes).template(), end="")
                         return 0
                     raw = input_bytes(args.source)
-                    result = create(root, routes, raw, args.actor, dry_run=args.dry_run, successor=successor)
+                    result = create(root, routes, raw, args.actor, dry_run=args.dry_run, successor=successor,
+                                    request_id=args.request_id)
         print(json.dumps(result, sort_keys=True))
     except Refused as error:
         print(f"innersanctum: {error}", file=sys.stderr)

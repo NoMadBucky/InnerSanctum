@@ -156,7 +156,8 @@ def ensure_links(text, index, links):
     return newline.join(lines)
 
 
-def plan_add(root, raw, actor, *, day=None, at=None, subject=None, category="Personal", now=None):
+def plan_add(root, raw, actor, *, day=None, at=None, subject=None, category="Personal", now=None,
+             revision=None):
     writer.validate_actor(actor)
     now = now or datetime.now().astimezone()
     entry_time = local_times(now, day, at)
@@ -180,6 +181,8 @@ def plan_add(root, raw, actor, *, day=None, at=None, subject=None, category="Per
                           writer.edit_log(log, path, title, actor, now, action="Journal entry"))
     if writer.present(target):
         old = writer.read_file(target)
+        if revision is not None:
+            writer.require_revision(revision, writer.digest(old))
         text = read_text(old)
         metadata, body, offset = document(text)
         if (metadata.get("type") != "Journal" or type(metadata.get("id")) is not str
@@ -189,6 +192,8 @@ def plan_add(root, raw, actor, *, day=None, at=None, subject=None, category="Per
         after = add_to_ledger(text, body, offset, entries, entry_time)
         return [writer.Change(path, writer.digest(old), after), audit], None
 
+    if revision is not None:
+        raise Refused("The day no longer exists; read the current journal before retrying.")
     identity = writer.allocate_id(identities | writer.retired_ids(log))
     initial = "\n".join(("---", f'id: "{identity}"', "type: Journal", f'title: "{title}"',
                          "generated:", f"  by: {json.dumps(actor, ensure_ascii=False)}",
@@ -206,11 +211,16 @@ def plan_add(root, raw, actor, *, day=None, at=None, subject=None, category="Per
     return [*changes, audit], month if new_month else None
 
 
-def add(root, raw, actor, *, day=None, at=None, subject=None, category="Personal", dry_run=False, successor=None):
+def add(root, raw, actor, *, day=None, at=None, subject=None, category="Personal", dry_run=False,
+        successor=None, request_id=None, revision=None):
     writer.check_authority(root, successor)
+    arguments = (writer.digest(raw), actor, day, at, subject, category)
+    request = writer.write_request(request_id, "journal-add", *arguments,
+                                   *(() if revision is None else (revision,)))
 
     def prepare():
-        changes, directory = plan_add(root, raw, actor, day=day, at=at, subject=subject, category=category)
+        changes, directory = plan_add(root, raw, actor, day=day, at=at, subject=subject, category=category,
+                                      revision=revision)
         for change in changes:
             read_text(change.after.encode())
         writer.verify_journal_changes(changes, directory)
@@ -224,9 +234,12 @@ def add(root, raw, actor, *, day=None, at=None, subject=None, category="Personal
     with writer.locked(root, successor) as state:
         if writer.present(state / writer.PENDING):
             raise Refused("A write is pending; run journal recover before trying another.")
+        retained = writer.replay(root, state, request)
+        if retained is not None:
+            return retained
         changes, directory = prepare()
-        writer.freeze(root, state, changes, operation="journal-add", directory=directory)
-        return writer.publish(root, state, changes, operation="journal-add", directory=directory)
+        writer.freeze(root, state, changes, operation="journal-add", directory=directory, request=request)
+        return writer.publish(root, state, changes, operation="journal-add", directory=directory, request=request)
 
 
 def load(root, day):
@@ -272,9 +285,12 @@ def set_label(lines, field, label, indent):
 
 
 def change(root, day, entry, revision, actor, *, replacement=None, category=None, subject=None,
-           clear_subject=False, dry_run=False, successor=None):
+           clear_subject=False, dry_run=False, successor=None, request_id=None):
     writer.validate_actor(actor)
     operation = "journal-delete" if replacement is None else "journal-update"
+    request = writer.write_request(request_id, operation, day, entry, revision, actor,
+                                   None if replacement is None else writer.digest(replacement),
+                                   category, subject, clear_subject)
 
     def prepare():
         record, old = load(root, day)
@@ -310,4 +326,4 @@ def change(root, day, entry, revision, actor, *, replacement=None, category=None
                                 action="Journal entry delete" if replacement is None else "Journal entry update")
         return [writer.Change(path, revision, after), writer.Change("log.md", writer.digest(log), audit)], record["id"]
 
-    return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor)
+    return writer.edit(root, operation, prepare, dry_run=dry_run, successor=successor, request=request)

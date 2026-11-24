@@ -29,6 +29,8 @@ JOURNAL_ROOT = "Documents/journal"
 STRUCTURAL = {"index.md", "log.md", "agents.md", "spec.md"}
 PLAN_LIMIT = 12 * LIMIT
 REVISION = re.compile(r"[0-9a-f]{64}")
+REQUEST_ID = re.compile(r"[A-Za-z0-9_-]{16,128}")
+RECEIPT_LIMIT = 32 * 1024
 EDITS = {"concept-update", "concept-delete", "journal-update", "journal-delete"}
 DELETED_ID = re.compile(r"^\* \*\*Delete\*\* \([^\r\n]+\) — bho\\:([0-9]{7}) · ", re.M)
 
@@ -225,6 +227,57 @@ def digest(data):
     return sha256(data).hexdigest()
 
 
+def json_bytes(value):
+    return json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("ascii")
+
+
+def write_request(request_id, operation, *arguments):
+    if request_id is None:
+        return None
+    if type(request_id) is not str or not REQUEST_ID.fullmatch(request_id):
+        raise Refused("Request ID must be 16–128 ASCII letters, digits, underscores or hyphens.")
+    return [request_id, digest(json_bytes([operation, *arguments]))]
+
+
+def receipt_path(state, request_id):
+    return state / ("receipt-" + digest(request_id.encode("ascii")) + ".json")
+
+
+def receipt_bytes(root, request, result):
+    data = {"bundle": bundle_identity(root), "request": request, "result": result}
+    return json_bytes({"data": data, "sha256": digest(json_bytes(data))})
+
+
+def replay(root, state, request):
+    if request is None:
+        return None
+    path = receipt_path(state, request[0])
+    if not present(path):
+        return None
+    try:
+        info = path.lstat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                or stat.S_IMODE(info.st_mode) != 0o600):
+            raise ValueError
+        raw = read_file(path, limit=RECEIPT_LIMIT)
+        data = json.loads(raw)["data"]
+        saved, result = data["request"], data["result"]
+        if (not valid_request(saved) or saved[0] != request[0] or type(result) is not dict
+                or result.get("request_id") != saved[0] or raw != receipt_bytes(root, saved, result)):
+            raise ValueError
+    except (Refused, OSError, ValueError, TypeError, KeyError, RecursionError):
+        raise Refused("The write receipt is invalid; retain it for inspection.") from None
+    if saved != request:
+        raise Refused("This request ID was already used with different arguments.")
+    return result
+
+
+def valid_request(request):
+    return (type(request) is list and len(request) == 2
+            and all(type(field) is str for field in request)
+            and REQUEST_ID.fullmatch(request[0]) and REVISION.fullmatch(request[1]))
+
+
 def validate_actor(actor):
     if not actor.strip() or not actor.isprintable() or len(actor) > 256:
         raise Refused("Provide the actual producer as a single-line actor.")
@@ -382,6 +435,13 @@ def bundle_identity(root):
 def read_changes(root, state):
     try:
         data = json.loads(read_file(state / PENDING, limit=PLAN_LIMIT))
+        if type(data) is not dict or type(data.get("version")) is not int:
+            raise ValueError
+        request = None
+        if data["version"] == 4:
+            if set(data) != {"version", "plan", "request"} or not valid_request(data["request"]):
+                raise ValueError
+            request, data = data["request"], data["plan"]
         if (type(data) is not dict or type(data.get("version")) is not int
                 or data.get("bundle") != bundle_identity(root) or type(data.get("changes")) is not list):
             raise ValueError
@@ -412,19 +472,19 @@ def read_changes(root, state):
                 raise ValueError
         if operation in EDITS:
             verify_edit_changes(changes, operation, identity)
-            return changes, operation, directory, identity
+            return changes, operation, directory, identity, request
         if any(c.after is None for c in changes):
             raise ValueError
         if operation == "journal-add":
             verify_journal_changes(changes, directory)
-            return changes, operation, directory, identity
+            return changes, operation, directory, identity, request
         record, index, audit = changes
         target = PurePosixPath(record.path)
         if (not re.fullmatch(r"[0-9]{7}\.md", target.name) or record.before is not None
                 or index.path != str(target.with_name("index.md")) or audit.path != "log.md"
                 or index.before is None or audit.before is None):
             raise ValueError
-        return changes, operation, directory, identity
+        return changes, operation, directory, identity, request
     except (Refused, OSError, ValueError, TypeError, KeyError):
         raise Refused("Pending write journal is invalid; retain it for inspection.") from None
 
@@ -489,7 +549,18 @@ def verify_journal_changes(changes, directory):
         raise ValueError
 
 
-def publish(root, state, changes, *, recovering=False, operation="create", directory=None, identity=None):
+def publish(root, state, changes, *, recovering=False, operation="create", directory=None, identity=None,
+            request=None):
+    status = {"create": "created", "journal-add": "added"}.get(operation)
+    result = describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
+                      operation=operation, directory=directory, identity=identity)
+    retained = replay(root, state, request)
+    if request is not None:
+        result["request_id"] = request[0]
+        receipt = receipt_bytes(root, request, result)
+        if len(receipt) > RECEIPT_LIMIT or (retained is not None and (not recovering or retained != result)):
+            raise Refused("The receipt does not match the pending write.")
+
     month = safe_target(root, directory, missing=True) if directory is not None else None
     month_absent = month is not None and not present(month)
     if month is not None and not month_absent:
@@ -538,11 +609,13 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
         _, observed = current(change)
         if observed != change.revision:
             raise Refused("Write read-back did not match; retain the journal.")
+    if request is not None and retained is None:
+        install(state, receipt_path(state, request[0]), receipt, absent=True)
+    elif retained is not None:
+        sync_directory(state)
     (state / PENDING).unlink()
     sync_directory(state)
-    status = {"create": "created", "journal-add": "added"}.get(operation)
-    return describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
-                    operation=operation, directory=directory, identity=identity)
+    return result
 
 
 def describe(changes, status, *, operation="create", directory=None, identity=None):
@@ -559,20 +632,23 @@ def describe(changes, status, *, operation="create", directory=None, identity=No
     return result
 
 
-def freeze(root, state, changes, *, operation="create", directory=None, identity=None):
+def freeze(root, state, changes, *, operation="create", directory=None, identity=None, request=None):
     data = {"version": 1, "bundle": bundle_identity(root), "changes": [vars(change) for change in changes]}
     if operation == "journal-add":
         data.update(version=2, operation=operation, directory=directory)
     elif operation in EDITS:
         data.update(version=3, operation=operation, identity=identity)
+    if request is not None:
+        data = {"version": 4, "plan": data, "request": request}
     raw = json.dumps(data, ensure_ascii=False).encode()
     if len(raw) > PLAN_LIMIT:
         raise Refused("The pending write journal is too large.")
     install(state, state / PENDING, raw, absent=True)
 
 
-def create(root, routes, raw, actor, *, dry_run=False, successor=None):
+def create(root, routes, raw, actor, *, dry_run=False, successor=None, request_id=None):
     check_authority(root, successor)
+    request = write_request(request_id, "create", routes, digest(raw), actor)
     if dry_run:
         if present(root / STATE / PENDING):
             raise Refused("A write is pending; recover it before planning another.")
@@ -580,10 +656,13 @@ def create(root, routes, raw, actor, *, dry_run=False, successor=None):
     with locked(root, successor) as state:
         if present(state / PENDING):
             raise Refused("A write is pending; run concept recover before trying another.")
+        retained = replay(root, state, request)
+        if retained is not None:
+            return retained
         changes = plan_create(root, routes, raw, actor)
         # Freeze all before revisions and after bytes before the first canonical mutation.
-        freeze(root, state, changes)
-        return publish(root, state, changes)
+        freeze(root, state, changes, request=request)
+        return publish(root, state, changes, request=request)
 
 
 def recover(root, *, successor=None):
@@ -591,12 +670,12 @@ def recover(root, *, successor=None):
     if not present(root / STATE / PENDING):
         raise Refused("No Create, concept edit or journal write is pending.")
     with locked(root, successor) as state:
-        changes, operation, directory, identity = read_changes(root, state)
+        changes, operation, directory, identity, request = read_changes(root, state)
         return publish(root, state, changes, recovering=True, operation=operation,
-                       directory=directory, identity=identity)
+                       directory=directory, identity=identity, request=request)
 
 
-def edit(root, operation, prepare, *, dry_run=False, successor=None):
+def edit(root, operation, prepare, *, dry_run=False, successor=None, request=None):
     check_authority(root, successor)
 
     def checked_plan():
@@ -612,6 +691,10 @@ def edit(root, operation, prepare, *, dry_run=False, successor=None):
         changes, identity = checked_plan()
         return describe(changes, "planned", operation=operation, identity=identity)
     with locked(root, successor) as state:
+        require_idle(root)
+        retained = replay(root, state, request)
+        if retained is not None:
+            return retained
         changes, identity = checked_plan()
-        freeze(root, state, changes, operation=operation, identity=identity)
-        return publish(root, state, changes, operation=operation, identity=identity)
+        freeze(root, state, changes, operation=operation, identity=identity, request=request)
+        return publish(root, state, changes, operation=operation, identity=identity, request=request)

@@ -2,6 +2,10 @@
 
 ## 2026-11-24
 
+* **Journal client migration**: Added replay-safe write receipts and an
+  existing-day append precondition. Prepared MatterKeep Personal's local
+  journal operator and a default-off BHO append adapter. No live activation.
+
 * **Personal CRUD**: Added guarded reads, revision-checked updates and deletes
   for concepts and journal entries. New writes use the shared audit log and
   recovery mechanism. Tested on disposable bundles only.

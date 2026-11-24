@@ -103,3 +103,43 @@ Use `concept create --live-checkout "$CHECKOUT"` with the normal draft, actor
 and routes arguments only after adoption is verified. Use the same explicit
 checkout argument with `concept recover` for an interrupted Create.
 Do not rerun `adopt` for the current live bundle.
+
+## Journal client source slice
+
+InnerSanctum exposes durable request receipts for concept and journal
+mutations. The journal append command can require an exact existing day
+revision. The first two clients use the guarded CLI, not a new canonical
+writer or a shared Python runtime:
+
+| Client | Source coverage |
+| --- | --- |
+| MatterKeep Personal | Explicit `successor-journal` local operator command: add, read, update, delete and recover. Uses the existing explicit checkout configuration but does not open Notes or Auth. |
+| BHO dashboard | Default-off append from the composer on an existing Personal day. Rechecks the signed-in owner, registered checkout, maintenance fence and source revision; no legacy or Work fallback. |
+
+This does not restore the Personal web editor or delegated Note Save,
+Clerk ordinary concept changes or managed Transcript publication, or Daily
+Briefing. Those clients still depend on private-draft checks, reviewed
+plans or managed publication state not supplied by ordinary CRUD receipts.
+BHO journal editing, deletion and opening a missing day are not enabled by
+this slice. Work writing and other owners are unchanged.
+
+Both clients passed focused tests against a noneditable InnerSanctum
+wheel on disposable checkouts. No deployment, service restart,
+binding/grant change, hold release or live write was performed.
+Do not remove the owner hold to enable this one lane without first
+reconciling and independently fencing every publisher that the hold covers.
+
+The next source work can proceed without enabling any publisher:
+
+1. **Personal and BHO Notes:** qualify an owner-only read and Save adapter
+   against the retained private-draft generations. Keep any original Save
+   receipts resolvable; a fresh InnerSanctum revision is not draft clearance.
+2. **Clerk concept changes:** preserve owner review of the exact change,
+   including the index and deletion protections, before replacing Apply.
+3. **Managed publishing:** give Clerk Transcripts and Daily Briefing
+   separate typed operations with stable identities and exact receipts.
+   Reconcile both halves of each Briefing before admitting another run.
+
+Native document/event writers, lifecycle markers, moves and distribution
+are outside this slice. Do not replay old requests into new operations to
+rebuild missing receipts.

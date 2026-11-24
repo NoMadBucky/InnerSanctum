@@ -97,6 +97,10 @@ The command defaults to the current local timestamp and `Personal` category.
 To record a different time or day, pass `--at` with an ISO 8601 timestamp
 including seconds and a UTC offset; `--date`, if supplied, must match that
 timestamp's calendar date. Entries accept paragraphs with inline Markdown.
+To append only to an existing day, pass its exact `--revision` from
+`journal read`. Clients can pass `--entry-json` with `--from -` to supply
+both `markdown` and `subject` (string or `null`) on stdin rather than
+putting a private subject in process arguments.
 
 `journal add` uses the Journal schema and the date-named layout
 `Documents/journal/YYYY-MM/YYYY-MM-DD.md`. It inserts the entry in timestamp
@@ -141,6 +145,18 @@ Files change one at a time. The lock coordinates InnerSanctum writes on one
 host, not other readers, sync or another writer. If no write is pending,
 check the record and audit log before resubmitting: the command may have
 finished without reporting success.
+
+For integrations, all six mutating commands accept a stable `--request-id`
+(16–128 ASCII letters, digits, underscores or hyphens). The writer retains a
+private receipt after canonical read-back and before clearing the pending
+write. After recovery, an exact retry with the same ID and arguments returns
+the original receipt, not a fresh write or evidence of current content.
+Reusing an ID with different arguments is refused. Dry runs do not reserve
+the ID or write a receipt. Keep receipts with the bundle's writer state;
+removing one loses the retry guarantee for that ID.
+
+The [publisher migration record](create-cutover.md#journal-client-source-slice)
+distinguishes the journal adapters from the publishers that are still held.
 
 ## Format requirements
 
