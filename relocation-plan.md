@@ -40,8 +40,9 @@ relocation or supersede later writes.
   operator wrapper select the same TOML file. A private candidate replaces
   only `okf`, `source_root`, and `source_catalog`, and adds
   `innersanctum_checkout`. The original config and wrapper were verified
-  unchanged. Runtime validation waits for the private replacement trees;
-  the root-owned launcher still needs owner-local byte comparison.
+  unchanged. The owner-local helper verified the root-owned launcher's bytes
+  during the checkpoint window; recheck them before another service stop.
+  Runtime validation waits for the private replacement trees.
 - [x] Build and rehearse the Barry-only BHO binding. The candidate keeps
   the existing registry rules for all other owners and leaves BHO's runtime
   state where it is. A matching private selector and Barry's existing
@@ -52,14 +53,22 @@ relocation or supersede later writes.
   451 focused and 81 managed-reader checks passed (the groups overlap).
   The legacy Clerk Desk suite had the same 96 failing cases on the
   unchanged baseline and candidate, with no candidate-only failures.
-- [ ] Prepare the coordinated BHO selection for the maintenance window.
-  The candidate is a private, unapplied source patch. Recheck the serving
-  and independent Clerk reader preimages, then freeze a stopped transition
-  for only Barry's registry row and `system/innersanctum-barry.json`
-  selector. Neither the global
-  Personal content base nor other owner rows may change. Keep existing
-  sessions and publisher journals; do not let a process with the old
-  binding continue reading or writing the retired tree.
+- [x] Prepare the BHO transition for review without applying it. The
+  private packet pins the serving source and launcher inputs, Clerk's
+  independent records and concept bridge files, the absent
+  `system/innersanctum-barry.json` selector, and the expected and intended
+  values of Barry's single registry row. An in-memory rehearsal against the
+  observed registry schema changed exactly that row, rejected a repeat,
+  and rolled back without changing other rows or schema. The review digest
+  is `24d655d8ced741ced28d5af6e43e571464d09fc762521bde912be19fe2eda34d`;
+  it is not cutover approval or a frozen live registry preimage.
+- [ ] During the approved stopped window, recheck the source, launcher and
+  Clerk inputs, confirm the selector is still absent, and retain a verified
+  private registry backup. Freeze the exact BHO selection alongside the
+  Personal relocation plan for approval. Keep independent Clerk clients held
+  with BHO until the source, selector, and Barry row agree. Do not change the
+  global Personal content base, other owner rows, session bindings, or
+  publisher journals. The file checks did not exercise live Clerk tools.
 - [ ] Use `MatterKeep/Personal/publisher-coverage.md` and the latest deployment
   record to identify active publishers. Check ordinary Clerk Transcripts,
   Daily Briefing (which publishes both a Note and a Transcript), and BHO's
@@ -92,7 +101,7 @@ relocation or supersede later writes.
 
 | Surface | Verified or documented boundary |
 | --- | --- |
-| Personal server | `system/com.matterkeep.personal.barry` owns the loopback `5564` listener. The loaded selection invokes `matterkeep_personal.cli` with a private config on CPython 3.14.6. The root-owned `0600` launcher was not readable to this session; compare its exact bytes in the owner's Terminal before control. |
+| Personal server | `system/com.matterkeep.personal.barry` owns the loopback `5564` listener. The loaded selection invokes `matterkeep_personal.cli` with a private config on CPython 3.14.6. The checkpoint helper verified the root-owned `0600` launcher in the owner's Terminal; recheck it there before control. |
 | Personal operator | The independent `~/.local/share/matterkeep-personal-log-operator/bin/personal-log-entry` wrapper selects CPython 3.14.6 and passes the same TOML as the serving job. Verify both runtime selections against that shared binding. |
 | BHO / Clerk | `gui/501/com.matterkeep.dashboard` owns the loopback `5555` listener. Its deployed registry still selects the old tree. The documented drain order is BHO before Personal if a BHO stop is approved. Shared OpenCode can host Clerk tools independently of that service: a BHO stop alone is not proof of exclusion. |
 | Publisher and sync controls | A read-only sample found the owner-specific BHO maintenance flag **off**; this is not evidence for or against any other write gate. Confirm separate exclusion for Clerk, Briefing, manual and local-operator writers, and inbound sync. No journals were verified drained, and no holds, publishers, or sync tasks were changed. Never use a legacy `allow-write` to resume coordinated clients. |
@@ -111,11 +120,10 @@ relocation or supersede later writes.
    does not establish it. Retain the current Auth authority separately under
    its existing backup procedure, and independently back up `SourceFiles/`
    (the OKF/Notes checkpoint covers neither). Inventory hidden files as well.
-   The latest inventory found one Finder `.DS_Store` with mode `0644` at the
-   root of the source `OKF/`. Barry approved changing only that file to `0600`
-   during the stopped window, if it is still an owner-owned, single-link
-   regular file at the exact path. Verify the change without editing its
-   bytes. Stop on drift; no other mode repair, deletion, or omission is approved.
+   The checkpoint-only window changed the source `OKF/.DS_Store` from `0644`
+   to `0600` without changing its bytes. Verify its custody and mode again;
+   stop on drift rather than assuming permission for another repair. No
+   other mode repair, deletion, or omission on the live source is approved.
 3. **Replace only the destination copies.** Preserve both current InnerSanctum
    trees in the private hold directory before installing anything. Prepare a
    fresh, byte-for-byte OKF copy from the stopped checkpoint, including the old
@@ -130,15 +138,19 @@ relocation or supersede later writes.
    config and digest, stopped checkpoint and receipt digest, `--target-okf`
    naming this checkout's `OKF/`, and `--target-innersanctum-checkout` naming
    this checkout. Retain the plan, its staging directory, and its returned
-   digest. **Pause for explicit approval of that exact digest.** Planning
-   does not switch the writer or authorize apply.
+   digest, along with the exact Personal runtime and config and the stopped
+   BHO selection. **Pause for explicit approval of the exact relocation
+   digest and accompanying selections.** Planning does not switch the
+   writer or authorize apply.
 5. **Apply and select the new configuration.** Only with exact approval and
    continued exclusion, run `relocation-apply` with the old config and
    approved plan digest. After read-back confirms both the Notes database and
    new marker, select the approved configs for both Personal consumers and
-   update only registrations or readers identified in preflight. Use the
-   checkout opt-in, the new `OKF/`, the new `SourceFiles/`, and its exact
-   catalog path. Restart only the approved service; keep publishers held.
+   use the checkout opt-in, the new `OKF/`, the new `SourceFiles/`, and its
+   exact catalog path. With BHO stopped and Clerk held, install and verify
+   the approved BHO source and selector, then update just Barry's pinned
+   registry row. Read back all three before restarting BHO. Restart only
+   the approved services; keep publishers held.
 
 ## Acceptance and handback
 
@@ -146,6 +158,9 @@ relocation or supersede later writes.
   and config digests. Read a known note and a catalog-backed attachment through
   their normal consumers. Check that the original note ID, draft, and a known
   completed receipt remain available without resending its request.
+- [ ] Verify the BHO and independent Clerk brokered reads at the new path
+  and verify that the relocated workspace refuses native BHO writes. Do not
+  restart shared OpenCode or alter existing grants for these checks.
 - [ ] Make one owner-approved write through the normal Personal interface.
   Verify the exact resulting record and expected index/log updates at the new
   path, no changes at the old path, and no unresolved publication. Record a
