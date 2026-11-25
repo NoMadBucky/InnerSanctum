@@ -200,6 +200,43 @@ The v0.3 target uses:
   Date-times include `Z` or an explicit UTC offset; date-only values use
   `YYYY-MM-DD` where allowed.
 
+### Personal v0.3 readiness
+
+Run the read-only report on a synthetic fixture or a separately approved,
+offline **copy** of the Personal bundle outside any repository:
+
+```sh
+uv run --locked innersanctum migration version-readiness --snapshot "$OFFLINE_OKF"
+```
+
+A stopped copy may retain its writer marker. The report doesn't initialize
+writer state, follow visible symlinks, read attachment contents or use the
+sibling `SourceFiles/` catalog. It refuses pending writes. Use an unchanged,
+physical snapshot: the command checks for observed drift, but doesn't lock
+the source or create a snapshot. Its JSON contains relative paths and an
+inventory digest (visible names, entry kinds and Markdown bytes), not
+frontmatter values, attachment hashes or file contents. Keep real reports private.
+
+`ready` (exit 0) means the selected checks found no blockers. `blocked`
+(exit 1) separates format findings (frontmatter and reserved indexes/logs),
+Personal migration work (Video viewing state, timestamp formatting and
+path fields that resolve only with the v0.2 bundle-root fallback), and parser
+limitations. A refused inspection exits 2. Ordinary broken Markdown links
+are not failures. If the root explicitly declares `"0.2"`, a finding notes
+that the current declaration command only adds a **missing** version;
+don't remove the version to make the command accept it.
+
+Before a **go** decision, resolve or review each finding against the same
+snapshot and rehearse any changes there on a writable disposable fixture.
+The report does not certify workspace schema, all timestamp semantics, or
+reader behavior. Separately verify Personal Notes source and navigation, both
+bundle-relative path forms, and BHO Movies results and filters with
+`video_status` distinct from lifecycle `status`. Any reader displaying trust
+tiers must ignore verification events older than `generated.at`. A ready
+report or a successful rehearsal is not approval for live operations.
+
+### Video viewing state
+
 The read-only Video migration preview proposes renaming the optional
 `status` enum to `video_status` in `Resources/videos/index.md` and in
 Video records with one of the six legacy values:

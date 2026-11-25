@@ -1,5 +1,14 @@
 # InnerSanctum Change Log
 
+## 2026-11-25
+
+* **Personal v0.3 readiness**: Added a read-only report for offline
+  snapshots and a disposable rehearsal of the Video and timestamp migrations,
+  a v0.2 path fallback repair, and the version declaration. The synthetic
+  Personal Notes read and BHO movie reader and filter checks passed. BHO's
+  signed-in board route did not pass even on the unchanged fixture, so
+  route-level compatibility is still unverified. No live checks.
+
 ## 2026-11-24
 
 * **Relocation closeout**: Marked the v0.2 move historical and aligned the

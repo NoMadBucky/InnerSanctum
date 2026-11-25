@@ -9,7 +9,7 @@ import sys
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import SUCCESSOR, adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, receipt_status, recover
-from . import clerk_archive, concept, journal, migration, timestamp_cleanup, version_declaration
+from . import clerk_archive, concept, journal, migration, readiness, timestamp_cleanup, version_declaration
 
 
 def parser():
@@ -87,6 +87,9 @@ def parser():
                           help="Assert writers and publishers are excluded; this does not stop them")
     migrations = groups.add_parser("migration")
     migration_actions = migrations.add_subparsers(required=True)
+    audit = migration_actions.add_parser("version-readiness", help="Check an external snapshot for OKF 0.3 readiness")
+    audit.set_defaults(action="version-readiness")
+    audit.add_argument("--snapshot", required=True, help="Physical, offline bundle outside any repository")
     video = migration_actions.add_parser("video-status-preview", help="Inspect the Video field rename without writing")
     video.set_defaults(action="video-status-preview")
     target = video.add_mutually_exclusive_group(required=True)
@@ -205,6 +208,8 @@ def main(argv=None):
         if args.action == "adopt":
             result = adopt(Path(args.live_checkout).expanduser().absolute(), args.checkpoint,
                            args.sha256, writers_stopped=args.writers_stopped)
+        elif args.action == "version-readiness":
+            result = readiness.inspect(args.snapshot, checkout)
         else:
             target = (live_checkout(Path(args.live_checkout).expanduser().absolute()) if getattr(args, "live_checkout", None)
                       else nullcontext((open_bundle(args.bundle, checkout), None)))
@@ -299,14 +304,15 @@ def main(argv=None):
         print(f"innersanctum: {error}", file=sys.stderr)
         return 2
     except (OSError, UnicodeError):
-        print("innersanctum: I/O failed. If a write is pending, recover it before retrying.",
-              file=sys.stderr)
+        message = ("I/O failed during snapshot inspection." if args.action == "version-readiness" else
+                   "I/O failed. If a write is pending, recover it before retrying.")
+        print(f"innersanctum: {message}", file=sys.stderr)
         return 2
     except KeyboardInterrupt:
         print("innersanctum: interrupted. If a write is pending, recover it before retrying.",
               file=sys.stderr)
         return 130
-    return 0
+    return int(args.action == "version-readiness" and result["status"] == "blocked")
 
 
 if __name__ == "__main__":

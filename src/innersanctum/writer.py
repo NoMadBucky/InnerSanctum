@@ -60,13 +60,18 @@ def check_authority(root, successor=None):
         raise Refused("The approved InnerSanctum writer marker changed.")
 
 
-def open_bundle(path, checkout):
+def external_root(path, checkout):
     root = Path(path).expanduser().absolute()
     if (root.resolve(strict=True) != root or not root.is_dir()
             or root.is_relative_to(checkout) or checkout.is_relative_to(root)
             or any(folded(part) == "synologydrive" for part in root.parts)
             or any(present(parent / ".git") for parent in (root, *root.parents))):
         raise Refused("Select a physical standalone bundle outside repositories and SynologyDrive.")
+    return root
+
+
+def open_bundle(path, checkout):
+    root = external_root(path, checkout)
     check_authority(root)
     return root
 
@@ -82,7 +87,7 @@ def read_file(path, *, limit=LIMIT):
         return data
 
 
-def visible_files(root):
+def visible_files(root, *, include_entries=False):
     def fail(error):
         raise error
 
@@ -95,8 +100,8 @@ def visible_files(root):
         for name in visible:
             if (path / name).is_symlink():
                 raise Refused("Bundle contains a visible symbolic link.")
-        for name in sorted(files):
-            if not name.startswith(".") and (path / name).suffix.lower() == ".md":
+        for name in sorted(visible if include_entries else files):
+            if not name.startswith(".") and (include_entries or (path / name).suffix.lower() == ".md"):
                 candidate = path / name
                 relative = candidate.relative_to(root).as_posix()
                 path_parts(relative)
