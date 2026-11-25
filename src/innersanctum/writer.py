@@ -620,9 +620,9 @@ def verify_clerk_log(changes, operation, session):
 
 
 def publish(root, state, changes, *, recovering=False, operation="create", directory=None, identity=None,
-            request=None, clerk_session=None, successor=None, archive_pin=None):
-    if operation == VIDEO_STATUS_OPERATION and successor is not None:
-        raise Refused("Video migration apply and recovery are available only on disposable bundles.")
+            request=None, clerk_session=None, successor=None, archive_pin=None, maintenance=False):
+    if operation == VIDEO_STATUS_OPERATION and successor is not None and not maintenance:
+        raise Refused("Use stopped-checkpoint Video migration recovery on the adopted checkout.")
     status = {"create": "created", "journal-add": "added"}.get(operation)
     result = describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
                       operation=operation, directory=directory, identity=identity, clerk_session=clerk_session)

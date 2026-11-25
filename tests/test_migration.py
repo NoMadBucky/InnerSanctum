@@ -1,9 +1,11 @@
 import json
+import shutil
 
 import pytest
 
 from innersanctum import cli, migration, writer
 from innersanctum.schema import Refused
+from test_handover import put, selection, transfer  # noqa: F401
 
 
 SCHEMA = """# Synthetic videos
@@ -184,3 +186,98 @@ def test_recovery_refuses_drift_without_changing_other_targets(bundle, monkeypat
         writer.recover(bundle)
     assert "status: watched" in (bundle / first).read_text()
     assert snapshot(bundle) == before and (bundle / writer.STATE / writer.PENDING).is_file()
+
+
+@pytest.fixture
+def stopped_selection(selection, tmp_path):
+    checkout, root, _, adoption = selection
+    transfer(selection)
+    a = record(root, 1234567, "status: watched\n")
+    b = record(root, 2345678, "status: watchlist\n")
+    for path in (a, b):
+        (root / path).chmod(0o600)
+    successor = (root / writer.MARKER).read_bytes()
+    with writer.locked(root, successor):
+        pass
+    private = tmp_path / "stopped"
+    private.mkdir(mode=0o700)
+    backup = private / "canonical"
+    shutil.copytree(root, backup)
+    return checkout, root, backup, adoption, (a, b)
+
+
+def live_args(stopped_selection, capsys):
+    checkout, _, backup, adoption, _ = stopped_selection
+    target = ["--live-checkout", str(checkout)]
+    assert cli.main(["migration", "video-status-preview", *target]) == 0
+    preview = json.loads(capsys.readouterr().out)
+    common = [*target, "--canonical-checkpoint", str(backup), "--expect-adoption", adoption]
+    assert cli.main(["migration", "video-status-checkpoint", *common]) == 0
+    checkpoint = json.loads(capsys.readouterr().out)
+    assert checkpoint["status"] == "verified_canonical_copy"
+    return [*common, "--checkpoint-sha256", checkpoint["checkpoint_sha256"], "--expect-digest",
+            preview["digest"], "--actor", ACTOR, "--request-id", REQUEST, "--writers-stopped"]
+
+
+def test_adopted_migration_requires_exact_checkpoint_and_original_cli_request(stopped_selection, capsys):
+    checkout, root, backup, _, paths = stopped_selection
+    args = live_args(stopped_selection, capsys)
+    command = ["migration", "video-status-apply", *args]
+    before = snapshot(root)
+    with pytest.raises(SystemExit):
+        cli.main(command[:-1])
+    capsys.readouterr()
+    wrong = command[:]
+    wrong[wrong.index("--checkpoint-sha256") + 1] = "0" * 64
+    assert cli.main(wrong) == 2
+    assert "reviewed digest" in capsys.readouterr().err
+    put(root / "unexpected.txt", b"an unrelated change")
+    assert cli.main(command) == 2
+    assert "inventory changed" in capsys.readouterr().err
+    (root / "unexpected.txt").unlink()
+    assert snapshot(root) == before == snapshot(backup)
+    assert cli.main(command) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["renames"] == 2
+    after = snapshot(root)
+    assert {p.as_posix() for p in before if before[p] != after[p]} == {*paths, migration.VIDEO_INDEX, "log.md"}
+    assert snapshot(backup) == before
+    assert (checkout / "SourceFiles/original.bin").read_bytes() == b"synthetic attachment"
+    assert cli.main(command) == 0 and json.loads(capsys.readouterr().out) == result
+
+
+@pytest.mark.parametrize("cut", ["record", "receipt"])
+def test_adopted_migration_only_recovers_with_guarded_command(stopped_selection, capsys, monkeypatch, cut):
+    checkout, root, backup, _, paths = stopped_selection
+    args = live_args(stopped_selection, capsys)
+    install = writer.install
+    target = root / paths[0] if cut == "record" else writer.receipt_path(root / writer.STATE, REQUEST)
+
+    def interrupt(state, path, data, **kwargs):
+        install(state, path, data, **kwargs)
+        if target == path:
+            raise OSError("simulated interruption")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(writer, "install", interrupt)
+        assert cli.main(["migration", "video-status-apply", *args]) == 2
+    capsys.readouterr()
+    frozen = snapshot(root)
+    assert cli.main(["concept", "recover", "--live-checkout", str(checkout)]) == 2
+    assert "stopped-checkpoint" in capsys.readouterr().err
+    wrong = args[:]
+    wrong[wrong.index("--request-id") + 1] = "test-different-migration"
+    assert cli.main(["migration", "video-status-recover", *wrong]) == 2
+    assert "original Video migration request" in capsys.readouterr().err
+    assert snapshot(root) == frozen
+    unexpected = root / "unexpected.txt"
+    put(unexpected, b"not part of the frozen migration")
+    assert cli.main(["migration", "video-status-recover", *args]) == 2
+    assert "inventory changed" in capsys.readouterr().err
+    assert snapshot(root) == frozen and (root / writer.STATE / writer.PENDING).exists()
+    unexpected.unlink()
+    assert cli.main(["migration", "video-status-recover", *args]) == 0
+    assert json.loads(capsys.readouterr().out)["renames"] == 2
+    assert not (root / writer.STATE / writer.PENDING).exists()
+    assert (root / "log.md").read_text().count("**Video status migration**") == 1
+    assert (backup / "log.md").read_text().count("**Video status migration**") == 0

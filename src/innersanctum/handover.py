@@ -159,6 +159,35 @@ def compare_checkpoint(root, snapshot):
         raise Refused("Canonical inventory changed after the checkpoint.")
 
 
+def successor_checkpoint(root, backup, marker):
+    """Hash a pre-existing, external canonical copy; never create or restore it."""
+    if (not physical(backup) or any(writer.folded(p) == "synologydrive" for p in backup.parts)
+            or backup.is_relative_to(root.parent) or root.parent.is_relative_to(backup)
+            or any(writer.present(p / ".git") for p in (backup, *backup.parents))):
+        raise Refused("Use an exact private canonical checkpoint outside repositories and SynologyDrive.")
+    owned(backup.parent, directory=True)
+    directories, files = {}, {}
+    for parent, children, names in os.walk(backup, followlinks=False, onerror=raise_error):
+        path = Path(parent)
+        owned(path, directory=True)
+        prefix = path.relative_to(backup).as_posix()
+        directories["" if prefix == "." else prefix] = {}
+        for name in children:
+            owned(path / name, directory=True)
+        for name in names:
+            target = path / name
+            before = owned(target, directory=False)
+            raw = writer.read_file(target, limit=CHECKPOINT_LIMIT)
+            if stamp(owned(target, directory=False)) != stamp(before):
+                raise Refused("A checkpoint file changed while it was read.")
+            files[target.relative_to(backup).as_posix()] = {"size": len(raw), "sha256": writer.digest(raw)}
+    snapshot = {"files": files, "directories": directories}
+    if (files.get(writer.MARKER, {}).get("sha256") != writer.digest(marker)
+            or f"{writer.STATE}/{writer.PENDING}" in files):
+        raise Refused("The checkpoint must contain the current writer marker and no pending write.")
+    return snapshot, writer.digest(writer.json_bytes(snapshot))
+
+
 def verify_notes(checkpoint, expected, source):
     if (type(expected) is not dict or type(source) is not dict
             or set(expected) != set(source) or "notes.sqlite3" not in expected

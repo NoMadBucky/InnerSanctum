@@ -231,6 +231,37 @@ on the same disposable bundle; it finishes the frozen changes, not a new
 preview. Files change one at a time. This rehearsal is not a live apply or
 a bundle version upgrade.
 
+### Adopted checkout maintenance
+
+Only in a separately approved window, pause and reconcile Personal and
+BHO Notes writes and confirm other publishers and inbound sync remain
+excluded. Independently verify a fresh stopped successor checkpoint of
+canonical OKF (including hidden writer state and receipts) and Notes, with
+Auth and `SourceFiles/` preserved separately. The migration does not stop
+services, verify Notes or Auth, or create or restore a backup.
+
+Run `migration video-status-checkpoint` with `--live-checkout`,
+`--expect-adoption`, and `--canonical-checkpoint` pointing to the private
+canonical copy. It checks the entire canonical inventory and returns
+`checkpoint_sha256`. Rerun the read-only preview with services paused.
+Do not proceed on digest drift or unresolved writes.
+
+`migration video-status-apply` requires those same three options plus
+`--checkpoint-sha256`, `--expect-digest` (the reviewed preview digest),
+`--actor`, `--request-id`, and `--writers-stopped`. Compare the 222 record
+revisions, declaring index, single audit entry, and final receipt against
+the reviewed plan before reopening writes. Verify the signed-in BHO Movies
+board and filters after restoring the existing service selections. The
+operation does not declare a new OKF version or change service bindings.
+
+If interrupted, keep writers paused. `migration video-status-recover`
+requires the same arguments and completes the original frozen request
+only if the checkpoint still matches every untouched file and each
+changed file is at its original or planned revision. If a completed
+receipt is already present and nothing is pending, verify the result
+instead of starting a new request. Do not restore an old checkpoint over
+newer writes.
+
 ## Specification source
 
 [`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the

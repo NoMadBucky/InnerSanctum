@@ -2,9 +2,10 @@
 
 from collections import Counter
 from datetime import datetime
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
+import re
 
-from . import writer
+from . import handover, writer
 from .schema import ID, MD, Refused, declarations, document, existing_fields, mapping, read_text, resolve_schema, same
 
 
@@ -185,21 +186,50 @@ def verify_changes(changes):
         raise Refused("Missing pending Video migration audit entry.")
 
 
-def apply_video_status(root, expected, actor, request_id):
-    """Publish only to an unadopted disposable bundle through the shared writer."""
-    writer.check_authority(root)
+def verified_checkpoint(root, successor, checkpoint, digest=None):
+    if successor is None:
+        raise Refused("The stopped checkpoint requires the adopted checkout.")
+    writer.check_authority(root, successor)
+    snapshot, observed = handover.successor_checkpoint(root, Path(checkpoint).expanduser().absolute(), successor)
+    if digest is not None and observed != digest:
+        raise Refused("The canonical checkpoint differs from the reviewed digest.")
+    return snapshot, observed
+
+
+def inspect_checkpoint(root, successor, checkpoint):
+    writer.require_idle(root)
+    snapshot, digest = verified_checkpoint(root, successor, checkpoint)
+    handover.compare_checkpoint(root, snapshot)
+    return {"status": "verified_canonical_copy", "checkpoint_sha256": digest, "files": len(snapshot["files"])}
+
+
+def migration_request(expected, actor, request_id, checkpoint_sha256=None):
     if type(expected) is not str or not writer.REVISION.fullmatch(expected):
         raise Refused("Provide the reviewed preview digest.")
     writer.validate_actor(actor)
-    operation = writer.VIDEO_STATUS_OPERATION
-    request = writer.write_request(request_id, operation, expected, actor)
+    request = writer.write_request(request_id, writer.VIDEO_STATUS_OPERATION, expected, actor,
+                                   *(() if checkpoint_sha256 is None else (checkpoint_sha256,)))
     if request is None:
         raise Refused("The Video migration requires a durable request ID.")
-    with writer.locked(root) as state:
+    return request
+
+
+def apply_video_status(root, expected, actor, request_id, *, successor=None,
+                       checkpoint=None, checkpoint_sha256=None, writers_stopped=False):
+    """Publish a frozen Video rename through the shared writer."""
+    writer.check_authority(root, successor)
+    if successor is not None:
+        require_stopped(root, checkpoint, checkpoint_sha256, writers_stopped)
+    request = migration_request(expected, actor, request_id, checkpoint_sha256)
+    operation = writer.VIDEO_STATUS_OPERATION
+    with writer.locked(root, successor) as state:
         writer.require_idle(root)
         retained = writer.replay(root, state, request)
         if retained is not None:
             return retained
+        if successor is not None:
+            snapshot, _ = verified_checkpoint(root, successor, checkpoint, checkpoint_sha256)
+            handover.compare_checkpoint(root, snapshot)
         plan, changes, raw_log = plan_video_status(root)
         if plan["digest"] != expected:
             raise Refused("The Video migration preview changed; review a fresh preview.")
@@ -212,4 +242,67 @@ def apply_video_status(root, expected, actor, request_id):
             read_text(c.after.encode())
         verify_changes(changes)
         writer.freeze(root, state, changes, operation=operation, request=request)
-        return writer.publish(root, state, changes, operation=operation, request=request)
+        return writer.publish(root, state, changes, operation=operation, request=request,
+                              successor=successor, maintenance=successor is not None)
+
+
+def require_stopped(root, checkpoint, checkpoint_sha256, writers_stopped):
+    if (not writers_stopped or checkpoint is None or type(checkpoint_sha256) is not str
+            or not writer.REVISION.fullmatch(checkpoint_sha256)):
+        raise Refused("Require stopped writers and the reviewed canonical checkpoint digest.")
+    writer.validate_state(root, root / writer.STATE)
+    handover.owned(root / writer.STATE / "lock", directory=False)
+
+
+def check_frozen_plan(checkpoint, expected, actor, changes):
+    plan, planned, backup_log = plan_video_status(checkpoint)
+    if plan["digest"] != expected or plan["blockers"] or changes[:-1] != planned:
+        raise Refused("The pending Video migration differs from the reviewed plan.")
+    original = read_text(backup_log)
+    added = list((Counter(changes[-1].after.splitlines()) - Counter(original.splitlines())).elements())
+    stamps = [match[1] for line in added
+              if (match := re.match(r"^\* \*\*Video status migration\*\* \(([^)]+)\) — ", line))]
+    if len(stamps) != 1:
+        raise Refused("The pending audit lacks the original Video migration entry.")
+    try:
+        when = datetime.fromisoformat(stamps[0])
+    except ValueError:
+        raise Refused("The pending Video migration has an invalid audit timestamp.") from None
+    audit = writer.edit_log(original, VIDEO_INDEX, f"{plan['renames']} Video records", actor, when,
+                            action="Video status migration")
+    if when.utcoffset() is None or changes[-1] != writer.Change("log.md", plan["audit_before"], audit):
+        raise Refused("The pending audit differs from the reviewed Video migration.")
+
+
+def recover_video_status(root, expected, actor, request_id, *, successor, checkpoint,
+                         checkpoint_sha256, writers_stopped):
+    if successor is None:
+        raise Refused("Stopped-checkpoint recovery requires the adopted checkout.")
+    writer.check_authority(root, successor)
+    require_stopped(root, checkpoint, checkpoint_sha256, writers_stopped)
+    request = migration_request(expected, actor, request_id, checkpoint_sha256)
+    with writer.locked(root, successor) as state:
+        changes, operation, _, _, saved, _, _ = writer.read_changes(root, state)
+        if operation != writer.VIDEO_STATUS_OPERATION or saved != request:
+            raise Refused("Recovery requires the original Video migration request.")
+        snapshot, _ = verified_checkpoint(root, successor, checkpoint, checkpoint_sha256)
+        check_frozen_plan(Path(checkpoint).expanduser().absolute(), expected, actor, changes)
+        files = snapshot["files"]
+        for change in changes:
+            if files.get(change.path, {}).get("sha256") != change.before:
+                raise Refused("A frozen target is not in the approved checkpoint.")
+            raw = writer.read_file(writer.safe_target(root, change.path))
+            observed = writer.digest(raw)
+            if observed not in {change.before, change.revision}:
+                raise Refused("A target changed; retain the original migration journal.")
+            files[change.path] = {"size": len(raw), "sha256": observed}
+        pending = writer.read_file(state / writer.PENDING, limit=writer.PLAN_LIMIT)
+        files[f"{writer.STATE}/{writer.PENDING}"] = {"size": len(pending), "sha256": writer.digest(pending)}
+        receipt = writer.receipt_path(state, request_id)
+        if writer.present(receipt):
+            retained = writer.replay(root, state, request)
+            raw = writer.receipt_bytes(root, request, retained)
+            files[f"{writer.STATE}/{receipt.name}"] = {"size": len(raw), "sha256": writer.digest(raw)}
+        handover.compare_checkpoint(root, snapshot)
+        return writer.publish(root, state, changes, recovering=True, operation=operation, request=request,
+                              successor=successor, maintenance=True)

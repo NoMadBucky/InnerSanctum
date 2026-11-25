@@ -98,6 +98,24 @@ def parser():
     rehearsal.add_argument("--expect-digest", required=True, help="Digest from the reviewed preview")
     rehearsal.add_argument("--actor", required=True, help="Actual editor for the audit")
     rehearsal.add_argument("--request-id", required=True, help="Stable ID for this rehearsal")
+    evidence = migration_actions.add_parser("video-status-checkpoint", help="Verify an existing stopped canonical copy")
+    evidence.set_defaults(action="video-status-checkpoint")
+    evidence.add_argument("--live-checkout", required=True)
+    evidence.add_argument("--canonical-checkpoint", required=True)
+    evidence.add_argument("--expect-adoption", required=True)
+    for name in ("apply", "recover"):
+        live = migration_actions.add_parser(f"video-status-{name}",
+                                            help=f"{name.capitalize()} on an adopted, stopped checkout")
+        live.set_defaults(action=f"video-status-{name}")
+        live.add_argument("--live-checkout", required=True)
+        live.add_argument("--canonical-checkpoint", required=True)
+        live.add_argument("--checkpoint-sha256", required=True)
+        live.add_argument("--expect-adoption", required=True)
+        live.add_argument("--expect-digest", required=True)
+        live.add_argument("--actor", required=True)
+        live.add_argument("--request-id", required=True)
+        live.add_argument("--writers-stopped", required=True, action="store_true",
+                          help="Assert writer exclusion and independent stopped-pair verification")
     archive = groups.add_parser("clerk-archive", help="Keep or reopen a private Clerk snapshot outside OKF")
     archive_actions = archive.add_subparsers(required=True)
     store = archive_actions.add_parser("store", help="Store an immutable UTF-8 conversation export")
@@ -188,6 +206,14 @@ def main(argv=None):
                     result = migration.preview_video_status(root, successor)
                 elif args.action == "video-status-rehearse":
                     result = migration.apply_video_status(root, args.expect_digest, args.actor, args.request_id)
+                elif args.action == "video-status-checkpoint":
+                    result = migration.inspect_checkpoint(root, successor, args.canonical_checkpoint)
+                elif args.action in {"video-status-apply", "video-status-recover"}:
+                    command = (migration.apply_video_status if args.action == "video-status-apply"
+                               else migration.recover_video_status)
+                    result = command(root, args.expect_digest, args.actor, args.request_id, successor=successor,
+                                     checkpoint=args.canonical_checkpoint, checkpoint_sha256=args.checkpoint_sha256,
+                                     writers_stopped=args.writers_stopped)
                 elif args.action in {"update", "delete"}:
                     replacement = input_bytes(args.source) if args.action == "update" else None
                     result = concept.change(root, args.selector, args.revision, args.actor,
