@@ -92,6 +92,12 @@ def parser():
     target = video.add_mutually_exclusive_group(required=True)
     target.add_argument("--bundle", help="Explicit standalone bundle directory")
     target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
+    rehearsal = migration_actions.add_parser("video-status-rehearse", help="Apply the reviewed rename on a disposable bundle")
+    rehearsal.set_defaults(action="video-status-rehearse")
+    rehearsal.add_argument("--bundle", required=True, help="Explicit standalone bundle directory")
+    rehearsal.add_argument("--expect-digest", required=True, help="Digest from the reviewed preview")
+    rehearsal.add_argument("--actor", required=True, help="Actual editor for the audit")
+    rehearsal.add_argument("--request-id", required=True, help="Stable ID for this rehearsal")
     archive = groups.add_parser("clerk-archive", help="Keep or reopen a private Clerk snapshot outside OKF")
     archive_actions = archive.add_subparsers(required=True)
     store = archive_actions.add_parser("store", help="Store an immutable UTF-8 conversation export")
@@ -180,6 +186,8 @@ def main(argv=None):
                     result = concept.read(root, args.selector, successor=successor)
                 elif args.action == "video-status-preview":
                     result = migration.preview_video_status(root, successor)
+                elif args.action == "video-status-rehearse":
+                    result = migration.apply_video_status(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action in {"update", "delete"}:
                     replacement = input_bytes(args.source) if args.action == "update" else None
                     result = concept.change(root, args.selector, args.revision, args.actor,

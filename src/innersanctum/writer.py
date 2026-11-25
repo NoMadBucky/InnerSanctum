@@ -32,6 +32,7 @@ REVISION = re.compile(r"[0-9a-f]{64}")
 REQUEST_ID = re.compile(r"[A-Za-z0-9_-]{16,128}")
 RECEIPT_LIMIT = 32 * 1024
 EDITS = {"concept-update", "concept-delete", "journal-update", "journal-delete"}
+VIDEO_STATUS_OPERATION = "video-status-migration"
 DELETED_ID = re.compile(r"^\* \*\*Delete\*\* \([^\r\n]+\) — bho\\:([0-9]{7}) · ", re.M)
 
 
@@ -506,6 +507,11 @@ def read_changes(root, state):
                     or data["operation"] not in EDITS):
                 raise ValueError
             operation, directory, identity = data["operation"], None, data["identity"]
+        elif version == 7:
+            if (set(data) != {"version", "bundle", "changes", "operation"}
+                    or data["operation"] != VIDEO_STATUS_OPERATION or request is None):
+                raise ValueError
+            operation, directory, identity = VIDEO_STATUS_OPERATION, None, None
         else:
             raise ValueError
         changes = [Change(**item) for item in data["changes"]]
@@ -525,6 +531,11 @@ def read_changes(root, state):
             raise ValueError
         if any(c.after is None for c in changes):
             raise ValueError
+        if operation == VIDEO_STATUS_OPERATION:
+            from .migration import verify_changes
+
+            verify_changes(changes)
+            return changes, operation, directory, identity, request, None, None
         if operation == "journal-add":
             verify_journal_changes(changes, directory)
             return changes, operation, directory, identity, request, None, None
@@ -610,6 +621,8 @@ def verify_clerk_log(changes, operation, session):
 
 def publish(root, state, changes, *, recovering=False, operation="create", directory=None, identity=None,
             request=None, clerk_session=None, successor=None, archive_pin=None):
+    if operation == VIDEO_STATUS_OPERATION and successor is not None:
+        raise Refused("Video migration apply and recovery are available only on disposable bundles.")
     status = {"create": "created", "journal-add": "added"}.get(operation)
     result = describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
                       operation=operation, directory=directory, identity=identity, clerk_session=clerk_session)
@@ -682,6 +695,9 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
 
 
 def describe(changes, status, *, operation="create", directory=None, identity=None, clerk_session=None):
+    if operation == VIDEO_STATUS_OPERATION:
+        return {"status": "migrated", "operation": operation, "renames": len(changes) - 2,
+                "index_revision": changes[-2].revision, "audit_revision": changes[-1].revision}
     record = changes[0]
     result = {"status": status, "path": record.path, "id": identity or f"bho:{PurePosixPath(record.path).stem}",
               "revision": record.revision, "files": [change.path for change in changes]}
@@ -704,6 +720,10 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
         data.update(version=2, operation=operation, directory=directory)
     elif operation in EDITS:
         data.update(version=3, operation=operation, identity=identity)
+    elif operation == VIDEO_STATUS_OPERATION:
+        if request is None:
+            raise Refused("The Video migration requires a durable request ID.")
+        data.update(version=7, operation=operation)
     if request is not None:
         data = {"version": 4, "plan": data, "request": request}
     if clerk_session is not None:
@@ -740,7 +760,7 @@ def create(root, routes, raw, actor, *, dry_run=False, successor=None, request_i
 def recover(root, *, successor=None, archive_pin=None):
     check_authority(root, successor)
     if not present(root / STATE / PENDING):
-        raise Refused("No Create, concept edit or journal write is pending.")
+        raise Refused("No Create, concept edit, journal write or Video migration is pending.")
     with locked(root, successor) as state:
         changes, operation, directory, identity, request, clerk_session, retained_pin = read_changes(root, state)
         if retained_pin != archive_pin or (clerk_session is not None and (successor is None) != (archive_pin is None)):

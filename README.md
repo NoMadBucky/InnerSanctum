@@ -216,6 +216,21 @@ using it to plan a cutover. This command never applies the rename or changes
 records; they should prefer `video_status` and fall back only for the six
 legacy values, not for OKF lifecycle values.
 
+To rehearse a reviewed, unblocked preview on a disposable bundle:
+
+```sh
+uv run --locked innersanctum migration video-status-rehearse \
+  --bundle "$DISPOSABLE_OKF" --expect-digest "$PREVIEW_DIGEST" \
+  --actor "process:rehearsal" --request-id "$REQUEST_ID"
+```
+
+This applies the exact field rename to the qualifying records and the
+declaring index and adds one audit entry. It refuses a changed preview and
+does not accept `--live-checkout`. After interruption, use `concept recover`
+on the same disposable bundle; it finishes the frozen changes, not a new
+preview. Files change one at a time. This rehearsal is not a live apply or
+a bundle version upgrade.
+
 ## Specification source
 
 [`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the
