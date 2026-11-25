@@ -200,6 +200,22 @@ The v0.3 target uses:
   Date-times include `Z` or an explicit UTC offset; date-only values use
   `YYYY-MM-DD` where allowed.
 
+The read-only Video migration preview proposes renaming the optional
+`status` enum to `video_status` in `Resources/videos/index.md` and in
+Video records with one of the six legacy values:
+
+```sh
+uv run --locked innersanctum migration video-status-preview --bundle "$DISPOSABLE_OKF"
+```
+
+For an authorized read-only audit of the adopted checkout, use
+`--live-checkout "$CHECKOUT"` instead. The JSON contains private paths and
+revision digests, not record contents. Check `status` and `blockers` before
+using it to plan a cutover. This command never applies the rename or changes
+`okf_version`. Qualify readers that use the legacy field before converting
+records; they should prefer `video_status` and fall back only for the six
+legacy values, not for OKF lifecycle values.
+
 ## Specification source
 
 [`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the

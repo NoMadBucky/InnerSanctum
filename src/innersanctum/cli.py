@@ -9,7 +9,7 @@ import sys
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import SUCCESSOR, adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, receipt_status, recover
-from . import clerk_archive, concept, journal
+from . import clerk_archive, concept, journal, migration
 
 
 def parser():
@@ -85,6 +85,13 @@ def parser():
     transfer.add_argument("--sha256", required=True, help="Retained approval digest for the checkpoint receipt")
     transfer.add_argument("--writers-stopped", action="store_true", required=True,
                           help="Assert writers and publishers are excluded; this does not stop them")
+    migrations = groups.add_parser("migration")
+    migration_actions = migrations.add_subparsers(required=True)
+    video = migration_actions.add_parser("video-status-preview", help="Inspect the Video field rename without writing")
+    video.set_defaults(action="video-status-preview")
+    target = video.add_mutually_exclusive_group(required=True)
+    target.add_argument("--bundle", help="Explicit standalone bundle directory")
+    target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
     archive = groups.add_parser("clerk-archive", help="Keep or reopen a private Clerk snapshot outside OKF")
     archive_actions = archive.add_subparsers(required=True)
     store = archive_actions.add_parser("store", help="Store an immutable UTF-8 conversation export")
@@ -171,6 +178,8 @@ def main(argv=None):
                     result = receipt_status(root, args.request_id, successor=successor)
                 elif args.action == "read":
                     result = concept.read(root, args.selector, successor=successor)
+                elif args.action == "video-status-preview":
+                    result = migration.preview_video_status(root, successor)
                 elif args.action in {"update", "delete"}:
                     replacement = input_bytes(args.source) if args.action == "update" else None
                     result = concept.change(root, args.selector, args.revision, args.actor,
