@@ -19,7 +19,9 @@ backups passed byte-for-byte checks, and all 91 catalog entries verified.
 The first real Video Create read back exactly the new concept, one parent
 index insertion, and one root audit entry. No other canonical bytes or
 attachments changed, and no publication was left pending. Retained evidence
-is outside Git. This does not change the OKF v0.2 format or move `SourceFiles/`.
+is outside Git. The writer transfer did not change the then-v0.2 format or
+move `SourceFiles/`. A later [November 25 snapshot audit](README.md#personal-v03-readiness)
+found that Personal already declared v0.3 and reported zero readiness findings.
 
 A November 24 read-only check resolved `Video` to `Resources/videos` from
 116 indexes and found 1,008 unique IDs. In-memory formatting checks passed

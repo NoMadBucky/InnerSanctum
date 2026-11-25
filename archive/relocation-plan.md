@@ -9,6 +9,9 @@ The later [Create cutover](../create-cutover.md) transferred write authority
 to InnerSanctum. The [Notes Save rollout](notes-save-rollout.md) then
 verified both Personal and BHO Notes Save through that writer on
 November 24, 2026. These are recorded outcomes, not a live health check.
+The move was separate from the format change; a later
+[November 25 snapshot audit](../README.md#personal-v03-readiness) verified that
+the Personal bundle already declared v0.3.
 Do not reuse this plan to restart the former writer, release held
 publishers, or restore a checkpoint over newer writes.
 
@@ -22,8 +25,6 @@ publishers, or restore a checkpoint over newer writes.
 - **Displaced movie record:** The differing copy was retained privately
   and was not merged. Review it separately before deciding whether any
   real correction belongs in the live bundle.
-- **OKF v0.3:** The format conversion was not part of the move. Plan and
-  rehearse it on disposable data before proposing any live change.
 
 ## Historical execution record
 
@@ -251,7 +252,7 @@ outstanding approvals or instructions to reopen the completed relocation.
 - [x] Retain both verified checkpoints, the old source, and the displaced
   checkout copies outside Git. The differing local movie record remains
   preserved in the displaced copy and was not merged. A future decision
-  about that record or any v0.3 conversion is separate from this move.
+  about that record is separate from this move.
 
 ### Historical failure handling
 

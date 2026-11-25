@@ -1,8 +1,8 @@
 # InnerSanctum
 
 InnerSanctum is a local-first personal knowledge project for collecting notes and
-finding their sources. Start with the [project index](index.md). The target format
-for its Personal bundle is [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
+finding their sources. Start with the [project index](index.md). Its Personal
+bundle declares [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
 
 ## Project hub
 
@@ -24,7 +24,7 @@ other agents, or any deployment.
 
 ## Local Personal store
 
-* [`OKF/`](OKF/index.md) holds the live MatterKeep Personal v0.2 bundle,
+* [`OKF/`](OKF/index.md) holds the live MatterKeep Personal v0.3 bundle,
   including its own indexes and log.
 * [`SourceFiles/`](SourceFiles/) is the sibling store for native attachments and
   the source catalog. It is outside the OKF bundle.
@@ -32,8 +32,8 @@ other agents, or any deployment.
 Both folders are local to this checkout and intentionally ignored by Git. They
 do not come with a clone and need their own backup. InnerSanctum is the sole
 writer; the former SynologyDrive store is retained but inactive. Keep inbound
-sync excluded. The [cutover record](create-cutover.md) records current writer
-authority. Any v0.3 conversion is separate.
+sync excluded. See the [cutover record](create-cutover.md) for writer authority
+and the [November 25 snapshot audit](#personal-v03-readiness) for format evidence.
 
 ## Concepts
 
@@ -190,7 +190,7 @@ distinguishes the journal adapters from the publishers that are still held.
 
 ## Format requirements
 
-The v0.3 target uses:
+OKF v0.3 uses:
 
 * [YAML 1.2](https://yaml.org/spec/1.2.2/) with the core schema for frontmatter.
 * CommonMark with [GitHub Flavored Markdown (GFM) tables](https://github.github.com/gfm/#tables-extension-)
@@ -201,6 +201,14 @@ The v0.3 target uses:
   `YYYY-MM-DD` where allowed.
 
 ### Personal v0.3 readiness
+
+On November 25, 2026, a verified offline copy of Personal already declared
+`okf_version: "0.3"` in its root `index.md`. Source inventories and SHA-256
+hashes matched before and after copying 1,127 visible files. The readiness
+report returned `ready` with zero findings. No declaration or migration ran
+during the audit. The copy and report are private and outside Git; the copy
+is not a restore backup. This is format evidence, not live service or reader
+acceptance.
 
 Run the read-only report on a synthetic fixture or a separately approved,
 offline **copy** of the Personal bundle outside any repository:
@@ -214,8 +222,9 @@ writer state, follow visible symlinks, read attachment contents or use the
 sibling `SourceFiles/` catalog. It refuses pending writes. Use an unchanged,
 physical snapshot: the command checks for observed drift, but doesn't lock
 the source or create a snapshot. Its JSON contains relative paths and an
-inventory digest (visible names, entry kinds and Markdown bytes), not
-frontmatter values, attachment hashes or file contents. Keep real reports private.
+inventory digest (visible names, entry kinds and Markdown bytes). Apart from the
+version status, it does not expose frontmatter values, attachment hashes or file
+contents. Keep real reports private.
 
 `ready` (exit 0) means the selected checks found no blockers. `blocked`
 (exit 1) separates format findings (frontmatter and reserved indexes/logs),
@@ -226,8 +235,8 @@ are not failures. If the root explicitly declares `"0.2"`, a finding notes
 that the current declaration command only adds a **missing** version;
 don't remove the version to make the command accept it.
 
-Before a **go** decision, resolve or review each finding against the same
-snapshot and rehearse any changes there on a writable disposable fixture.
+Before using audit findings to propose changes, review them against the same
+snapshot and rehearse the changes on a writable disposable fixture.
 The report does not certify workspace schema, all timestamp semantics, or
 reader behavior. Separately verify Personal Notes source and navigation, both
 bundle-relative path forms, and BHO Movies results and filters with
@@ -235,7 +244,7 @@ bundle-relative path forms, and BHO Movies results and filters with
 tiers must ignore verification events older than `generated.at`. A ready
 report or a successful rehearsal is not approval for live operations.
 
-### Video viewing state
+### Video viewing state migration reference
 
 The read-only Video migration preview proposes renaming the optional
 `status` enum to `video_status` in `Resources/videos/index.md` and in
@@ -270,6 +279,9 @@ a bundle version upgrade.
 
 ### Adopted checkout maintenance
 
+These commands are maintenance references, not pending work for Personal.
+Do not rerun a migration that is already reflected in the bundle.
+
 Only in a separately approved window, pause and reconcile Personal and
 BHO Notes writes and confirm other publishers and inbound sync remain
 excluded. Independently verify a fresh stopped successor checkpoint of
@@ -285,7 +297,7 @@ Do not proceed on digest drift or unresolved writes.
 
 `migration video-status-apply` requires those same three options plus
 `--checkpoint-sha256`, `--expect-digest` (the reviewed preview digest),
-`--actor`, `--request-id`, and `--writers-stopped`. Compare the 222 record
+`--actor`, `--request-id`, and `--writers-stopped`. Compare the affected record
 revisions, declaring index, single audit entry, and final receipt against
 the reviewed plan before reopening writes. Verify the signed-in BHO Movies
 board and filters after restoring the existing service selections. The
@@ -324,11 +336,14 @@ not change the bundle version or resolve ambiguous source dates. Generic
 with the original request ID and digests. Do not resume writers on an
 unverified or partial apply.
 
-### Personal version declaration
+### Version declaration reference
+
+Personal already declares v0.3. Do not run `version-apply` to redeclare it.
 
 `innersanctum migration version-preview --live-checkout "$CHECKOUT"` previews
-adding `okf_version: "0.3"` to the Personal root `index.md`. The command
-preserves existing frontmatter and the index body. Declare the version
+adding `okf_version: "0.3"` to an adopted bundle's root `index.md` when no
+version is declared. By default it preserves existing frontmatter and the index
+body. Declare the version
 only after a separate conformance and consumer-compatibility review.
 `version-rehearse` accepts a standalone bundle and the same preview,
 actor, and request arguments as `timestamp-rehearse`.

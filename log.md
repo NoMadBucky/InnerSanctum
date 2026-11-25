@@ -2,6 +2,11 @@
 
 ## 2026-11-25
 
+* **Personal format verification**: A verified offline copy of the live
+  bundle already declared `okf_version: "0.3"`. Source inventories and
+  SHA-256 hashes matched before and after copying 1,127 visible files.
+  The [readiness report](README.md#personal-v03-readiness) found zero
+  blockers. Updated repository docs; no live write or service check.
 * **Personal v0.3 readiness**: Added a read-only report for offline
   snapshots and a disposable rehearsal of the Video and timestamp migrations,
   a v0.2 path fallback repair, and the version declaration. The synthetic
