@@ -63,20 +63,25 @@ to `SourceFiles/`.
 ## Rank a film by choosing a gap
 
 The ranking is an ordered list of **only the films Barry has ranked**, from
-best to worst. The prototype doesn’t use public ratings.
+best to worst. A film joins on its first confirmed placement. After that,
+Barry can move it up or down; it keeps exactly one place. There is no
+**Remove from ranking** action. The prototype doesn’t use public ratings.
 
-1. From film detail, select **Rank**. Open near the middle of the ranked
-   posters. For reranking, leave the selected film out of the comparison
-   list without changing its saved placement until confirmation.
+1. On iPhone or Mac, select **Rank** from film detail for a first placement
+   or **Rerank** to revisit a film. A first placement opens near the middle
+   of the posters. Reranking opens at the film’s current gap, with the film
+   left out of the comparison list; its saved placement stays in effect until
+   confirmation.
 2. Scroll through the posters in **personal ranking order**. Select a gap
    between adjacent films, or before the first or after the last. Preview the
    two comparisons: **Worse than [film above]** and **Better than [film
    below]**. At either end, show just the applicable comparison. If the list
-   is empty, invite Barry to make this the first ranked film.
+   is empty, invite Barry to make this the first ranked film. If reranking
+   the only ranked film, show that it is already first.
 3. **Confirm placement** to save the order on the device immediately, even
-   offline. Browsing or canceling changes nothing. If the list changed and
-   the chosen neighbors no longer bound the same gap, reopen the placement
-   for review rather than guessing.
+   offline. Browsing, canceling, or confirming the original gap changes
+   nothing. If the list changed and the chosen neighbors no longer bound the
+   same gap, reopen the placement for review rather than guessing.
 
 ## Local-first storage and sync
 
@@ -91,17 +96,18 @@ fallback, not a required step for routine use.
 * **Bundle representation:** one dedicated OKF concept holds a numbered list
   of links to the ranked movies. It is the source of truth for the order and
   membership recorded in the bundle. Film frontmatter has a Personal
-  `ranked` boolean as a derived convenience: set `true` on addition and
-  `false` on removal if supported. Interpret an absent flag as false for
-  unranked films; don’t backfill the whole library. A rerank doesn’t change
-  the flag. On the device, derive the badge from the local list so it responds
-  immediately. If bundle flags and the list disagree, use the list and flag
-  the mismatch for reconciliation.
-* **Sync attempts:** try on app open or return to foreground, periodically
-  while active with changes pending, and via **Sync now**. Background attempts
-  on iPhone are best-effort, not a guaranteed schedule. Show **Saved on this
-  device**, **Synced to OKF**, or **Needs review**; offline use never waits
-  for an acknowledgment.
+  `ranked` boolean as a derived convenience: set `true` on first placement.
+  Interpret an absent flag as false for unranked films; don’t backfill the
+  whole library. A rerank doesn’t change the flag or the watched date. On the
+  device, derive the badge from the local list so it responds immediately.
+  If bundle flags and the list disagree, use the list and flag the mismatch
+  for reconciliation.
+* **Sync attempts:** the iPhone syncs when it can reach the Mac on the home
+  network. A placement made at the theater stays saved on the phone until
+  then. Try on app open or return to foreground, periodically while active
+  with changes pending, and via **Sync now**. Background attempts on iPhone
+  are best-effort. Show **Saved on this device**, **Synced to OKF**, or
+  **Needs review**.
 * **Writer boundary:** sync ranking requests, not folders. A narrow,
   authenticated Mac-side adapter is proposed; only InnerSanctum would
   publish to the live bundle. Validate the movie references and the expected
@@ -113,18 +119,20 @@ fallback, not a required step for routine use.
 * **Conflicts:** if the bundle ranking changed since the last acknowledged
   revision, keep the local order and pending work. Show the two versions for
   review; don’t overwrite one with the other or silently reorder the films.
-  Don’t retry an uncertain write with a new request ID. Start with one phone
-  and explicit conflict review, not automatic multi-device merging.
+  Don’t retry an uncertain write with a new request ID. Start with one iPhone
+  and one Mac, both able to rank. Review the affected film’s gap against the
+  latest order, keeping other films and pending moves intact.
 
-The sync transport, canonical ranking path and schema, and live activation
-are separate decisions. Rehearsing the sync workflow does not authorize
-inbound folder sync or changing writer authority.
+The [design decisions](design-decisions.md) record the device and home-sync
+choices and the working design for storage, pairing, and conflict review.
+Live activation is a separate operational decision.
 
 ## Prototype and verification
 
 1. Build Watched, film detail, and the ranking carousel on a disposable
    Personal-shaped bundle. Test sorting, empty rankings, top/middle/bottom
-   placement, cancellation, and reranking.
+   placement, cancellation, and reranking. Move a film from near the top to
+   the bottom: it should appear once, with the same membership and watch date.
 2. Rank films offline, relaunch, then sync to the disposable bundle. Read
    back the exact order and membership flags. Test a lost acknowledgment
    without a duplicate write, a newer bundle ranking without lost local work,
