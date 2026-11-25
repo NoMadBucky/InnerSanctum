@@ -11,9 +11,17 @@ from .schema import Refused, document, read_text, same
 
 DECLARATION = 'okf_version: "0.3"'
 ACTION = "OKF version declaration"
+STORAGE_NOTE = ("This is the active Personal OKF bundle. InnerSanctum is its sole writer.\n"
+                "Workspace-qualified links are unchanged.\n\n")
+OLD_STORAGE_NOTE = re.compile(
+    r"\A(# Personal Workspace\n\n)Active registered content root:\n"
+    r"`/[^`\n]*/SynologyDrive/[^`\n]*/OKF/`\.\n"
+    r"The former local OKF tree is retained as a backup only\. Registry and writer state\n"
+    r"remain local; workspace-qualified links are unchanged\.\n\n(?=## Directory Listing\n)"
+)
 
 
-def updated_index(original):
+def updated_index(original, *, refresh_storage_note=False):
     before, body, offset = document(original, required=False)
     newline = writer.lines_for(original)[1]
     if "okf_version" in before:
@@ -26,6 +34,19 @@ def updated_index(original):
     after, new_body, _ = document(updated)
     if not same(after, {**before, "okf_version": "0.3"}) or new_body != ("" if offset else newline) + body:
         raise Refused("The version declaration would change unrelated index content.")
+    if refresh_storage_note:
+        _, _, next_offset = document(updated)
+        *header, body_text = updated.split("\n", next_offset)
+        head = "\n".join(header) + "\n"
+        original_body = body_text.replace(newline, "\n")
+        original_body = original_body.lstrip("\n")
+        lead = body_text[:len(body_text) - len(original_body.replace("\n", newline))]
+        match = OLD_STORAGE_NOTE.match(original_body)
+        if match is None:
+            raise Refused("The expected stale Personal workspace notice was not found at the start of the index.")
+        replacement = (match[1] + STORAGE_NOTE).replace("\n", newline)
+        old_prefix = match[0].replace("\n", newline)
+        return head + lead + replacement + body_text[len(lead) + len(old_prefix):]
     return updated
 
 
@@ -39,16 +60,17 @@ def describe(index, audit_before):
     return {**result, "digest": writer.digest(writer.json_bytes(result))}
 
 
-def plan(root):
+def plan(root, *, refresh_storage_note=False):
     writer.require_idle(root)
     originals = [read_text(writer.read_file(writer.safe_target(root, name))) for name in ("index.md", "log.md")]
-    index = writer.Change("index.md", writer.digest(originals[0].encode()), updated_index(originals[0]))
+    index = writer.Change("index.md", writer.digest(originals[0].encode()),
+                          updated_index(originals[0], refresh_storage_note=refresh_storage_note))
     return describe(index, writer.digest(originals[1].encode())), index, originals
 
 
-def preview(root, successor=None):
+def preview(root, successor=None, *, refresh_storage_note=False):
     writer.check_authority(root, successor)
-    return plan(root)[0]
+    return plan(root, refresh_storage_note=refresh_storage_note)[0]
 
 
 def request_for(expected, actor, request_id, checkpoint_sha256=None):
@@ -68,7 +90,11 @@ def verify_changes(changes, originals, actor, expected, request, checkpoint_sha2
                    for c, text in zip(changes, originals))):
         raise Refused("Invalid pending version declaration.")
     index, audit = changes
-    if (index.after != updated_index(originals[0]) or describe(index, audit.before)["digest"] != expected
+    version_only = updated_index(originals[0])
+    if (index.after != version_only
+            and index.after != updated_index(originals[0], refresh_storage_note=True)):
+        raise Refused("The frozen version declaration changed unrelated root index text.")
+    if (describe(index, audit.before)["digest"] != expected
             or request != request_for(expected, actor, request[0], checkpoint_sha256)):
         raise Refused("The frozen version declaration differs from the reviewed preview.")
     added = (Counter(audit.after.splitlines()) - Counter(originals[1].splitlines())).elements()
@@ -84,19 +110,21 @@ def verify_changes(changes, originals, actor, expected, request, checkpoint_sha2
         raise Refused("The frozen version declaration changed unrelated audit text.")
 
 
-def rehearse(root, expected, actor, request_id):
-    return _apply(root, expected, actor, request_id)
+def rehearse(root, expected, actor, request_id, *, refresh_storage_note=False):
+    return _apply(root, expected, actor, request_id, refresh_storage_note=refresh_storage_note)
 
 
-def apply(root, expected, actor, request_id, *, successor, checkpoint, checkpoint_sha256, writers_stopped):
+def apply(root, expected, actor, request_id, *, successor, checkpoint, checkpoint_sha256, writers_stopped,
+          refresh_storage_note=False):
     if successor is None:
         raise Refused("Stopped-checkpoint version declaration requires the adopted checkout.")
     migration.require_stopped(root, checkpoint, checkpoint_sha256, writers_stopped)
     return _apply(root, expected, actor, request_id, successor=successor, checkpoint=checkpoint,
-                  checkpoint_sha256=checkpoint_sha256)
+                  checkpoint_sha256=checkpoint_sha256, refresh_storage_note=refresh_storage_note)
 
 
-def _apply(root, expected, actor, request_id, *, successor=None, checkpoint=None, checkpoint_sha256=None):
+def _apply(root, expected, actor, request_id, *, successor=None, checkpoint=None, checkpoint_sha256=None,
+           refresh_storage_note=False):
     writer.check_authority(root, successor)
     operation = writer.VERSION_OPERATION
     request = request_for(expected, actor, request_id, checkpoint_sha256)
@@ -107,7 +135,7 @@ def _apply(root, expected, actor, request_id, *, successor=None, checkpoint=None
         if successor is not None:
             snapshot, _ = migration.verified_checkpoint(root, successor, checkpoint, checkpoint_sha256)
             handover.compare_checkpoint(root, snapshot)
-        result, index, originals = plan(root)
+        result, index, originals = plan(root, refresh_storage_note=refresh_storage_note)
         if result["digest"] != expected:
             raise Refused("The version declaration preview changed; review a fresh preview.")
         formats = timestamp_cleanup.preview(root, successor)
@@ -126,7 +154,8 @@ def _apply(root, expected, actor, request_id, *, successor=None, checkpoint=None
                               successor=successor, maintenance=successor is not None)
 
 
-def recover(root, expected, actor, request_id, *, successor, checkpoint, checkpoint_sha256, writers_stopped):
+def recover(root, expected, actor, request_id, *, successor, checkpoint, checkpoint_sha256, writers_stopped,
+            refresh_storage_note=False):
     if successor is None:
         raise Refused("Stopped-checkpoint version recovery requires the adopted checkout.")
     writer.check_authority(root, successor)
@@ -137,7 +166,7 @@ def recover(root, expected, actor, request_id, *, successor, checkpoint, checkpo
         if operation != writer.VERSION_OPERATION or saved != request:
             raise Refused("Recovery requires the original version declaration request.")
         snapshot, _ = migration.verified_checkpoint(root, successor, checkpoint, checkpoint_sha256)
-        result, index, _ = plan(Path(checkpoint).expanduser().absolute())
+        result, index, _ = plan(Path(checkpoint).expanduser().absolute(), refresh_storage_note=refresh_storage_note)
         if result["digest"] != expected or changes[0] != index:
             raise Refused("The pending version declaration differs from the checkpoint preview.")
         migration.check_recovery_snapshot(root, state, changes, snapshot, request)

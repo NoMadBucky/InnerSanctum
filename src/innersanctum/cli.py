@@ -94,6 +94,7 @@ def parser():
     target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
     version = migration_actions.add_parser("version-preview", help="Preview declaring OKF 0.3")
     version.set_defaults(action="version-preview")
+    version.add_argument("--refresh-storage-note", action="store_true")
     target = version.add_mutually_exclusive_group(required=True)
     target.add_argument("--bundle", help="Explicit standalone bundle directory")
     target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
@@ -104,6 +105,7 @@ def parser():
     version_rehearsal.add_argument("--expect-digest", required=True)
     version_rehearsal.add_argument("--actor", required=True)
     version_rehearsal.add_argument("--request-id", required=True)
+    version_rehearsal.add_argument("--refresh-storage-note", action="store_true")
     stamps = migration_actions.add_parser("timestamp-preview", help="Preview format-only timestamp cleanup")
     stamps.set_defaults(action="timestamp-preview")
     target = stamps.add_mutually_exclusive_group(required=True)
@@ -141,6 +143,8 @@ def parser():
         live.add_argument("--request-id", required=True)
         live.add_argument("--writers-stopped", required=True, action="store_true",
                           help="Assert writer exclusion and independent stopped-pair verification")
+        if family == "version":
+            live.add_argument("--refresh-storage-note", action="store_true")
     archive = groups.add_parser("clerk-archive", help="Keep or reopen a private Clerk snapshot outside OKF")
     archive_actions = archive.add_subparsers(required=True)
     store = archive_actions.add_parser("store", help="Store an immutable UTF-8 conversation export")
@@ -232,9 +236,10 @@ def main(argv=None):
                 elif args.action == "timestamp-preview":
                     result = timestamp_cleanup.preview(root, successor)
                 elif args.action == "version-preview":
-                    result = version_declaration.preview(root, successor)
+                    result = version_declaration.preview(root, successor, refresh_storage_note=args.refresh_storage_note)
                 elif args.action == "version-rehearse":
-                    result = version_declaration.rehearse(root, args.expect_digest, args.actor, args.request_id)
+                    result = version_declaration.rehearse(root, args.expect_digest, args.actor, args.request_id,
+                                                         refresh_storage_note=args.refresh_storage_note)
                 elif args.action == "timestamp-rehearse":
                     result = timestamp_cleanup.rehearse(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action == "video-status-rehearse":
@@ -256,7 +261,7 @@ def main(argv=None):
                     command = version_declaration.apply if args.action == "version-apply" else version_declaration.recover
                     result = command(root, args.expect_digest, args.actor, args.request_id, successor=successor,
                                      checkpoint=args.canonical_checkpoint, checkpoint_sha256=args.checkpoint_sha256,
-                                     writers_stopped=args.writers_stopped)
+                                     writers_stopped=args.writers_stopped, refresh_storage_note=args.refresh_storage_note)
                 elif args.action in {"update", "delete"}:
                     replacement = input_bytes(args.source) if args.action == "update" else None
                     result = concept.change(root, args.selector, args.revision, args.actor,

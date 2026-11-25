@@ -11,6 +11,15 @@ from test_handover import put, selection, transfer  # noqa: F401
 
 REQUEST = "test-version-declaration"
 ACTOR = "test:synthetic"
+STALE_INDEX = (
+    "# Personal Workspace\n\n"
+    "Active registered content root:\n"
+    "`/fixture/SynologyDrive/Example/OKF/`.\n"
+    "The former local OKF tree is retained as a backup only. Registry and writer state\n"
+    "remain local; workspace-qualified links are unchanged.\n\n"
+    "## Directory Listing\n\n"
+    "* [Unchanged](note.md)\n"
+)
 
 
 def test_declaration_preserves_index_body_and_existing_metadata():
@@ -21,6 +30,19 @@ def test_declaration_preserves_index_body_and_existing_metadata():
     assert version_declaration.updated_index(existing) == expected
     with pytest.raises(Refused, match="already declares"):
         version_declaration.updated_index(expected)
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_explicit_storage_refresh_preserves_the_directory_listing(newline):
+    original = STALE_INDEX.replace("\n", newline)
+    expected = ('---\nokf_version: "0.3"\n---\n\n# Personal Workspace\n\n'
+                "This is the active Personal OKF bundle. InnerSanctum is its sole writer.\n"
+                "Workspace-qualified links are unchanged.\n\n"
+                "## Directory Listing\n\n* [Unchanged](note.md)\n").replace("\n", newline)
+    assert version_declaration.updated_index(original, refresh_storage_note=True) == expected
+    assert "SynologyDrive" in version_declaration.updated_index(original)
+    with pytest.raises(Refused, match="stale Personal workspace notice"):
+        version_declaration.updated_index("# Some other index\n", refresh_storage_note=True)
 
 
 def test_rehearsal_replays_receipt_and_refuses_outstanding_timestamp_cleanup(bundle):
@@ -53,16 +75,17 @@ def stopped_version(selection, tmp_path):
     return checkout, root, backup, adoption
 
 
-def live_args(stopped_version, capsys):
+def live_args(stopped_version, capsys, *, refresh=False):
     checkout, _, backup, adoption = stopped_version
     target = ["--live-checkout", str(checkout)]
-    assert cli.main(["migration", "version-preview", *target]) == 0
+    options = ["--refresh-storage-note"] if refresh else []
+    assert cli.main(["migration", "version-preview", *target, *options]) == 0
     preview = json.loads(capsys.readouterr().out)
     common = [*target, "--canonical-checkpoint", str(backup), "--expect-adoption", adoption]
     assert cli.main(["migration", "version-checkpoint", *common]) == 0
     evidence = json.loads(capsys.readouterr().out)
     return [*common, "--checkpoint-sha256", evidence["checkpoint_sha256"], "--expect-digest",
-            preview["digest"], "--actor", ACTOR, "--request-id", REQUEST, "--writers-stopped"]
+            preview["digest"], "--actor", ACTOR, "--request-id", REQUEST, "--writers-stopped", *options]
 
 
 def test_adopted_version_apply_checks_checkpoint_and_changes_only_index_and_log(stopped_version, capsys):
@@ -86,9 +109,13 @@ def test_adopted_version_apply_checks_checkpoint_and_changes_only_index_and_log(
     assert cli.main(command) == 0 and json.loads(capsys.readouterr().out) == result
 
 
-def test_adopted_version_recovers_original_after_interruption(stopped_version, capsys, monkeypatch):
-    checkout, root, _, _ = stopped_version
-    args = live_args(stopped_version, capsys)
+@pytest.mark.parametrize("refresh", [False, True])
+def test_adopted_version_recovers_original_after_interruption(stopped_version, capsys, monkeypatch, refresh):
+    checkout, root, backup, _ = stopped_version
+    if refresh:
+        for directory in (root, backup):
+            put(directory / "index.md", STALE_INDEX.encode())
+    args = live_args(stopped_version, capsys, refresh=refresh)
     real_install = writer.install
 
     def interrupt(state, path, data, **kwargs):
@@ -102,7 +129,12 @@ def test_adopted_version_recovers_original_after_interruption(stopped_version, c
     capsys.readouterr()
     assert cli.main(["concept", "recover", "--live-checkout", str(checkout)]) == 2
     assert "stopped-checkpoint version recovery" in capsys.readouterr().err
+    if refresh:
+        assert cli.main(["migration", "version-recover", *args[:-1]]) == 2
+        assert "checkpoint preview" in capsys.readouterr().err
     assert cli.main(["migration", "version-recover", *args]) == 0
     assert json.loads(capsys.readouterr().out)["okf_version"] == "0.3"
     assert not (root / writer.STATE / writer.PENDING).exists()
     assert (root / "log.md").read_text().count("**OKF version declaration**") == 1
+    assert (root / "index.md").read_text() == version_declaration.updated_index(
+        (backup / "index.md").read_text(), refresh_storage_note=refresh)

@@ -296,6 +296,10 @@ only after a separate conformance and consumer-compatibility review.
 `version-rehearse` accepts a standalone bundle and the same preview,
 actor, and request arguments as `timestamp-rehearse`.
 
+Use `--refresh-storage-note` on preview, apply, and recovery to replace the
+exact stale SynologyDrive notice as part of the same reviewed declaration.
+That option refuses unexpected text and preserves the directory listing.
+
 Use `version-checkpoint`, `version-apply`, and `version-recover` with the
 [stopped maintenance arguments](#adopted-checkout-maintenance). Apply
 changes only the root index and one audit entry; it refuses an existing
