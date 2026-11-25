@@ -262,6 +262,14 @@ receipt is already present and nothing is pending, verify the result
 instead of starting a new request. Do not restore an old checkpoint over
 newer writes.
 
+### Timestamp cleanup preview
+
+`innersanctum migration timestamp-preview --bundle "$DISPOSABLE_OKF"` previews
+format-only changes to generation and verification timestamps and known
+legacy `!!timestamp` fields. Use `--live-checkout "$CHECKOUT"` for an
+authorized read-only audit. The preview checks that the parsed YAML values
+and types stay the same; it does not rewrite source dates or apply changes.
+
 ## Specification source
 
 [`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the

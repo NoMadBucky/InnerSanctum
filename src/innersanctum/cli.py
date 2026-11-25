@@ -9,7 +9,7 @@ import sys
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import SUCCESSOR, adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, receipt_status, recover
-from . import clerk_archive, concept, journal, migration
+from . import clerk_archive, concept, journal, migration, timestamp_cleanup
 
 
 def parser():
@@ -90,6 +90,11 @@ def parser():
     video = migration_actions.add_parser("video-status-preview", help="Inspect the Video field rename without writing")
     video.set_defaults(action="video-status-preview")
     target = video.add_mutually_exclusive_group(required=True)
+    target.add_argument("--bundle", help="Explicit standalone bundle directory")
+    target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
+    stamps = migration_actions.add_parser("timestamp-preview", help="Preview format-only timestamp cleanup")
+    stamps.set_defaults(action="timestamp-preview")
+    target = stamps.add_mutually_exclusive_group(required=True)
     target.add_argument("--bundle", help="Explicit standalone bundle directory")
     target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
     rehearsal = migration_actions.add_parser("video-status-rehearse", help="Apply the reviewed rename on a disposable bundle")
@@ -204,6 +209,8 @@ def main(argv=None):
                     result = concept.read(root, args.selector, successor=successor)
                 elif args.action == "video-status-preview":
                     result = migration.preview_video_status(root, successor)
+                elif args.action == "timestamp-preview":
+                    result = timestamp_cleanup.preview(root, successor)
                 elif args.action == "video-status-rehearse":
                     result = migration.apply_video_status(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action == "video-status-checkpoint":
