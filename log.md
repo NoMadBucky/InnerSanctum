@@ -5,9 +5,13 @@
 * **Personal v0.3 readiness**: Added a read-only report for offline
   snapshots and a disposable rehearsal of the Video and timestamp migrations,
   a v0.2 path fallback repair, and the version declaration. The synthetic
-  Personal Notes read and BHO movie reader and filter checks passed. BHO's
-  signed-in board route did not pass even on the unchanged fixture, so
-  route-level compatibility is still unverified. No live checks.
+  Personal Notes read and BHO movie reader and filter checks passed.
+* **BHO Movies reader qualification**: The initial signed-in test failure
+  came from a test fixture overwriting the synthetic workspace root after
+  sign-in. With fixture order corrected, 21 route cases passed on the
+  unchanged control and 21 passed with a v0.3 declaration and
+  `video_status` separate from lifecycle `status`. This tested BHO
+  source `1445c1ada`, not the deployed service. No live checks.
 
 ## 2026-11-24
 
