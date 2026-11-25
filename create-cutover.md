@@ -4,9 +4,14 @@
 
 **Cutover complete.** InnerSanctum owns write authority for the live `OKF/`
 bundle. The former installed Personal runtime refused the new marker before
-opening Notes. MatterKeep Personal remains stopped and restart-disabled.
-BHO is back online with its Personal publishers disabled; it did not take
-over writer authority.
+opening Notes and remains retired as a writer. BHO did not take over writer
+authority.
+
+At the November 24, 2026 [Notes Save acceptance](notes-save-rollout.md#bho-notes-source-activation),
+the Personal Notes-only successor and BHO Notes Source both saved through
+InnerSanctum. Other BHO publishers and Work writing remained held. This
+records acceptance, not current service health or approval to release
+another publisher.
 
 A fresh stopped Personal checkpoint of OKF and Notes verified independently
 before and after the marker change. Separate private Auth and `SourceFiles/`
@@ -35,9 +40,9 @@ changing the binding. Local and public HTTPS sign-in responded; no publisher
 was invoked. The sampled canonical files and publisher journals were unchanged.
 
 Use one writer for the entire bundle, not one writer per collection. Create
-changes the shared root audit log and checks bundle-wide IDs. Until an explicit
-reader-only Personal deployment is qualified, keep the Personal service stopped
-and keep its publishers held.
+changes the shared root audit log and checks bundle-wide IDs. At this stage
+the Personal service stayed stopped and its publishers stayed held. The
+later Notes-only successor did not restore the former writer.
 
 | Existing surface | Required disposition before cutover |
 | --- | --- |

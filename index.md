@@ -10,7 +10,7 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 
 * [README](README.md) - Project layout, migration status, and format requirements.
 * [Project registry](project-registry.md) - Seven sites, source checkouts, runbooks, and dated status.
-* [Personal relocation plan](relocation-plan.md) - Stopped-writer cutover and acceptance for the v0.2 store.
+* [Personal relocation closeout](relocation-plan.md) - Completed v0.2 move, historical evidence, and separate follow-ups.
 * [Change log](log.md) - History of changes to the project.
 * [Concept creation routes](concept-routes.toml) - Explicit authoring destinations for the standalone writer.
 * [Live Create cutover](create-cutover.md) - Compatibility checks and writer handover gates.

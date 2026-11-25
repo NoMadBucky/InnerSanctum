@@ -2,6 +2,11 @@
 
 ## 2026-11-24
 
+* **Relocation closeout**: Marked the v0.2 move historical and aligned the
+  status docs with the recorded Personal and BHO Notes Save acceptance.
+  Separated backup coverage, displaced-record review and v0.3 conversion
+  from the completed move. No live checks or changes.
+
 * **Clerk archive**: Added private conversation snapshots and recoverable
   audit links for body edits on disposable bundles. Saving a conversation
   does not create a concept or audit entry. No live changes.

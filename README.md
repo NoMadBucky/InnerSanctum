@@ -42,9 +42,10 @@ without MatterKeep or a browser. Use **disposable, standalone bundles outside th
 checkout**. Standalone mode refuses repository paths, SynologyDrive and
 bundles carrying Personal's writer marker. Do not remove a marker to make
 a bundle eligible. The [live Create cutover](create-cutover.md) verified that
-InnerSanctum is now the sole writer of `OKF/`. MatterKeep Personal remains
-offline. The BHO dashboard is online with its Personal publishers and delegated
-Notes editing disabled.
+InnerSanctum is now the sole writer of `OKF/`. The
+[November 24 Notes Save acceptance](notes-save-rollout.md) verified Personal
+and BHO Notes Save through InnerSanctum. The former Personal writer was not
+restored, and other BHO publishers and Work writing remained held.
 
 Use an existing bundle with a root `index.md` and `log.md`, a declaring index
 with a fenced `okf_schema` block, and a destination index with a

@@ -1,14 +1,31 @@
 # Personal v0.2 relocation plan
 
-**Historical operation.** This records the move of Personal's bundle, not
-current writer authority. The later [Create cutover](create-cutover.md)
-transferred write authority to InnerSanctum; do not use this plan to restart
-the former writer.
-
-**Status: cutover and handback verification complete.** This checkout's
-`OKF/` and sibling `SourceFiles/` are the live Personal store at OKF v0.2.
+**Closed.** The v0.2 relocation and handback verification are complete.
+This checkout's `OKF/` and sibling `SourceFiles/` are the live Personal store.
 The move did not change Auth or publisher grants. Retain the former
-SynologyDrive tree unchanged and inactive.
+SynologyDrive tree unchanged and inactive, and keep inbound sync excluded.
+
+The later [Create cutover](create-cutover.md) transferred write authority
+to InnerSanctum. The [Notes Save rollout](notes-save-rollout.md) then
+verified both Personal and BHO Notes Save through that writer on
+November 24, 2026. These are recorded outcomes, not a live health check.
+Do not reuse this plan to restart the former writer, release held
+publishers, or restore a checkpoint over newer writes.
+
+## Separate follow-ups
+
+- **Backup coverage:** The relocation checkpoints are same-host history.
+  An independent backup of the current adopted store, including its
+  private writer state and sibling `SourceFiles/`, would be a separate
+  operation. The stopped backup in the Notes Save rollout predates the
+  accepted BHO Save.
+- **Displaced movie record:** The differing copy was retained privately
+  and was not merged. Review it separately before deciding whether any
+  real correction belongs in the live bundle.
+- **OKF v0.3:** The format conversion was not part of the move. Plan and
+  rehearse it on disposable data before proposing any live change.
+
+## Historical execution record
 
 **Checkpoint-only window completed.** The stopped OKF/Notes pair passed
 MatterKeep's offline verifier. Separate local backups of `SourceFiles/` and
@@ -32,7 +49,10 @@ selector and Barry-only registry update passed stopped read-back. Other
 registry rows, grants, Auth, and shared OpenCode were not changed. Both
 services restarted on their original launchers.
 
-## Before scheduling downtime
+### Before scheduling downtime
+
+Unchecked items below preserve the pre-cutover record. They are not
+outstanding approvals or instructions to reopen the completed relocation.
 
 - [x] Qualify the relocation source on disposable data. The candidate
   noneditable wheel from MatterKeep `d33c4ff` passed 481 focused tests on the
@@ -144,7 +164,7 @@ services restarted on their original launchers.
   and Auth preservation are still required. Same-host copies do not
   protect against loss of the serving disk.
 
-### Read-only control map
+#### Read-only control map
 
 | Surface | Verified or documented boundary |
 | --- | --- |
@@ -153,7 +173,7 @@ services restarted on their original launchers.
 | BHO / Clerk | `gui/501/com.matterkeep.dashboard` owns the loopback `5555` listener. Its deployed registry still selects the old tree. The documented drain order is BHO before Personal if a BHO stop is approved. Shared OpenCode can host Clerk tools independently of that service: a BHO stop alone is not proof of exclusion. |
 | Publisher and sync controls | A read-only sample found the owner-specific BHO maintenance flag **off**; this is not evidence for or against any other write gate. Confirm separate exclusion for Clerk, Briefing, manual and local-operator writers, and inbound sync. No journals were verified drained, and no holds, publishers, or sync tasks were changed. Never use a legacy `allow-write` to resume coordinated clients. |
 
-## Stopped-writer window
+### Stopped-writer window
 
 1. **Drain and hold.** The owner approves the exact maintenance window, service
    and launcher changes, and which publishers are paused. Drain Personal and
@@ -199,7 +219,7 @@ services restarted on their original launchers.
    registry row. Read back all three before restarting BHO. Restart only
    the approved services; keep publishers held.
 
-## Acceptance and handback
+### Acceptance and handback
 
 - [x] Verify the serving and operator selections against the approved artifact
   and config digests. A live Personal read matched a retained note ID,
@@ -233,7 +253,7 @@ services restarted on their original launchers.
   preserved in the displaced copy and was not merged. A future decision
   about that record or any v0.3 conversion is separate from this move.
 
-## If something fails
+### Historical failure handling
 
 | Point of failure | Response |
 | --- | --- |
