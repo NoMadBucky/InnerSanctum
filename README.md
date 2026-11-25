@@ -1,14 +1,48 @@
 # InnerSanctum
 
-InnerSanctum is a local-first personal knowledge project for collecting notes and
-finding their sources. Start with the [project index](index.md). Its Personal
-bundle declares [Open Knowledge Format (OKF) v0.3](OKF_SPEC/SPEC.md).
+InnerSanctum is a local-first proof of concept for creating, exploring, and
+developing a personal [Open Knowledge Format (OKF) v0.3](OKF_SPEC/index.md)
+bundle. The goal is a collection a person can browse and understand, and an
+assistant can help maintain, without moving the knowledge out of Markdown.
+
+| Component | Role | Where it stands |
+| --- | --- | --- |
+| **OKF Builder** | An LLM-led conversation that works out what the user wants to collect, what belongs in scope, and how to structure the bundle. | Deferred; use a small hand-authored fixture first. |
+| **OKF Clerk** | Finds and edits concepts, explains validation findings, and guides review against sources. | Guarded CLI CRUD and schema checks exist. The Clerk workflow and trust features are proposed. |
+| **OKF Viewer** | A web interface for exploring the bundle through cards, facets, and connection graphs, with trust and source details where available. | Proposed here; existing Personal and BHO reader evidence is separate. |
+
+**First milestone:** On a disposable bundle, find a concept in a card view,
+review and apply an edit through the Clerk, then see the canonical change in
+the Viewer. The [roadmap](docs/roadmap.md) lays out the full CRUD loop and
+the visual prototype.
+
+## Start here
+
+* [Project index](index.md): Map of the repository and its historical records.
+* [Operator guide](docs/operator-guide.md): Existing concept and journal
+  commands, previews, receipts, recovery, and migration references.
+* [Agent guide](AGENTS.md): Repository rules and verification commands.
+
+## Private data and operations
+
+The live Personal bundle is `OKF/`; its native attachments and source catalog
+live beside it in `SourceFiles/`, outside the bundle. Both are Git-ignored
+and absent from fresh clones. InnerSanctum is the sole Personal writer; the
+former SynologyDrive store remains inactive and inbound sync stays excluded.
+Use disposable bundles outside the checkout for development. See the
+[writer cutover record](create-cutover.md) for authority and handover evidence.
+
+### Personal v0.3 readiness
+
+The November 25, 2026 offline snapshot audit found that Personal already
+declared v0.3 and reported zero readiness findings. That is format evidence,
+not a restore backup or live reader acceptance. See the
+[full audit and readiness command](docs/operator-guide.md#personal-v03-readiness).
 
 ## Project hub
 
-Use the [project registry](project-registry.md) to route work for seven sites.
-In OpenCode v2, new sessions in InnerSanctum default to the read-only
-`project-hub` agent. You can name a URL directly or use:
+The [project registry](project-registry.md) routes work for seven sites. In
+OpenCode v2, this checkout defaults to the read-only `project-hub` agent:
 
 ```text
 /project-status
@@ -16,356 +50,8 @@ In OpenCode v2, new sessions in InnerSanctum default to the read-only
 /project-plan design review a navigation change
 ```
 
-Status is the last recorded evidence, not a health check. Both commands select
-`project-hub` in the current session.
-
-For authorized InnerSanctum work, select the separate `project-build` agent.
-Its project-level permissions allow tools without prompting, including shell
-commands and access outside the checkout. Host-level restrictions still apply,
-as do the repository's rules for private stores and the separate approval
-required for live operations. For another project's source work, open its
-owning checkout in a separate session.
-
-## Local Personal store
-
-* [`OKF/`](OKF/index.md) holds the live MatterKeep Personal v0.3 bundle,
-  including its own indexes and log.
-* [`SourceFiles/`](SourceFiles/) is the sibling store for native attachments and
-  the source catalog. It is outside the OKF bundle.
-
-Both folders are local to this checkout and intentionally ignored by Git. They
-do not come with a clone and need their own backup. InnerSanctum is the sole
-writer; the former SynologyDrive store is retained but inactive. Keep inbound
-sync excluded. See the [cutover record](create-cutover.md) for writer authority
-and the [November 25 snapshot audit](#personal-v03-readiness) for format evidence.
-
-## Concepts
-
-InnerSanctum can create, read, update and delete ordinary Markdown concepts
-without MatterKeep or a browser. Use **disposable, standalone bundles outside the
-checkout**. Standalone mode refuses repository paths, SynologyDrive and
-bundles carrying Personal's writer marker. Do not remove a marker to make
-a bundle eligible. The [live Create cutover](create-cutover.md) verified that
-InnerSanctum is now the sole writer of `OKF/`. The
-[November 24 Notes Save acceptance](archive/notes-save-rollout.md) verified Personal
-and BHO Notes Save through InnerSanctum. The former Personal writer was not
-restored, and other BHO publishers and Work writing remained held.
-
-Use an existing bundle with a root `index.md` and `log.md`, a declaring index
-with a fenced `okf_schema` block, and a destination index with a
-`## Directory Listing` section. A [route](concept-routes.toml) points to the
-declaring index and selects the exact destination; `directory` inside the
-schema still limits the allowed subtree. Routes cannot override the schema.
-Add types as data, not Python code. The supplied Video route expects the
-declaration and destination index at `Resources/videos/index.md`.
-
-```sh
-uv run --locked innersanctum concept template Video \
-  --bundle "$DISPOSABLE_OKF" --routes concept-routes.toml
-
-uv run --locked innersanctum concept create --from "$DRAFT" \
-  --bundle "$DISPOSABLE_OKF" --routes concept-routes.toml --actor "human:your-name"
-```
-
-For real records in the adopted checkout, use `--live-checkout "$CHECKOUT"`
-instead of `--bundle`. Use standalone mode for tests and examples.
-
-Supply the actual producer as `--actor`. The draft supplies `type`, `title`,
-other schema fields and any Markdown body. The command allocates a seven-digit
-`bho:` ID and adds generation provenance without reformatting the draft. It
-validates required and declared fields, leaves extra metadata alone unless
-forbidden, and refuses unsupported schema rules. It writes the new concept
-without overwriting an existing file, adds the parent index entry and audit
-entry, then verifies all three. It returns a JSON path, ID and source revision.
-Create does not deduplicate by title or external URL, create directories, or
-fetch attachments.
-
-Read by exact bundle-relative path or `bho:` ID. Read returns JSON with the
-original `markdown` and a SHA-256 `revision`. For Update, start from that
-Markdown (for example, extract it with `jq -j .markdown`), then supply the full
-edited document. Keep the type, ID and other managed fields (`generated`,
-`verified`, `owner`, `scope`). Update validates against the existing type
-declaration and changes the parent index label if the title changes. It does
-not move the concept. Updates requiring unsupported legacy YAML are refused.
-
-```sh
-uv run --locked innersanctum concept read "$SELECTOR" --bundle "$DISPOSABLE_OKF"
-
-uv run --locked innersanctum concept update "$SELECTOR" --bundle "$DISPOSABLE_OKF" \
-  --from "$EDITED_MARKDOWN" --revision "$REVISION" --actor "human:your-name"
-
-uv run --locked innersanctum concept delete "$SELECTOR" --bundle "$DISPOSABLE_OKF" \
-  --revision "$REVISION" --actor "human:your-name" --dry-run
-```
-
-Delete permanently removes the concept file and its parent listing, leaving
-an audit entry that keeps the ID from being assigned again. It does not remove
-attachments or rewrite other links to the concept. Delete and title changes
-refuse missing, duplicate or nonstandard
-parent listing entries rather than guessing which text to change. Update and
-Delete both refuse a stale revision: read the current version before retrying.
-
-For Clerk edits, the [Clerk archive workflow](clerk-archive.md) shows how
-to keep conversation exports outside OKF and link their exact snapshots
-from the edit audit. It is available for standalone rehearsals only.
-
-## Personal journal
-
-For a real entry, provide a Markdown file or pipe the text on stdin. Use the
-actual author for `--actor`. For examples and development, substitute
-`--bundle "$DISPOSABLE_OKF"` and use a standalone fixture.
-
-```sh
-uv run --locked innersanctum journal add --live-checkout "$CHECKOUT" \
-  --from "$ENTRY_FILE" --actor "human:your-name" --subject "Optional subject"
-```
-
-The command defaults to the current local timestamp and `Personal` category.
-To record a different time or day, pass `--at` with an ISO 8601 timestamp
-including seconds and a UTC offset; `--date`, if supplied, must match that
-timestamp's calendar date. Entries accept paragraphs with inline Markdown.
-To append only to an existing day, pass its exact `--revision` from
-`journal read`. Clients can pass `--entry-json` with `--from -` to supply
-both `markdown` and `subject` (string or `null`) on stdin rather than
-putting a private subject in process arguments.
-
-`journal add` uses the Journal schema and the date-named layout
-`Documents/journal/YYYY-MM/YYYY-MM-DD.md`. It inserts the entry in timestamp
-order, without rewriting earlier entries or frontmatter. If the day is new,
-it creates and links it in the monthly and journal indexes, creating the
-month and its index if needed. It refuses an ambiguous existing ledger or an
-existing month with no index. The root audit log records the operation but
-not the entry text or subject.
-
-`journal read DATE` returns JSON with the day's `revision` and a numbered list
-of entries, each with `at` and `markdown`. Use the reported entry number and
-day revision together. Any change to the day, including a new entry, makes
-the old revision stale.
-
-```sh
-uv run --locked innersanctum journal read "$DAY" --bundle "$DISPOSABLE_OKF"
-
-uv run --locked innersanctum journal update "$DAY" --bundle "$DISPOSABLE_OKF" \
-  --entry "$NUMBER" --revision "$REVISION" --from "$ENTRY_FILE" --actor "human:your-name"
-
-uv run --locked innersanctum journal delete "$DAY" --bundle "$DISPOSABLE_OKF" \
-  --entry "$NUMBER" --revision "$REVISION" --actor "human:your-name" --dry-run
-```
-
-Update replaces the entry text and keeps its original time and author.
-Use `--category` or `--subject` to change those fields, or `--clear-subject`
-to remove the subject. Delete removes only the selected entry. The day's
-frontmatter and indexes stay in place, even when you delete the last entry.
-The audit records the operation, not the entry text or subject.
-
-## Preview and recovery
-
-All write commands for concepts and journal entries accept `--dry-run` to
-validate and report affected paths without writing. A Create preview does not
-reserve its proposed ID. Concept and journal operations share one lock and
-one pending write in the private `.innersanctum/` directory.
-
-After an interruption, use `concept recover` or `journal recover` with the
-same target instead of resubmitting. Recovery finishes the original changes
-or stops if it encounters unexpected bytes; it does not roll back or merge.
-Files change one at a time. The lock coordinates InnerSanctum writes on one
-host, not other readers, sync or another writer. If no write is pending,
-check the record and audit log before resubmitting: the command may have
-finished without reporting success.
-
-For integrations, all six mutating commands accept a stable `--request-id`
-(16–128 ASCII letters, digits, underscores or hyphens). The writer retains a
-private receipt after canonical read-back and before clearing the pending
-write. After recovery, an exact retry with the same ID and arguments returns
-the original receipt, not a fresh write or evidence of current content.
-Reusing an ID with different arguments is refused. Dry runs do not reserve
-the ID or write a receipt. Keep receipts with the bundle's writer state;
-removing one loses the retry guarantee for that ID.
-
-Clients of the adopted checkout can inspect an ID with `concept receipt`.
-This does not recover anything or return source. It reports `pending` if
-any canonical write is pending; otherwise it reports `missing` or a
-`completed` historical receipt and its argument fingerprint. An ID-based
-`concept update` can also require the original `--expect-path`. Clients can
-pin the adoption receipt digest with `--expect-adoption` on either command.
-
-The [publisher migration record](create-cutover.md#journal-client-source-slice)
-distinguishes the journal adapters from the publishers that are still held.
-
-## Format requirements
-
-OKF v0.3 uses:
-
-* [YAML 1.2](https://yaml.org/spec/1.2.2/) with the core schema for frontmatter.
-* CommonMark with [GitHub Flavored Markdown (GFM) tables](https://github.github.com/gfm/#tables-extension-)
-  and footnotes in `[^label]` form for document bodies. No other Markdown
-  extensions are required.
-* [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) for dates and timestamps.
-  Date-times include `Z` or an explicit UTC offset; date-only values use
-  `YYYY-MM-DD` where allowed.
-
-### Personal v0.3 readiness
-
-On November 25, 2026, a verified offline copy of Personal already declared
-`okf_version: "0.3"` in its root `index.md`. Source inventories and SHA-256
-hashes matched before and after copying 1,127 visible files. The readiness
-report returned `ready` with zero findings. No declaration or migration ran
-during the audit. The copy and report are private and outside Git; the copy
-is not a restore backup. This is format evidence, not live service or reader
-acceptance.
-
-Run the read-only report on a synthetic fixture or a separately approved,
-offline **copy** of the Personal bundle outside any repository:
-
-```sh
-uv run --locked innersanctum migration version-readiness --snapshot "$OFFLINE_OKF"
-```
-
-A stopped copy may retain its writer marker. The report doesn't initialize
-writer state, follow visible symlinks, read attachment contents or use the
-sibling `SourceFiles/` catalog. It refuses pending writes. Use an unchanged,
-physical snapshot: the command checks for observed drift, but doesn't lock
-the source or create a snapshot. Its JSON contains relative paths and an
-inventory digest (visible names, entry kinds and Markdown bytes). Apart from the
-version status, it does not expose frontmatter values, attachment hashes or file
-contents. Keep real reports private.
-
-`ready` (exit 0) means the selected checks found no blockers. `blocked`
-(exit 1) separates format findings (frontmatter and reserved indexes/logs),
-Personal migration work (Video viewing state, timestamp formatting and
-path fields that resolve only with the v0.2 bundle-root fallback), and parser
-limitations. A refused inspection exits 2. Ordinary broken Markdown links
-are not failures. If the root explicitly declares `"0.2"`, a finding notes
-that the current declaration command only adds a **missing** version;
-don't remove the version to make the command accept it.
-
-Before using audit findings to propose changes, review them against the same
-snapshot and rehearse the changes on a writable disposable fixture.
-The report does not certify workspace schema, all timestamp semantics, or
-reader behavior. Separately verify Personal Notes source and navigation, both
-bundle-relative path forms, and BHO Movies results and filters with
-`video_status` distinct from lifecycle `status`. Any reader displaying trust
-tiers must ignore verification events older than `generated.at`. A ready
-report or a successful rehearsal is not approval for live operations.
-
-### Video viewing state migration reference
-
-The read-only Video migration preview proposes renaming the optional
-`status` enum to `video_status` in `Resources/videos/index.md` and in
-Video records with one of the six legacy values:
-
-```sh
-uv run --locked innersanctum migration video-status-preview --bundle "$DISPOSABLE_OKF"
-```
-
-For an authorized read-only audit of the adopted checkout, use
-`--live-checkout "$CHECKOUT"` instead. The JSON contains private paths and
-revision digests, not record contents. Check `status` and `blockers` before
-using it to plan a cutover. This command never applies the rename or changes
-`okf_version`. Qualify readers that use the legacy field before converting
-records; they should prefer `video_status` and fall back only for the six
-legacy values, not for OKF lifecycle values.
-
-To rehearse a reviewed, unblocked preview on a disposable bundle:
-
-```sh
-uv run --locked innersanctum migration video-status-rehearse \
-  --bundle "$DISPOSABLE_OKF" --expect-digest "$PREVIEW_DIGEST" \
-  --actor "process:rehearsal" --request-id "$REQUEST_ID"
-```
-
-This applies the exact field rename to the qualifying records and the
-declaring index and adds one audit entry. It refuses a changed preview and
-does not accept `--live-checkout`. After interruption, use `concept recover`
-on the same disposable bundle; it finishes the frozen changes, not a new
-preview. Files change one at a time. This rehearsal is not a live apply or
-a bundle version upgrade.
-
-### Adopted checkout maintenance
-
-These commands are maintenance references, not pending work for Personal.
-Do not rerun a migration that is already reflected in the bundle.
-
-Only in a separately approved window, pause and reconcile Personal and
-BHO Notes writes and confirm other publishers and inbound sync remain
-excluded. Independently verify a fresh stopped successor checkpoint of
-canonical OKF (including hidden writer state and receipts) and Notes, with
-Auth and `SourceFiles/` preserved separately. The migration does not stop
-services, verify Notes or Auth, or create or restore a backup.
-
-Run `migration video-status-checkpoint` with `--live-checkout`,
-`--expect-adoption`, and `--canonical-checkpoint` pointing to the private
-canonical copy. It checks the entire canonical inventory and returns
-`checkpoint_sha256`. Rerun the read-only preview with services paused.
-Do not proceed on digest drift or unresolved writes.
-
-`migration video-status-apply` requires those same three options plus
-`--checkpoint-sha256`, `--expect-digest` (the reviewed preview digest),
-`--actor`, `--request-id`, and `--writers-stopped`. Compare the affected record
-revisions, declaring index, single audit entry, and final receipt against
-the reviewed plan before reopening writes. Verify the signed-in BHO Movies
-board and filters after restoring the existing service selections. The
-operation does not declare a new OKF version or change service bindings.
-
-If interrupted, keep writers paused. `migration video-status-recover`
-requires the same arguments and completes the original frozen request
-only if the checkpoint still matches every untouched file and each
-changed file is at its original or planned revision. If a completed
-receipt is already present and nothing is pending, verify the result
-instead of starting a new request. Do not restore an old checkpoint over
-newer writes.
-
-### Timestamp cleanup preview
-
-`innersanctum migration timestamp-preview --bundle "$DISPOSABLE_OKF"` previews
-format-only changes to generation and verification timestamps and known
-legacy `!!timestamp` fields. Use `--live-checkout "$CHECKOUT"` for an
-authorized read-only audit. The preview checks that the parsed YAML values
-and types stay the same; it does not rewrite source dates or apply changes.
-
-Rehearse with `migration timestamp-rehearse --bundle "$DISPOSABLE_OKF"
---expect-digest "$PREVIEW_DIGEST" --actor "process:rehearsal"
---request-id "$REQUEST_ID"`. The rehearsal binds the digest to the current
-audit log, changes only the planned records, and adds one audit entry.
-After interruption, use `concept recover` on the same disposable bundle
-to finish the original frozen request.
-
-For an adopted checkout, use `migration timestamp-checkpoint`,
-`timestamp-apply`, or `timestamp-recover` with the corresponding
-[stopped maintenance arguments](#adopted-checkout-maintenance). Timestamp
-cleanup requires its own reviewed preview and fresh stopped checkpoint.
-It changes only the reviewed concept files and one audit entry; it does
-not change the bundle version or resolve ambiguous source dates. Generic
-`concept recover` refuses live timestamp cleanup; use `timestamp-recover`
-with the original request ID and digests. Do not resume writers on an
-unverified or partial apply.
-
-### Version declaration reference
-
-Personal already declares v0.3. Do not run `version-apply` to redeclare it.
-
-`innersanctum migration version-preview --live-checkout "$CHECKOUT"` previews
-adding `okf_version: "0.3"` to an adopted bundle's root `index.md` when no
-version is declared. By default it preserves existing frontmatter and the index
-body. Declare the version
-only after a separate conformance and consumer-compatibility review.
-`version-rehearse` accepts a standalone bundle and the same preview,
-actor, and request arguments as `timestamp-rehearse`.
-
-Use `--refresh-storage-note` on preview, apply, and recovery to replace the
-exact stale SynologyDrive notice as part of the same reviewed declaration.
-That option refuses unexpected text and preserves the directory listing.
-
-Use `version-checkpoint`, `version-apply`, and `version-recover` with the
-[stopped maintenance arguments](#adopted-checkout-maintenance). Apply
-changes only the root index and one audit entry; it refuses an existing
-version declaration or unresolved timestamp cleanup. Live recovery
-requires the original request and checkpoint, not `concept recover`.
-
-## Specification source
-
-[`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the
-[upstream specification](https://github.com/open-knowledge-format/open-knowledge-format/blob/527e81aff55992be21507e97004286789126f88c/SPEC.md)
-at commit `527e81aff55992be21507e97004286789126f88c`. The upstream
-[Apache License 2.0](OKF_SPEC/SPEC-LICENSE.txt) applies to the vendored specification,
-not to the rest of this repository.
+Both commands select `project-hub` in the current session. Status is dated
+evidence, not a health check. For authorized repository changes, select
+`project-build`; it grants tool permissions, not permission to touch private
+stores or operate live services. For another site's source work, use its owning
+checkout and instructions. The hub is not the OKF Builder, Clerk, or Viewer.

@@ -2,6 +2,13 @@
 
 ## 2026-11-25
 
+* **Clerk validation and trust**: Added a roadmap for format and schema
+  feedback, source attribution, and revision-bound verification. Identified
+  the writer changes needed before the editable Viewer shows trust badges.
+* **Product direction**: Documented the Builder, Clerk, and Viewer proof of
+  concept in the [roadmap](docs/roadmap.md). Prioritized a disposable Clerk and
+  Viewer CRUD loop and moved CLI and maintenance details to the
+  [operator guide](docs/operator-guide.md). No tooling or live changes.
 * **Personal format verification**: A verified offline copy of the live
   bundle already declared `okf_version: "0.3"`. Source inventories and
   SHA-256 hashes matched before and after copying 1,127 visible files.

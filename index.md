@@ -8,7 +8,9 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 
 ## Directory Listing
 
-* [README](README.md) - Project layout, migration status, and format requirements.
+* [README](README.md) - Product overview and starting points.
+* [Roadmap](docs/roadmap.md) - Builder, Clerk, and Viewer direction and prototype milestones.
+* [Operator guide](docs/operator-guide.md) - CLI workflows, recovery, and format maintenance.
 * [Project registry](project-registry.md) - Seven sites, source checkouts, runbooks, and dated status.
 * [Change log](log.md) - History of changes to the project.
 * [Concept creation routes](concept-routes.toml) - Explicit authoring destinations for the standalone writer.
