@@ -2,13 +2,14 @@
 
 from collections import Counter
 from datetime import datetime
+from pathlib import Path
 import re
 
 from ruamel.yaml.error import YAMLError
 from ruamel.yaml.nodes import MappingNode, ScalarNode, SequenceNode
 from ruamel.yaml.tokens import ScalarToken, TagToken
 
-from . import writer
+from . import handover, migration, writer
 from .schema import Refused, existing_fields, mapping, read_text, same, split_document, yaml_reader
 
 
@@ -138,7 +139,7 @@ def audit_update(original, count, actor, when):
     return writer.edit_log(original, "index.md", f"{count} concept records", actor, when, action=AUDIT_ACTION)
 
 
-def verify_changes(changes, originals, actor, expected, request):
+def verify_changes(changes, originals, actor, expected, request, checkpoint_sha256=None):
     """Check frozen scope and reproduce each edit from its retained original."""
     writer.validate_actor(actor)
     if (len(changes) < 2 or type(originals) is not list or len(changes) != len(originals)
@@ -162,7 +163,7 @@ def verify_changes(changes, originals, actor, expected, request):
     result = {"status": "preview", "records": edits, "blockers": [], "audit_before": changes[-1].before,
               "provenance_timestamps": total["provenance_timestamps"], "explicit_tags": total["explicit_tags"]}
     if (expected != writer.digest(writer.json_bytes(result))
-            or request != writer.write_request(request[0], writer.TIMESTAMP_OPERATION, expected, actor)):
+            or request != migration_request(expected, actor, request[0], checkpoint_sha256)):
         raise Refused("Pending timestamp cleanup differs from the approved preview.")
     added = (Counter(changes[-1].after.splitlines()) - Counter(originals[-1].splitlines())).elements()
     stamps = [match[1] for line in added
@@ -177,19 +178,40 @@ def verify_changes(changes, originals, actor, expected, request):
         raise Refused("Pending timestamp cleanup changed unrelated audit text.")
 
 
-def rehearse(root, expected, actor, request_id):
-    writer.check_authority(root)
+def migration_request(expected, actor, request_id, checkpoint_sha256=None):
     if type(expected) is not str or not writer.REVISION.fullmatch(expected):
         raise Refused("Provide the reviewed preview digest.")
     writer.validate_actor(actor)
-    operation = writer.TIMESTAMP_OPERATION
-    request = writer.write_request(request_id, operation, expected, actor)
+    request = writer.write_request(request_id, writer.TIMESTAMP_OPERATION, expected, actor,
+                                   *(() if checkpoint_sha256 is None else (checkpoint_sha256,)))
     if request is None:
         raise Refused("Timestamp cleanup requires a durable request ID.")
-    with writer.locked(root) as state:
+    return request
+
+
+def rehearse(root, expected, actor, request_id):
+    return _apply(root, expected, actor, request_id)
+
+
+def apply(root, expected, actor, request_id, *, successor, checkpoint, checkpoint_sha256, writers_stopped):
+    if successor is None:
+        raise Refused("Stopped-checkpoint timestamp apply requires the adopted checkout.")
+    migration.require_stopped(root, checkpoint, checkpoint_sha256, writers_stopped)
+    return _apply(root, expected, actor, request_id, successor=successor, checkpoint=checkpoint,
+                  checkpoint_sha256=checkpoint_sha256)
+
+
+def _apply(root, expected, actor, request_id, *, successor=None, checkpoint=None, checkpoint_sha256=None):
+    writer.check_authority(root, successor)
+    request = migration_request(expected, actor, request_id, checkpoint_sha256)
+    operation = writer.TIMESTAMP_OPERATION
+    with writer.locked(root, successor) as state:
         writer.require_idle(root)
         if (receipt := writer.replay(root, state, request)) is not None:
             return receipt
+        if successor is not None:
+            snapshot, _ = migration.verified_checkpoint(root, successor, checkpoint, checkpoint_sha256)
+            handover.compare_checkpoint(root, snapshot)
         result, changes, originals = plan(root)
         if result["digest"] != expected:
             raise Refused("The timestamp cleanup preview changed; review a fresh preview.")
@@ -199,7 +221,29 @@ def rehearse(root, expected, actor, request_id):
         changes.append(writer.Change("log.md", result["audit_before"], audit))
         for c in changes:
             read_text(c.after.encode())
-        verify_changes(changes, originals, actor, expected, request)
-        writer.freeze(root, state, changes, operation=operation, request=request,
-                      timestamp_review={"actor": actor, "digest": expected, "originals": originals})
-        return writer.publish(root, state, changes, operation=operation, request=request)
+        verify_changes(changes, originals, actor, expected, request, checkpoint_sha256)
+        review = {"actor": actor, "digest": expected, "originals": originals}
+        if successor is not None:
+            review["checkpoint_sha256"] = checkpoint_sha256
+        writer.freeze(root, state, changes, operation=operation, request=request, timestamp_review=review)
+        return writer.publish(root, state, changes, operation=operation, request=request,
+                              successor=successor, maintenance=successor is not None)
+
+
+def recover(root, expected, actor, request_id, *, successor, checkpoint, checkpoint_sha256, writers_stopped):
+    if successor is None:
+        raise Refused("Stopped-checkpoint timestamp recovery requires the adopted checkout.")
+    writer.check_authority(root, successor)
+    migration.require_stopped(root, checkpoint, checkpoint_sha256, writers_stopped)
+    request = migration_request(expected, actor, request_id, checkpoint_sha256)
+    with writer.locked(root, successor) as state:
+        changes, operation, _, _, saved, _, _ = writer.read_changes(root, state)
+        if operation != writer.TIMESTAMP_OPERATION or saved != request:
+            raise Refused("Recovery requires the original timestamp cleanup request.")
+        snapshot, _ = migration.verified_checkpoint(root, successor, checkpoint, checkpoint_sha256)
+        result, planned, _ = plan(Path(checkpoint).expanduser().absolute())
+        if result["digest"] != expected or result["blockers"] or changes[:-1] != planned:
+            raise Refused("The pending timestamp cleanup differs from the checkpoint preview.")
+        migration.check_recovery_snapshot(root, state, changes, snapshot, request)
+        return writer.publish(root, state, changes, recovering=True, operation=operation, request=request,
+                              successor=successor, maintenance=True)

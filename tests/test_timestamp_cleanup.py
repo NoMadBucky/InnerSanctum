@@ -1,9 +1,12 @@
 import json
+import shutil
 
 import pytest
 
 from innersanctum import cli, timestamp_cleanup, writer
 from innersanctum.schema import Refused, document, same, split_document, yaml_reader
+from test_create import bundle  # noqa: F401
+from test_handover import put, selection, transfer  # noqa: F401
 
 
 def test_formats_provenance_without_changing_meaning_or_body():
@@ -150,3 +153,95 @@ def test_rehearsal_refuses_stale_log_or_managed_bundle(timestamp_bundle):
     (root / writer.MARKER).write_text("managed")
     with pytest.raises(Refused, match="managed"):
         timestamp_cleanup.rehearse(root, approved["digest"], ACTOR, REQUEST)
+
+
+@pytest.fixture
+def adopted_timestamps(selection, tmp_path):
+    checkout, root, _, adoption = selection
+    transfer(selection)
+    put(root / "a.md", (NOTE + "---\nKeep this body.\n").encode())
+    put(root / "b.md", (TASK + "---\nKeep this body too.\n").encode())
+    successor = (root / writer.MARKER).read_bytes()
+    with writer.locked(root, successor):
+        pass
+    directory = tmp_path / "stopped-timestamps"
+    directory.mkdir(mode=0o700)
+    backup = directory / "canonical"
+    shutil.copytree(root, backup)
+    return checkout, root, backup, adoption
+
+
+def adopted_args(adopted_timestamps, capsys):
+    checkout, _, backup, adoption = adopted_timestamps
+    target = ["--live-checkout", str(checkout)]
+    assert cli.main(["migration", "timestamp-preview", *target]) == 0
+    preview = json.loads(capsys.readouterr().out)
+    common = [*target, "--canonical-checkpoint", str(backup), "--expect-adoption", adoption]
+    assert cli.main(["migration", "timestamp-checkpoint", *common]) == 0
+    checkpoint = json.loads(capsys.readouterr().out)
+    assert checkpoint["status"] == "verified_canonical_copy"
+    return [*common, "--checkpoint-sha256", checkpoint["checkpoint_sha256"], "--expect-digest",
+            preview["digest"], "--actor", ACTOR, "--request-id", REQUEST, "--writers-stopped"]
+
+
+def test_adopted_timestamp_apply_pins_checkpoint_and_preview(adopted_timestamps, capsys):
+    checkout, root, backup, _ = adopted_timestamps
+    args = adopted_args(adopted_timestamps, capsys)
+    command = ["migration", "timestamp-apply", *args]
+    initial = {p.relative_to(root): p.read_bytes() for p in root.rglob("*.md")}
+    with pytest.raises(SystemExit):
+        cli.main(command[:-1])
+    capsys.readouterr()
+    for flag, message in (("--expect-adoption", "expected checkpoint receipt"),
+                          ("--checkpoint-sha256", "reviewed digest"), ("--expect-digest", "preview changed")):
+        wrong = command[:]
+        wrong[wrong.index(flag) + 1] = "0" * 64
+        assert cli.main(wrong) == 2
+        assert message in capsys.readouterr().err
+    put(root / "unexpected.txt", b"Unrelated file")
+    assert cli.main(command) == 2
+    assert "inventory changed" in capsys.readouterr().err
+    (root / "unexpected.txt").unlink()
+    assert {p.relative_to(root): p.read_bytes() for p in root.rglob("*.md")} == initial
+    assert cli.main(command) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["records"] == 2
+    after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*.md")}
+    assert {p.as_posix() for p in initial if initial[p] != after[p]} == {"a.md", "b.md", "log.md"}
+    assert all((backup / path).read_bytes() == raw for path, raw in initial.items())
+    assert (checkout / "SourceFiles/original.bin").read_bytes() == b"synthetic attachment"
+    assert cli.main(command) == 0 and json.loads(capsys.readouterr().out) == result
+
+
+@pytest.mark.parametrize("cut", ["record", "receipt"])
+def test_adopted_timestamp_recovery_refuses_drift_and_generic_command(adopted_timestamps, capsys, monkeypatch, cut):
+    checkout, root, _, _ = adopted_timestamps
+    args = adopted_args(adopted_timestamps, capsys)
+    install = writer.install
+    target = root / "a.md" if cut == "record" else writer.receipt_path(root / writer.STATE, REQUEST)
+
+    def interrupt(state, path, data, **kwargs):
+        install(state, path, data, **kwargs)
+        if target == path:
+            raise OSError("simulated interruption")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(writer, "install", interrupt)
+        assert cli.main(["migration", "timestamp-apply", *args]) == 2
+    capsys.readouterr()
+    assert cli.main(["concept", "recover", "--live-checkout", str(checkout)]) == 2
+    assert "stopped-checkpoint timestamp recovery" in capsys.readouterr().err
+    wrong = args[:]
+    wrong[wrong.index("--request-id") + 1] = "timestamp-different-request"
+    assert cli.main(["migration", "timestamp-recover", *wrong]) == 2
+    assert "original timestamp cleanup request" in capsys.readouterr().err
+    frozen = (root / writer.STATE / writer.PENDING).read_bytes()
+    put(root / "unexpected.txt", b"Unrelated file")
+    assert cli.main(["migration", "timestamp-recover", *args]) == 2
+    assert "inventory changed" in capsys.readouterr().err
+    assert (root / writer.STATE / writer.PENDING).read_bytes() == frozen
+    (root / "unexpected.txt").unlink()
+    assert cli.main(["migration", "timestamp-recover", *args]) == 0
+    assert json.loads(capsys.readouterr().out)["records"] == 2
+    assert not (root / writer.STATE / writer.PENDING).exists()
+    assert (root / "log.md").read_text().count("**Timestamp formatting**") == 1

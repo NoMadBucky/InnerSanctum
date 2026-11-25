@@ -110,15 +110,16 @@ def parser():
     rehearsal.add_argument("--expect-digest", required=True, help="Digest from the reviewed preview")
     rehearsal.add_argument("--actor", required=True, help="Actual editor for the audit")
     rehearsal.add_argument("--request-id", required=True, help="Stable ID for this rehearsal")
-    evidence = migration_actions.add_parser("video-status-checkpoint", help="Verify an existing stopped canonical copy")
-    evidence.set_defaults(action="video-status-checkpoint")
+    evidence = migration_actions.add_parser("video-status-checkpoint", aliases=["timestamp-checkpoint"],
+                                            help="Verify an existing stopped canonical copy")
+    evidence.set_defaults(action="migration-checkpoint")
     evidence.add_argument("--live-checkout", required=True)
     evidence.add_argument("--canonical-checkpoint", required=True)
     evidence.add_argument("--expect-adoption", required=True)
-    for name in ("apply", "recover"):
-        live = migration_actions.add_parser(f"video-status-{name}",
-                                            help=f"{name.capitalize()} on an adopted, stopped checkout")
-        live.set_defaults(action=f"video-status-{name}")
+    for family, name in ((f, n) for f in ("video-status", "timestamp") for n in ("apply", "recover")):
+        live = migration_actions.add_parser(f"{family}-{name}",
+                                            help=f"{name.capitalize()} {family} on an adopted, stopped checkout")
+        live.set_defaults(action=f"{family}-{name}")
         live.add_argument("--live-checkout", required=True)
         live.add_argument("--canonical-checkpoint", required=True)
         live.add_argument("--checkpoint-sha256", required=True)
@@ -222,11 +223,16 @@ def main(argv=None):
                     result = timestamp_cleanup.rehearse(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action == "video-status-rehearse":
                     result = migration.apply_video_status(root, args.expect_digest, args.actor, args.request_id)
-                elif args.action == "video-status-checkpoint":
+                elif args.action == "migration-checkpoint":
                     result = migration.inspect_checkpoint(root, successor, args.canonical_checkpoint)
                 elif args.action in {"video-status-apply", "video-status-recover"}:
                     command = (migration.apply_video_status if args.action == "video-status-apply"
                                else migration.recover_video_status)
+                    result = command(root, args.expect_digest, args.actor, args.request_id, successor=successor,
+                                     checkpoint=args.canonical_checkpoint, checkpoint_sha256=args.checkpoint_sha256,
+                                     writers_stopped=args.writers_stopped)
+                elif args.action in {"timestamp-apply", "timestamp-recover"}:
+                    command = timestamp_cleanup.apply if args.action == "timestamp-apply" else timestamp_cleanup.recover
                     result = command(root, args.expect_digest, args.actor, args.request_id, successor=successor,
                                      checkpoint=args.canonical_checkpoint, checkpoint_sha256=args.checkpoint_sha256,
                                      writers_stopped=args.writers_stopped)

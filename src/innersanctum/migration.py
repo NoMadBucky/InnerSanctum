@@ -287,22 +287,27 @@ def recover_video_status(root, expected, actor, request_id, *, successor, checkp
             raise Refused("Recovery requires the original Video migration request.")
         snapshot, _ = verified_checkpoint(root, successor, checkpoint, checkpoint_sha256)
         check_frozen_plan(Path(checkpoint).expanduser().absolute(), expected, actor, changes)
-        files = snapshot["files"]
-        for change in changes:
-            if files.get(change.path, {}).get("sha256") != change.before:
-                raise Refused("A frozen target is not in the approved checkpoint.")
-            raw = writer.read_file(writer.safe_target(root, change.path))
-            observed = writer.digest(raw)
-            if observed not in {change.before, change.revision}:
-                raise Refused("A target changed; retain the original migration journal.")
-            files[change.path] = {"size": len(raw), "sha256": observed}
-        pending = writer.read_file(state / writer.PENDING, limit=writer.PLAN_LIMIT)
-        files[f"{writer.STATE}/{writer.PENDING}"] = {"size": len(pending), "sha256": writer.digest(pending)}
-        receipt = writer.receipt_path(state, request_id)
-        if writer.present(receipt):
-            retained = writer.replay(root, state, request)
-            raw = writer.receipt_bytes(root, request, retained)
-            files[f"{writer.STATE}/{receipt.name}"] = {"size": len(raw), "sha256": writer.digest(raw)}
-        handover.compare_checkpoint(root, snapshot)
+        check_recovery_snapshot(root, state, changes, snapshot, request)
         return writer.publish(root, state, changes, recovering=True, operation=operation, request=request,
                               successor=successor, maintenance=True)
+
+
+def check_recovery_snapshot(root, state, changes, snapshot, request):
+    """Compare the full checkpoint, allowing only the exact frozen recovery state."""
+    files = snapshot["files"]
+    for change in changes:
+        if files.get(change.path, {}).get("sha256") != change.before:
+            raise Refused("A frozen target is not in the approved checkpoint.")
+        raw = writer.read_file(writer.safe_target(root, change.path))
+        observed = writer.digest(raw)
+        if observed not in {change.before, change.revision}:
+            raise Refused("A target changed; retain the original migration journal.")
+        files[change.path] = {"size": len(raw), "sha256": observed}
+    pending = writer.read_file(state / writer.PENDING, limit=writer.PLAN_LIMIT)
+    files[f"{writer.STATE}/{writer.PENDING}"] = {"size": len(pending), "sha256": writer.digest(pending)}
+    receipt = writer.receipt_path(state, request[0])
+    if writer.present(receipt):
+        retained = writer.replay(root, state, request)
+        raw = writer.receipt_bytes(root, request, retained)
+        files[f"{writer.STATE}/{receipt.name}"] = {"size": len(raw), "sha256": writer.digest(raw)}
+    handover.compare_checkpoint(root, snapshot)

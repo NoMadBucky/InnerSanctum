@@ -546,12 +546,18 @@ def read_changes(root, state):
             from .timestamp_cleanup import verify_changes
 
             review = data["timestamp_review"]
-            if (type(review) is not dict or set(review) != {"originals", "actor", "digest"}
+            base = {"originals", "actor", "digest"}
+            if (type(review) is not dict or set(review) not in (base, base | {"checkpoint_sha256"})
                     or type(review["digest"]) is not str or not REVISION.fullmatch(review["digest"])
                     or type(review["actor"]) is not str or type(review["originals"]) is not list
                     or any(type(t) is not str or len(t.encode()) > LIMIT for t in review["originals"])):
                 raise ValueError
-            verify_changes(changes, review["originals"], review["actor"], review["digest"], request)
+            checkpoint_sha256 = review.get("checkpoint_sha256")
+            if "checkpoint_sha256" in review and (type(checkpoint_sha256) is not str
+                                                    or not REVISION.fullmatch(checkpoint_sha256)):
+                raise ValueError
+            verify_changes(changes, review["originals"], review["actor"], review["digest"], request,
+                           checkpoint_sha256)
             return changes, operation, directory, identity, request, None, None
         if operation == "journal-add":
             verify_journal_changes(changes, directory)
@@ -640,8 +646,8 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
             request=None, clerk_session=None, successor=None, archive_pin=None, maintenance=False):
     if operation == VIDEO_STATUS_OPERATION and successor is not None and not maintenance:
         raise Refused("Use stopped-checkpoint Video migration recovery on the adopted checkout.")
-    if operation == TIMESTAMP_OPERATION and successor is not None:
-        raise Refused("Timestamp cleanup apply and recovery are available only on disposable bundles.")
+    if operation == TIMESTAMP_OPERATION and successor is not None and not maintenance:
+        raise Refused("Use stopped-checkpoint timestamp recovery on the adopted checkout.")
     status = {"create": "created", "journal-add": "added"}.get(operation)
     result = describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
                       operation=operation, directory=directory, identity=identity, clerk_session=clerk_session)

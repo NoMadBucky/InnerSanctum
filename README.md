@@ -275,8 +275,17 @@ Rehearse with `migration timestamp-rehearse --bundle "$DISPOSABLE_OKF"
 --request-id "$REQUEST_ID"`. The rehearsal binds the digest to the current
 audit log, changes only the planned records, and adds one audit entry.
 After interruption, use `concept recover` on the same disposable bundle
-to finish the original frozen request. Live apply and recovery are not
-enabled for timestamp cleanup.
+to finish the original frozen request.
+
+For an adopted checkout, use `migration timestamp-checkpoint`,
+`timestamp-apply`, or `timestamp-recover` with the corresponding
+[stopped maintenance arguments](#adopted-checkout-maintenance). Timestamp
+cleanup requires its own reviewed preview and fresh stopped checkpoint.
+It changes only the reviewed concept files and one audit entry; it does
+not change the bundle version or resolve ambiguous source dates. Generic
+`concept recover` refuses live timestamp cleanup; use `timestamp-recover`
+with the original request ID and digests. Do not resume writers on an
+unverified or partial apply.
 
 ## Specification source
 
