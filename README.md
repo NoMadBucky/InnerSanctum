@@ -17,10 +17,14 @@ In OpenCode v2, new sessions in InnerSanctum default to the read-only
 ```
 
 Status is the last recorded evidence, not a health check. Both commands select
-`project-hub` in the current session. Switch to Build for authorized
-InnerSanctum development, or open the owning checkout in a separate session for
-source work there. The hub configuration does not change global permissions,
-other agents, or any deployment.
+`project-hub` in the current session.
+
+For authorized InnerSanctum work, select the separate `project-build` agent.
+Its project-level permissions allow tools without prompting, including shell
+commands and access outside the checkout. Host-level restrictions still apply,
+as do the repository's rules for private stores and the separate approval
+required for live operations. For another project's source work, open its
+owning checkout in a separate session.
 
 ## Local Personal store
 

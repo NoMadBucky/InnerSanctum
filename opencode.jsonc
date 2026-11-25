@@ -9,6 +9,13 @@
         { "action": "*", "resource": "*", "effect": "deny" },
         { "action": "read", "resource": "project-registry.md", "effect": "allow" }
       ]
+    },
+    "project-build": {
+      "description": "Opt-in InnerSanctum development agent with all OpenCode tool permissions allowed",
+      "mode": "primary",
+      "permissions": [
+        { "action": "*", "resource": "*", "effect": "allow" }
+      ]
     }
   },
   "commands": {
