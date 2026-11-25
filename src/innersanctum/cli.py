@@ -9,7 +9,7 @@ import sys
 from .schema import LIMIT, Refused, read_text, resolve_route
 from .handover import SUCCESSOR, adopt, live_checkout
 from .writer import create, inventory, open_bundle, read_file, receipt_status, recover
-from . import clerk_archive, concept, journal, migration, timestamp_cleanup
+from . import clerk_archive, concept, journal, migration, timestamp_cleanup, version_declaration
 
 
 def parser():
@@ -92,6 +92,18 @@ def parser():
     target = video.add_mutually_exclusive_group(required=True)
     target.add_argument("--bundle", help="Explicit standalone bundle directory")
     target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
+    version = migration_actions.add_parser("version-preview", help="Preview declaring OKF 0.3")
+    version.set_defaults(action="version-preview")
+    target = version.add_mutually_exclusive_group(required=True)
+    target.add_argument("--bundle", help="Explicit standalone bundle directory")
+    target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
+    version_rehearsal = migration_actions.add_parser("version-rehearse",
+                                                     help="Declare OKF 0.3 on a disposable bundle")
+    version_rehearsal.set_defaults(action="version-rehearse")
+    version_rehearsal.add_argument("--bundle", required=True)
+    version_rehearsal.add_argument("--expect-digest", required=True)
+    version_rehearsal.add_argument("--actor", required=True)
+    version_rehearsal.add_argument("--request-id", required=True)
     stamps = migration_actions.add_parser("timestamp-preview", help="Preview format-only timestamp cleanup")
     stamps.set_defaults(action="timestamp-preview")
     target = stamps.add_mutually_exclusive_group(required=True)
@@ -110,13 +122,13 @@ def parser():
     rehearsal.add_argument("--expect-digest", required=True, help="Digest from the reviewed preview")
     rehearsal.add_argument("--actor", required=True, help="Actual editor for the audit")
     rehearsal.add_argument("--request-id", required=True, help="Stable ID for this rehearsal")
-    evidence = migration_actions.add_parser("video-status-checkpoint", aliases=["timestamp-checkpoint"],
+    evidence = migration_actions.add_parser("video-status-checkpoint", aliases=["timestamp-checkpoint", "version-checkpoint"],
                                             help="Verify an existing stopped canonical copy")
     evidence.set_defaults(action="migration-checkpoint")
     evidence.add_argument("--live-checkout", required=True)
     evidence.add_argument("--canonical-checkpoint", required=True)
     evidence.add_argument("--expect-adoption", required=True)
-    for family, name in ((f, n) for f in ("video-status", "timestamp") for n in ("apply", "recover")):
+    for family, name in ((f, n) for f in ("video-status", "timestamp", "version") for n in ("apply", "recover")):
         live = migration_actions.add_parser(f"{family}-{name}",
                                             help=f"{name.capitalize()} {family} on an adopted, stopped checkout")
         live.set_defaults(action=f"{family}-{name}")
@@ -219,6 +231,10 @@ def main(argv=None):
                     result = migration.preview_video_status(root, successor)
                 elif args.action == "timestamp-preview":
                     result = timestamp_cleanup.preview(root, successor)
+                elif args.action == "version-preview":
+                    result = version_declaration.preview(root, successor)
+                elif args.action == "version-rehearse":
+                    result = version_declaration.rehearse(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action == "timestamp-rehearse":
                     result = timestamp_cleanup.rehearse(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action == "video-status-rehearse":
@@ -233,6 +249,11 @@ def main(argv=None):
                                      writers_stopped=args.writers_stopped)
                 elif args.action in {"timestamp-apply", "timestamp-recover"}:
                     command = timestamp_cleanup.apply if args.action == "timestamp-apply" else timestamp_cleanup.recover
+                    result = command(root, args.expect_digest, args.actor, args.request_id, successor=successor,
+                                     checkpoint=args.canonical_checkpoint, checkpoint_sha256=args.checkpoint_sha256,
+                                     writers_stopped=args.writers_stopped)
+                elif args.action in {"version-apply", "version-recover"}:
+                    command = version_declaration.apply if args.action == "version-apply" else version_declaration.recover
                     result = command(root, args.expect_digest, args.actor, args.request_id, successor=successor,
                                      checkpoint=args.canonical_checkpoint, checkpoint_sha256=args.checkpoint_sha256,
                                      writers_stopped=args.writers_stopped)

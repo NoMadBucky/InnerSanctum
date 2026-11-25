@@ -34,6 +34,7 @@ RECEIPT_LIMIT = 32 * 1024
 EDITS = {"concept-update", "concept-delete", "journal-update", "journal-delete"}
 VIDEO_STATUS_OPERATION = "video-status-migration"
 TIMESTAMP_OPERATION = "timestamp-format-migration"
+VERSION_OPERATION = "okf-version-declaration"
 DELETED_ID = re.compile(r"^\* \*\*Delete\*\* \([^\r\n]+\) — bho\\:([0-9]{7}) · ", re.M)
 
 
@@ -518,6 +519,11 @@ def read_changes(root, state):
                     or data["operation"] != TIMESTAMP_OPERATION or request is None):
                 raise ValueError
             operation, directory, identity = TIMESTAMP_OPERATION, None, None
+        elif version == 9:
+            if (set(data) != {"version", "bundle", "changes", "operation", "version_review"}
+                    or data["operation"] != VERSION_OPERATION or request is None):
+                raise ValueError
+            operation, directory, identity = VERSION_OPERATION, None, None
         else:
             raise ValueError
         changes = [Change(**item) for item in data["changes"]]
@@ -542,10 +548,11 @@ def read_changes(root, state):
 
             verify_changes(changes)
             return changes, operation, directory, identity, request, None, None
-        if operation == TIMESTAMP_OPERATION:
-            from .timestamp_cleanup import verify_changes
+        if operation in {TIMESTAMP_OPERATION, VERSION_OPERATION}:
+            from . import timestamp_cleanup, version_declaration
 
-            review = data["timestamp_review"]
+            handler = timestamp_cleanup if operation == TIMESTAMP_OPERATION else version_declaration
+            review = data["timestamp_review" if operation == TIMESTAMP_OPERATION else "version_review"]
             base = {"originals", "actor", "digest"}
             if (type(review) is not dict or set(review) not in (base, base | {"checkpoint_sha256"})
                     or type(review["digest"]) is not str or not REVISION.fullmatch(review["digest"])
@@ -556,8 +563,8 @@ def read_changes(root, state):
             if "checkpoint_sha256" in review and (type(checkpoint_sha256) is not str
                                                     or not REVISION.fullmatch(checkpoint_sha256)):
                 raise ValueError
-            verify_changes(changes, review["originals"], review["actor"], review["digest"], request,
-                           checkpoint_sha256)
+            handler.verify_changes(changes, review["originals"], review["actor"], review["digest"], request,
+                                   checkpoint_sha256)
             return changes, operation, directory, identity, request, None, None
         if operation == "journal-add":
             verify_journal_changes(changes, directory)
@@ -648,6 +655,8 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
         raise Refused("Use stopped-checkpoint Video migration recovery on the adopted checkout.")
     if operation == TIMESTAMP_OPERATION and successor is not None and not maintenance:
         raise Refused("Use stopped-checkpoint timestamp recovery on the adopted checkout.")
+    if operation == VERSION_OPERATION and successor is not None and not maintenance:
+        raise Refused("Use stopped-checkpoint version recovery on the adopted checkout.")
     status = {"create": "created", "journal-add": "added"}.get(operation)
     result = describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
                       operation=operation, directory=directory, identity=identity, clerk_session=clerk_session)
@@ -726,6 +735,9 @@ def describe(changes, status, *, operation="create", directory=None, identity=No
     if operation == TIMESTAMP_OPERATION:
         return {"status": "migrated", "operation": operation, "records": len(changes) - 1,
                 "audit_revision": changes[-1].revision}
+    if operation == VERSION_OPERATION:
+        return {"status": "declared", "operation": operation, "okf_version": "0.3",
+                "index_revision": changes[0].revision, "audit_revision": changes[1].revision}
     record = changes[0]
     result = {"status": status, "path": record.path, "id": identity or f"bho:{PurePosixPath(record.path).stem}",
               "revision": record.revision, "files": [change.path for change in changes]}
@@ -742,7 +754,7 @@ def describe(changes, status, *, operation="create", directory=None, identity=No
 
 
 def freeze(root, state, changes, *, operation="create", directory=None, identity=None, request=None,
-           clerk_session=None, archive_pin=None, timestamp_review=None):
+           clerk_session=None, archive_pin=None, timestamp_review=None, version_review=None):
     data = {"version": 1, "bundle": bundle_identity(root), "changes": [vars(change) for change in changes]}
     if operation == "journal-add":
         data.update(version=2, operation=operation, directory=directory)
@@ -756,6 +768,10 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
         if request is None or timestamp_review is None:
             raise Refused("Timestamp cleanup requires a durable request and reviewed preimages.")
         data.update(version=8, operation=operation, timestamp_review=timestamp_review)
+    elif operation == VERSION_OPERATION:
+        if request is None or version_review is None:
+            raise Refused("Version declaration requires a durable request and reviewed preimages.")
+        data.update(version=9, operation=operation, version_review=version_review)
     if request is not None:
         data = {"version": 4, "plan": data, "request": request}
     if clerk_session is not None:

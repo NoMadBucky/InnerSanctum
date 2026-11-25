@@ -287,6 +287,21 @@ not change the bundle version or resolve ambiguous source dates. Generic
 with the original request ID and digests. Do not resume writers on an
 unverified or partial apply.
 
+### Personal version declaration
+
+`innersanctum migration version-preview --live-checkout "$CHECKOUT"` previews
+adding `okf_version: "0.3"` to the Personal root `index.md`. The command
+preserves existing frontmatter and the index body. Declare the version
+only after a separate conformance and consumer-compatibility review.
+`version-rehearse` accepts a standalone bundle and the same preview,
+actor, and request arguments as `timestamp-rehearse`.
+
+Use `version-checkpoint`, `version-apply`, and `version-recover` with the
+[stopped maintenance arguments](#adopted-checkout-maintenance). Apply
+changes only the root index and one audit entry; it refuses an existing
+version declaration or unresolved timestamp cleanup. Live recovery
+requires the original request and checkpoint, not `concept recover`.
+
 ## Specification source
 
 [`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the
