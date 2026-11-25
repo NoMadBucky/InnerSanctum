@@ -10,7 +10,6 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 
 * [README](README.md) - Project layout, migration status, and format requirements.
 * [Project registry](project-registry.md) - Seven sites, source checkouts, runbooks, and dated status.
-* [Personal relocation closeout](relocation-plan.md) - Completed v0.2 move, historical evidence, and separate follow-ups.
 * [Change log](log.md) - History of changes to the project.
 * [Concept creation routes](concept-routes.toml) - Explicit authoring destinations for the standalone writer.
 * [Live Create cutover](create-cutover.md) - Compatibility checks and writer handover gates.
@@ -21,3 +20,7 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 * [Markdown lint configuration](.markdownlint.json) - Repository formatting rules.
 * [Personal OKF](OKF/index.md) - Live, local-only MatterKeep Personal v0.2 bundle.
 * [Personal source files](SourceFiles/) - Live, local-only native files and source catalog.
+
+## Archive
+
+* [Personal relocation plan](archive/relocation-plan.md) - Completed v0.2 move, verification record, and separate follow-ups.

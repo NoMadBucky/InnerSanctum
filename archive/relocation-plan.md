@@ -1,12 +1,12 @@
 # Personal v0.2 relocation plan
 
-**Closed.** The v0.2 relocation and handback verification are complete.
+**Archived.** The v0.2 relocation and handback verification are complete.
 This checkout's `OKF/` and sibling `SourceFiles/` are the live Personal store.
 The move did not change Auth or publisher grants. Retain the former
 SynologyDrive tree unchanged and inactive, and keep inbound sync excluded.
 
-The later [Create cutover](create-cutover.md) transferred write authority
-to InnerSanctum. The [Notes Save rollout](notes-save-rollout.md) then
+The later [Create cutover](../create-cutover.md) transferred write authority
+to InnerSanctum. The [Notes Save rollout](../notes-save-rollout.md) then
 verified both Personal and BHO Notes Save through that writer on
 November 24, 2026. These are recorded outcomes, not a live health check.
 Do not reuse this plan to restart the former writer, release held

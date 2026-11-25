@@ -22,5 +22,5 @@
 ## Edit and verify
 
 * Use the [vendored OKF spec](OKF_SPEC/SPEC.md) for v0.3 rules. Preserve the root `index.md` frontmatter when updating its listing. Use standard Markdown links, not Obsidian wikilinks; in OKF a leading `/` means the current bundle root, not the filesystem or necessarily the Git root.
-* Run `uv run --locked pytest` for tooling changes. From the repo root run `markdownlint-cli2 AGENTS.md README.md index.md log.md relocation-plan.md OKF_SPEC/index.md`, or pass just the changed Markdown paths. Avoid a recursive glob: it can sweep in private migration copies and the upstream spec’s existing lint violations. Keep `OKF_SPEC/SPEC.md` and its license unmodified.
+* Run `uv run --locked pytest` for tooling changes. From the repo root run `markdownlint-cli2 AGENTS.md README.md index.md log.md archive/relocation-plan.md OKF_SPEC/index.md`, or pass just the changed Markdown paths. Avoid a recursive glob: it can sweep in private migration copies and the upstream spec’s existing lint violations. Keep `OKF_SPEC/SPEC.md` and its license unmodified.
 * Suggest a commit message for repository changes; do not commit.
