@@ -15,9 +15,9 @@ present before separately authorized source work.
 | Alias | URL | Checkout · component · source branch | Operating guidance |
 | --- | --- | --- | --- |
 | `landing` | <https://matterkeep.com/> | `../MatterKeep` · `Guide/public-site/` · `main` | `Guide/public-site/DEPLOYMENT.md`, Current state |
-| `barry` | <https://matterkeep.com/barry/> | `../MatterKeep` · `Personal/` · `main` | [InnerSanctum cutover](create-cutover.md) for writer authority; [Notes Save rollout](notes-save-rollout.md) for the successor service |
+| `barry` | <https://matterkeep.com/barry/> | `../MatterKeep` · `Personal/` · `main` | [InnerSanctum cutover](create-cutover.md) for writer authority; [archived Notes Save rollout](archive/notes-save-rollout.md) for successor service acceptance |
 | `litigation` | <https://matterkeep.com/litigation/> | `../MatterKeep-Litigation` · `Demo/` and `website/` · `feature/litigation-workspace` | `Demo/docker/README.md`, Current observed owner-review state; `Demo/progress.md` |
-| `bho` | <https://matterkeep.com/bho/> | `../BHO` · `website/` · `main` | `website/README.md` and root `AGENTS.md` for the live desk; [Notes Save rollout](notes-save-rollout.md) for Personal Notes Source and publisher holds |
+| `bho` | <https://matterkeep.com/bho/> | `../BHO` · `website/` · `main` | `website/README.md` and root `AGENTS.md` for the live desk; [archived Notes Save rollout](archive/notes-save-rollout.md) for Notes Source acceptance and recorded publisher holds |
 | `cove` | <https://matterkeep.com/bloniencove/> | `../MatterKeepCove` · repository root · `main` | `docs/deployment.md`; confirm current reader binding before relying on it |
 | `design` | <https://design.matterkeep.com/> | `../MatterKeep` · `Guide/design-site/` · `main` | `Guide/design-site/README.md` for component operations and release state |
 | `gallery` | <https://bloniencove.com/> | `../BlonienCove` · repository root · `main` | `README.md` and `main.py` identify the gallery; no current operator runbook found |
@@ -31,9 +31,9 @@ those files or contact the services during a hub lookup.
 | Alias | Evidence date | Recorded status and source |
 | --- | --- | --- |
 | `landing` | 2026-11-06 | `Guide/public-site/DEPLOYMENT.md` records the completed launcher path cutover for `system/com.matterkeep.public`; HTTPS apex and chooser returned 200. |
-| `barry` | 2026-11-24 | The [Notes Save rollout](notes-save-rollout.md) records the Personal Notes-only successor and a verified signed-in Save. InnerSanctum remains the only writer of Personal `OKF/`; the former writer was not restored. |
+| `barry` | 2026-11-24 | The [Notes Save rollout](archive/notes-save-rollout.md) records the Personal Notes-only successor and a verified signed-in Save. InnerSanctum remains the only writer of Personal `OKF/`; the former writer was not restored. |
 | `litigation` | 2026-11-03 | `Demo/progress.md` records a healthy demo container, anonymous HTTPS sign-in, and closed enrollment. Signed-in acceptance was not established by that check. A second linked worktree, `../MatterKeep-Litigation-open-enrollment` (`feature/demo-open-enrollment`), exists; confirm the exact worktree and reviewed revision before planning a release. |
-| `bho` | 2026-11-24 | The [Notes Save rollout](notes-save-rollout.md#bho-notes-source-activation) records a verified BHO Notes Source Save through InnerSanctum. The owner hold remained on and other publishers and Work writing stayed held. Use an isolated worktree for source changes that could trigger the live reloader. |
+| `bho` | 2026-11-24 | The [Notes Save rollout](archive/notes-save-rollout.md#bho-notes-source-activation) records a verified BHO Notes Source Save through InnerSanctum. The owner hold remained on and other publishers and Work writing stayed held. Use an isolated worktree for source changes that could trigger the live reloader. |
 | `cove` | 2026-10-23 | `../BHO/website/ACCEPTANCE.md` records an operator-reported tunnel mapping, not current service or reader acceptance. `docs/deployment.md` describes the independent read-only workspace. |
 | `design` | 2026-11-09 | `Guide/design-site/README.md` and `Guide/design-site/docs/signing-c3b-2026-11-09.md` record the running invite-only signing candidate and scoped wallet acceptance. This does not establish deployment of newer editor source. |
 | `gallery` | 2026-10-23 | `../BHO/website/ACCEPTANCE.md` records an operator-reported tunnel route and tailnet reachability on port 4304. This is not a fresh HTTPS check or authenticated gallery acceptance; supervisor and rollback procedure are unconfirmed. |

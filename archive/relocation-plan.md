@@ -6,7 +6,7 @@ The move did not change Auth or publisher grants. Retain the former
 SynologyDrive tree unchanged and inactive, and keep inbound sync excluded.
 
 The later [Create cutover](../create-cutover.md) transferred write authority
-to InnerSanctum. The [Notes Save rollout](../notes-save-rollout.md) then
+to InnerSanctum. The [Notes Save rollout](notes-save-rollout.md) then
 verified both Personal and BHO Notes Save through that writer on
 November 24, 2026. These are recorded outcomes, not a live health check.
 Do not reuse this plan to restart the former writer, release held
@@ -17,8 +17,8 @@ publishers, or restore a checkpoint over newer writes.
 - **Backup coverage:** The relocation checkpoints are same-host history.
   An independent backup of the current adopted store, including its
   private writer state and sibling `SourceFiles/`, would be a separate
-  operation. The stopped backup in the Notes Save rollout predates the
-  accepted BHO Save.
+  operation. The stopped backup in the [Notes Save rollout](notes-save-rollout.md#bho-notes-source-activation)
+  predates the accepted BHO Save.
 - **Displaced movie record:** The differing copy was retained privately
   and was not merged. Review it separately before deciding whether any
   real correction belongs in the live bundle.

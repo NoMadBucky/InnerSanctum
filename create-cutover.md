@@ -7,7 +7,7 @@ bundle. The former installed Personal runtime refused the new marker before
 opening Notes and remains retired as a writer. BHO did not take over writer
 authority.
 
-At the November 24, 2026 [Notes Save acceptance](notes-save-rollout.md#bho-notes-source-activation),
+At the November 24, 2026 [Notes Save acceptance](archive/notes-save-rollout.md#bho-notes-source-activation),
 the Personal Notes-only successor and BHO Notes Source both saved through
 InnerSanctum. Other BHO publishers and Work writing remained held. This
 records acceptance, not current service health or approval to release
@@ -174,5 +174,5 @@ Keep Clerk, managed publishers, and the Work socket disabled. Preserve
 the current Notes database and InnerSanctum receipts if rolling back the
 client; do not restore the legacy writer or overwrite current data.
 
-The [Notes Save rollout card](notes-save-rollout.md) pins the rehearsed
-candidate and separates read-only preflight from live activation.
+The [archived Notes Save rollout](archive/notes-save-rollout.md) records the
+rehearsed candidate, read-only preflight, live activation, and acceptance.

@@ -1,11 +1,17 @@
 # Notes Save rollout
 
-**2026-11-24T20:16:54Z · First BHO Notes Source Save independently verified.**
-The [project registry](project-registry.md) resolves `barry` and `bho`.
-The [cutover record](create-cutover.md) remains the source for writer authority.
-The November 24 record is not a fresh observation of either service.
+**Archived.** Personal and BHO Notes Source both passed signed-in, body-only
+Save acceptance through InnerSanctum on November 24, 2026. The first BHO
+Notes Source Save was independently verified at `2026-11-24T20:16:54Z`.
+Other BHO publishers and Work writing stayed held.
 
-## Candidate
+This is a historical record, not a live health check or authorization to
+rerun a gate. The [project registry](../project-registry.md) resolves
+`barry` and `bho`, and the [cutover record](../create-cutover.md) remains
+the source for writer authority. Current backup coverage is a
+[separate follow-up](relocation-plan.md#separate-follow-ups).
+
+## Rehearsed candidate
 
 The Personal `serve` command now skips the legacy Auth bootstrap in
 successor mode. The successor app itself requires the existing Auth
@@ -31,7 +37,7 @@ grant, browser, or HTTPS readiness. The packaged Python payloads matched
 the committed InnerSanctum and Personal sources. Temporary artifacts
 are not production selections.
 
-## Gate 1 — approved read-only preflight
+## Gate 1 — historical read-only preflight
 
 The preflight verified the adopted checkout, offline checkpoint seal,
 physical Notes identity and matching database bytes. The original Auth
@@ -45,10 +51,10 @@ on the expected loopback port and bound to the adopted checkout.
 The Personal publishers were not selected and the owner hold was active.
 The retained BHO Notes grant was active and write-capable; its journal
 contained one completed Save, one unsent draft and no uncertain submission.
-These were local checks with no service requests. The protected Personal
-launcher and inbound sync exclusion still need owner confirmation.
+These were local checks with no service requests. At this point the protected
+Personal launcher and inbound sync exclusion still awaited owner confirmation.
 
-Request approval to inspect only the adopted Personal checkout's
+The preflight approval scope was limited to the adopted Personal checkout's
 metadata and supported Note schemas and indexes; the original Auth and
 Notes state and sealed handover checkpoint; and the current Personal
 and BHO job, listener, and selector metadata. Use the expected
@@ -81,7 +87,7 @@ configuration edit is part of this gate.
   Unknown or mismatched evidence blocks activation. Do not renew an
   expired grant or clear a hold as part of the preflight.
 
-## Gates 2 and 3 — separate operational approval
+## Gates 2 and 3 — historical approval and execution record
 
 1. **Personal first.** Pin exact artifacts, configuration and service
    action. Before any start, preserve a verified checkpoint of the
@@ -125,8 +131,8 @@ The proposed launcher is attended (`KeepAlive` off). The private Terminal
 runbook rechecks the stopped backup and BHO hold, archives the original
 protected launcher, and changes only the Personal job. The backup sources
 still matched at runbook preparation. No privileged command ran, no
-service was started, and no Save was performed. The owner must run the
-reviewed Terminal step before signed-in read verification.
+service was started, and no Save was performed at that point. Signed-in read
+verification awaited the owner running the reviewed Terminal step.
 
 The owner subsequently ran the Terminal step and reported the staged
 launcher started. Independent read-back matched the selected runtime
@@ -135,7 +141,7 @@ listener. Public HTTPS sign-in responded; both Notes API paths refused
 anonymous access. The adoption marker and lack of pending canonical
 writes were verified. BHO remained running on its existing listener
 with its publisher selectors absent. An attended browser opened the
-Personal sign-in page without submitting it. No Save has been performed.
+Personal sign-in page without submitting it. No Save had been performed yet.
 
 The owner reported that a note loaded correctly after sign-in. This
 established owner-reported read acceptance before the Save.
@@ -150,7 +156,7 @@ audit log, and new receipt changed within the canonical directory; title,
 frontmatter and indexes were unchanged. No write remained pending. The
 signed-in editor reopened the exact published revision after reload.
 
-Personal remains on the Notes-only candidate. No BHO selector or hold
+Personal stayed on the Notes-only candidate. No BHO selector or hold
 changed during this Save. The stopped backup is historical, not a
 rollback target.
 
@@ -190,8 +196,8 @@ BHO operation journal and the owner hold. Public sign-in responded and
 unauthenticated requests did not reach Notes content. The existing signed-in
 BHO session opened its Notes Source listing with 123 eligible Notes. No
 individual Source editor was opened: that would create a BHO operation.
-Separate owner approval for the exact test Note and edit is still required.
-Do not use the existing unsent draft for the test.
+The exact test Note and edit still awaited separate owner approval at that
+point. The existing unsent draft was excluded from the test.
 
 The initially proposed test Note was excluded because the retained unsent
 BHO draft belonged to it. The owner approved one blank line at the end
@@ -206,12 +212,12 @@ The original-request receipt recheck produced no second publication.
 Both the acknowledged BHO Source and the reopened Personal editor
 matched the published revision.
 
-Both Notes lanes remain available under their existing owner and grant
-controls. Other BHO publishers and Work writing remain held. The stopped
-post-Personal backup predates the accepted BHO Save and must not be
-restored over it.
+At acceptance, both Notes lanes were available under their existing owner
+and grant controls. Other BHO publishers and Work writing remained held.
+The stopped post-Personal backup predates the accepted BHO Save and must
+not be restored over it.
 
-**Backout:** On any mismatch, stop and restart-inhibit only the
+**Historical backout plan:** On any mismatch, stop and restart-inhibit only the
 candidate Personal host if it was started. If the BHO Source selector
 was separately armed, take it back to its prior held setting and
 verify the dashboard's read path. Preserve the newest canonical bytes,

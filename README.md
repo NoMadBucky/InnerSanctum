@@ -43,7 +43,7 @@ checkout**. Standalone mode refuses repository paths, SynologyDrive and
 bundles carrying Personal's writer marker. Do not remove a marker to make
 a bundle eligible. The [live Create cutover](create-cutover.md) verified that
 InnerSanctum is now the sole writer of `OKF/`. The
-[November 24 Notes Save acceptance](notes-save-rollout.md) verified Personal
+[November 24 Notes Save acceptance](archive/notes-save-rollout.md) verified Personal
 and BHO Notes Save through InnerSanctum. The former Personal writer was not
 restored, and other BHO publishers and Work writing remained held.
 
