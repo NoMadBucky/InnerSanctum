@@ -33,6 +33,7 @@ REQUEST_ID = re.compile(r"[A-Za-z0-9_-]{16,128}")
 RECEIPT_LIMIT = 32 * 1024
 EDITS = {"concept-update", "concept-delete", "journal-update", "journal-delete"}
 VIDEO_STATUS_OPERATION = "video-status-migration"
+TIMESTAMP_OPERATION = "timestamp-format-migration"
 DELETED_ID = re.compile(r"^\* \*\*Delete\*\* \([^\r\n]+\) — bho\\:([0-9]{7}) · ", re.M)
 
 
@@ -512,6 +513,11 @@ def read_changes(root, state):
                     or data["operation"] != VIDEO_STATUS_OPERATION or request is None):
                 raise ValueError
             operation, directory, identity = VIDEO_STATUS_OPERATION, None, None
+        elif version == 8:
+            if (set(data) != {"version", "bundle", "changes", "operation", "timestamp_review"}
+                    or data["operation"] != TIMESTAMP_OPERATION or request is None):
+                raise ValueError
+            operation, directory, identity = TIMESTAMP_OPERATION, None, None
         else:
             raise ValueError
         changes = [Change(**item) for item in data["changes"]]
@@ -536,6 +542,17 @@ def read_changes(root, state):
 
             verify_changes(changes)
             return changes, operation, directory, identity, request, None, None
+        if operation == TIMESTAMP_OPERATION:
+            from .timestamp_cleanup import verify_changes
+
+            review = data["timestamp_review"]
+            if (type(review) is not dict or set(review) != {"originals", "actor", "digest"}
+                    or type(review["digest"]) is not str or not REVISION.fullmatch(review["digest"])
+                    or type(review["actor"]) is not str or type(review["originals"]) is not list
+                    or any(type(t) is not str or len(t.encode()) > LIMIT for t in review["originals"])):
+                raise ValueError
+            verify_changes(changes, review["originals"], review["actor"], review["digest"], request)
+            return changes, operation, directory, identity, request, None, None
         if operation == "journal-add":
             verify_journal_changes(changes, directory)
             return changes, operation, directory, identity, request, None, None
@@ -546,7 +563,7 @@ def read_changes(root, state):
                 or index.before is None or audit.before is None):
             raise ValueError
         return changes, operation, directory, identity, request, None, None
-    except (Refused, OSError, ValueError, TypeError, KeyError):
+    except (Refused, OSError, ValueError, TypeError, KeyError, RecursionError):
         raise Refused("Pending write journal is invalid; retain it for inspection.") from None
 
 
@@ -623,6 +640,8 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
             request=None, clerk_session=None, successor=None, archive_pin=None, maintenance=False):
     if operation == VIDEO_STATUS_OPERATION and successor is not None and not maintenance:
         raise Refused("Use stopped-checkpoint Video migration recovery on the adopted checkout.")
+    if operation == TIMESTAMP_OPERATION and successor is not None:
+        raise Refused("Timestamp cleanup apply and recovery are available only on disposable bundles.")
     status = {"create": "created", "journal-add": "added"}.get(operation)
     result = describe(changes, status or ("deleted" if operation.endswith("-delete") else "updated"),
                       operation=operation, directory=directory, identity=identity, clerk_session=clerk_session)
@@ -698,6 +717,9 @@ def describe(changes, status, *, operation="create", directory=None, identity=No
     if operation == VIDEO_STATUS_OPERATION:
         return {"status": "migrated", "operation": operation, "renames": len(changes) - 2,
                 "index_revision": changes[-2].revision, "audit_revision": changes[-1].revision}
+    if operation == TIMESTAMP_OPERATION:
+        return {"status": "migrated", "operation": operation, "records": len(changes) - 1,
+                "audit_revision": changes[-1].revision}
     record = changes[0]
     result = {"status": status, "path": record.path, "id": identity or f"bho:{PurePosixPath(record.path).stem}",
               "revision": record.revision, "files": [change.path for change in changes]}
@@ -714,7 +736,7 @@ def describe(changes, status, *, operation="create", directory=None, identity=No
 
 
 def freeze(root, state, changes, *, operation="create", directory=None, identity=None, request=None,
-           clerk_session=None, archive_pin=None):
+           clerk_session=None, archive_pin=None, timestamp_review=None):
     data = {"version": 1, "bundle": bundle_identity(root), "changes": [vars(change) for change in changes]}
     if operation == "journal-add":
         data.update(version=2, operation=operation, directory=directory)
@@ -724,6 +746,10 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
         if request is None:
             raise Refused("The Video migration requires a durable request ID.")
         data.update(version=7, operation=operation)
+    elif operation == TIMESTAMP_OPERATION:
+        if request is None or timestamp_review is None:
+            raise Refused("Timestamp cleanup requires a durable request and reviewed preimages.")
+        data.update(version=8, operation=operation, timestamp_review=timestamp_review)
     if request is not None:
         data = {"version": 4, "plan": data, "request": request}
     if clerk_session is not None:

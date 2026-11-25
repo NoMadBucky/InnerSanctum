@@ -97,6 +97,13 @@ def parser():
     target = stamps.add_mutually_exclusive_group(required=True)
     target.add_argument("--bundle", help="Explicit standalone bundle directory")
     target.add_argument("--live-checkout", help="Exact adopted InnerSanctum checkout")
+    stamps_rehearsal = migration_actions.add_parser("timestamp-rehearse",
+                                                   help="Apply reviewed timestamp cleanup on a disposable bundle")
+    stamps_rehearsal.set_defaults(action="timestamp-rehearse")
+    stamps_rehearsal.add_argument("--bundle", required=True)
+    stamps_rehearsal.add_argument("--expect-digest", required=True)
+    stamps_rehearsal.add_argument("--actor", required=True)
+    stamps_rehearsal.add_argument("--request-id", required=True)
     rehearsal = migration_actions.add_parser("video-status-rehearse", help="Apply the reviewed rename on a disposable bundle")
     rehearsal.set_defaults(action="video-status-rehearse")
     rehearsal.add_argument("--bundle", required=True, help="Explicit standalone bundle directory")
@@ -211,6 +218,8 @@ def main(argv=None):
                     result = migration.preview_video_status(root, successor)
                 elif args.action == "timestamp-preview":
                     result = timestamp_cleanup.preview(root, successor)
+                elif args.action == "timestamp-rehearse":
+                    result = timestamp_cleanup.rehearse(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action == "video-status-rehearse":
                     result = migration.apply_video_status(root, args.expect_digest, args.actor, args.request_id)
                 elif args.action == "video-status-checkpoint":

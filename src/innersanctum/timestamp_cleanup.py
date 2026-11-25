@@ -1,6 +1,7 @@
-"""Preview format-only timestamp changes without rewriting YAML or Markdown."""
+"""Plan and rehearse format-only timestamp changes."""
 
 from collections import Counter
+from datetime import datetime
 import re
 
 from ruamel.yaml.error import YAMLError
@@ -96,12 +97,14 @@ def plan_record(text):
     return text[:start] + replacement + text[start + len(fm):], counts
 
 
-def preview(root, successor=None):
-    writer.check_authority(root, successor)
+AUDIT_ACTION = "Timestamp formatting"
+
+
+def plan(root):
     writer.require_idle(root)
     counts = Counter()
-    edits, blockers = [], []
-    for relative, path in writer.visible_files(root):
+    edits, changes, originals, blockers = [], [], [], []
+    for relative, path in sorted(writer.visible_files(root)):
         if not writer.concept_path(relative):
             continue
         original = read_text(writer.read_file(path))
@@ -113,10 +116,90 @@ def preview(root, successor=None):
             blockers.append({"path": relative, "reason": str(error)})
             continue
         if replacement != original:
-            edits.append({"path": relative, "before": writer.digest(original.encode()),
-                          "after": writer.digest(replacement.encode()), "changes": dict(local)})
+            change = writer.Change(relative, writer.digest(original.encode()), replacement)
+            edits.append({"path": relative, "before": change.before, "after": change.revision, "changes": dict(local)})
+            changes.append(change)
+            originals.append(original)
             counts.update(local)
+    original_log = read_text(writer.read_file(writer.safe_target(root, "log.md")))
     writer.require_idle(root)
     result = {"status": "blocked" if blockers else "preview", "records": edits, "blockers": blockers,
+              "audit_before": writer.digest(original_log.encode()),
               "provenance_timestamps": counts["provenance_timestamps"], "explicit_tags": counts["explicit_tags"]}
-    return {**result, "digest": writer.digest(writer.json_bytes(result))}
+    return {**result, "digest": writer.digest(writer.json_bytes(result))}, changes, [*originals, original_log]
+
+
+def preview(root, successor=None):
+    writer.check_authority(root, successor)
+    return plan(root)[0]
+
+
+def audit_update(original, count, actor, when):
+    return writer.edit_log(original, "index.md", f"{count} concept records", actor, when, action=AUDIT_ACTION)
+
+
+def verify_changes(changes, originals, actor, expected, request):
+    """Check frozen scope and reproduce each edit from its retained original."""
+    writer.validate_actor(actor)
+    if (len(changes) < 2 or type(originals) is not list or len(changes) != len(originals)
+            or changes[-1].path != "log.md" or any(type(x) is not str for x in originals)):
+        raise Refused("Invalid pending timestamp cleanup.")
+    paths = [c.path for c in changes[:-1]]
+    if paths != sorted(set(paths)) or any(not writer.concept_path(p) for p in paths):
+        raise Refused("Invalid pending timestamp cleanup paths.")
+    if any(c.before != writer.digest(before.encode()) or c.after is None or c.after == before
+           for c, before in zip(changes, originals)):
+        raise Refused("Invalid timestamp cleanup before or after revisions.")
+    edits, total = [], Counter()
+    for c, before in zip(changes[:-1], originals[:-1]):
+        if not existing_fields(before, {"type"}).get("type"):
+            raise Refused("Only typed concepts can be formatted.")
+        replacement, counts = plan_record(before)
+        if c.after != replacement:
+            raise Refused("The pending concept differs from the format-only change.")
+        total.update(counts)
+        edits.append({"path": c.path, "before": c.before, "after": c.revision, "changes": dict(counts)})
+    result = {"status": "preview", "records": edits, "blockers": [], "audit_before": changes[-1].before,
+              "provenance_timestamps": total["provenance_timestamps"], "explicit_tags": total["explicit_tags"]}
+    if (expected != writer.digest(writer.json_bytes(result))
+            or request != writer.write_request(request[0], writer.TIMESTAMP_OPERATION, expected, actor)):
+        raise Refused("Pending timestamp cleanup differs from the approved preview.")
+    added = (Counter(changes[-1].after.splitlines()) - Counter(originals[-1].splitlines())).elements()
+    stamps = [match[1] for line in added
+              if (match := re.match(r"^\* \*\*Timestamp formatting\*\* \(([^)]+)\) — ", line))]
+    if len(stamps) != 1:
+        raise Refused("Missing the original timestamp cleanup audit entry.")
+    try:
+        when = datetime.fromisoformat(stamps[0])
+    except ValueError:
+        raise Refused("Invalid timestamp cleanup audit time.") from None
+    if when.utcoffset() is None or changes[-1].after != audit_update(originals[-1], len(edits), actor, when):
+        raise Refused("Pending timestamp cleanup changed unrelated audit text.")
+
+
+def rehearse(root, expected, actor, request_id):
+    writer.check_authority(root)
+    if type(expected) is not str or not writer.REVISION.fullmatch(expected):
+        raise Refused("Provide the reviewed preview digest.")
+    writer.validate_actor(actor)
+    operation = writer.TIMESTAMP_OPERATION
+    request = writer.write_request(request_id, operation, expected, actor)
+    if request is None:
+        raise Refused("Timestamp cleanup requires a durable request ID.")
+    with writer.locked(root) as state:
+        writer.require_idle(root)
+        if (receipt := writer.replay(root, state, request)) is not None:
+            return receipt
+        result, changes, originals = plan(root)
+        if result["digest"] != expected:
+            raise Refused("The timestamp cleanup preview changed; review a fresh preview.")
+        if result["blockers"] or not changes:
+            raise Refused("Timestamp cleanup requires a nonempty preview without blockers.")
+        audit = audit_update(originals[-1], len(changes), actor, datetime.now().astimezone())
+        changes.append(writer.Change("log.md", result["audit_before"], audit))
+        for c in changes:
+            read_text(c.after.encode())
+        verify_changes(changes, originals, actor, expected, request)
+        writer.freeze(root, state, changes, operation=operation, request=request,
+                      timestamp_review={"actor": actor, "digest": expected, "originals": originals})
+        return writer.publish(root, state, changes, operation=operation, request=request)

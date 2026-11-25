@@ -270,6 +270,14 @@ legacy `!!timestamp` fields. Use `--live-checkout "$CHECKOUT"` for an
 authorized read-only audit. The preview checks that the parsed YAML values
 and types stay the same; it does not rewrite source dates or apply changes.
 
+Rehearse with `migration timestamp-rehearse --bundle "$DISPOSABLE_OKF"
+--expect-digest "$PREVIEW_DIGEST" --actor "process:rehearsal"
+--request-id "$REQUEST_ID"`. The rehearsal binds the digest to the current
+audit log, changes only the planned records, and adds one audit entry.
+After interruption, use `concept recover` on the same disposable bundle
+to finish the original frozen request. Live apply and recovery are not
+enabled for timestamp cleanup.
+
 ## Specification source
 
 [`OKF_SPEC/SPEC.md`](OKF_SPEC/SPEC.md) is an unmodified copy of the
