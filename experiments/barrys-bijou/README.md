@@ -2,7 +2,8 @@
 
 **Status: proposed experiment, 2026-11-25.** The first prototype ranks watched
 films and proves a local-first round trip into a disposable OKF bundle.
-No app has been built and no live access or writes are approved.
+The [read-only Personal catalog review](design-decisions.md#personal-catalog-review)
+is complete. The app has not been built; live writes are not approved.
 
 Barry’s Bijou is a SwiftUI **movie journal for iPhone and Mac**, using the
 Personal OKF bundle as its film library. It opens to **Watched**, most recently
@@ -20,15 +21,16 @@ not just color, to identify the selected slot and its neighbors.
 
 ## Watched list and film detail
 
-* Read Personal `Video` concepts from `Resources/videos/`. Show the poster,
-  title, and release year where available. Show the recorded metadata,
-  notes, and source references in film detail. Use a placeholder when artwork
-  is missing or offline. Check how Personal references posters before
-  choosing a loading and caching policy; don’t assume the images are local.
-* Include only `video_type: Movie` concepts with a recorded watched date or
-  `video_status: watched`. Films marked watched without a date sort last,
-  rather than getting a guessed date. Keep `video_status` separate from OKF
-  lifecycle `status`.
+* Read Personal `Video` concepts from `Resources/videos/`. Show the title
+  and the year from `release_date` when present. Film detail shows the
+  Markdown body, including notes, and the recorded source references.
+* Use the `poster` frontmatter URL. The Mac caches thumbnails for the
+  Watched list and sends them to the phone during home sync. A missing or
+  unavailable image gets a placeholder without delaying browsing or ranking.
+* Include only `video_type: Movie` concepts with a `date_watched` or
+  `video_status: watched`. Sort by the recorded calendar day, newest first;
+  watched films without a date go last. Neither `in_library` nor OKF
+  lifecycle `status` determines whether a movie has been watched.
 * Keep ranked films in the same Watched list and label them **Ranked**.
   There is no standalone Ranked view in the first prototype; the ranked
   posters appear when choosing a placement. Use the concept’s bundle-relative
@@ -93,10 +95,11 @@ ranking changes in private device storage. Commit a placement and its
 pending sync state together. Provide a readable Markdown export as a
 fallback, not a required step for routine use.
 
-* **Bundle representation:** one dedicated OKF concept holds a numbered list
+* **Bundle representation:** one new `Film Ranking` concept holds a numbered list
   of links to the ranked movies. It is the source of truth for the order and
-  membership recorded in the bundle. Film frontmatter has a Personal
-  `ranked` boolean as a derived convenience: set `true` on first placement.
+  membership recorded in the bundle. On the disposable fixture, extend the
+  `Video` declaration with an optional `ranked` boolean. Set it to `true`
+  on first placement as a convenience for other readers.
   Interpret an absent flag as false for unranked films; don’t backfill the
   whole library. A rerank doesn’t change the flag or the watched date. On the
   device, derive the badge from the local list so it responds immediately.
@@ -137,11 +140,11 @@ Live activation is a separate operational decision.
    back the exact order and membership flags. Test a lost acknowledgment
    without a duplicate write, a newer bundle ranking without lost local work,
    and an unavailable Mac without blocked ranking.
-3. Use a separately approved private Personal snapshot to verify that the
-   real watched films, posters, and details are usable. Keep mutation tests
-   on disposable data; enabling automatic sync to live Personal needs
-   separate operational approval.
+3. Once the app exists, check film detail and offline poster rendering on
+   a separately approved private Personal snapshot. The catalog review
+   verified references, not image availability. Keep mutation tests on
+   disposable data; live sync needs separate operational approval.
 
-Full Xcode is needed for the iPhone build. The first phone test can use free
-Personal Team signing. For any eventual live integration,
+The first device targets are iOS 27 and macOS 27. The first phone test can
+use free Personal Team signing. For any eventual live integration,
 [InnerSanctum remains the sole OKF writer](../../create-cutover.md).
