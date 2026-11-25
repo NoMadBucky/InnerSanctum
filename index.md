@@ -22,6 +22,10 @@ description: A local-first personal knowledge bundle for collecting notes and fi
 * [Personal OKF](OKF/index.md) - Live, local-only MatterKeep Personal v0.3 bundle.
 * [Personal source files](SourceFiles/) - Live, local-only native files and source catalog.
 
+## Experiments
+
+* [Barry’s Bijou](experiments/barrys-bijou/README.md) - Local-first SwiftUI experiment for ranking watched Personal films.
+
 ## Archive
 
 * [Personal relocation plan](archive/relocation-plan.md) - Completed v0.2 move, verification record, and separate follow-ups.
