@@ -1,6 +1,6 @@
-# Periodical: A Snap History Game
+# Milestones: A Snap History Game
 
-**Can you find your place in history?**
+**Find your place in history.**
 
 Open `Chronology.xcodeproj`, select the Chronology scheme and run on a portrait
 iPhone (iOS 18 or later). Choose New Game to inspect the dated opening card,
@@ -23,21 +23,20 @@ shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
-Before the welcome screen, a separate 19-second newsreel plays once per app
+Before the welcome screen, a separate 18.83-second newsreel plays once per app
 launch. Skip Intro opens the menu immediately. Read Rules, VoiceOver and
-Reduce Motion provide a text version. The film includes original narration,
-burned-in instructions and excerpts from these public-domain archival films:
+Reduce Motion provide a text introduction to the rules. The Blonien Productions
+newsreel pairs its narrated question with these public-domain sources:
 
-- [Arrival of a Train at La Ciotat](https://commons.wikimedia.org/wiki/File:Arrival_of_a_Train_at_La_Ciotat_(The_Lumi%C3%A8re_Brothers,_1895).webm),
-  Lumière brothers (`train.webm`).
 - [San Francisco earthquake aftermath](https://commons.wikimedia.org/wiki/File:San_Francisco_Earthquake_aftermath,_1906.ogv),
   Market Street after the 1906 earthquake, Prelinger Archives (`quake.ogv`).
-- [Apollo 11: first steps on the Moon](https://commons.wikimedia.org/wiki/File:Apollo_11_Landing_-_first_steps_on_the_moon.ogv),
-  NASA, 1969 (`moon.ogv`).
+- [The first Wright Flyer flight](https://commons.wikimedia.org/wiki/File:Wrightflyer.jpg),
+  John T. Daniels’s photograph of Orville Wright piloting the Flyer (`Wrightflyer.jpg`).
 
-The announcer is Kokoro's British-English George (`bm_george`, `en-gb`).
+The announcer is Kokoro's British-English male voice Fable (`bm_fable`, `en-gb`).
+Shots follow the recorded phrases without stretching or accelerating the voice.
 Speech is rendered when building the film; the app only plays the audio track.
-To rebuild on macOS, place the three footage files named above together with
+To rebuild on macOS, place the two source files named above together with
 `kokoro-v1.0.int8.onnx` and `voices-v1.0.bin` from the
 [Kokoro ONNX model release](https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0).
 Install FFmpeg and Python packages `kokoro-onnx==0.4.9`, `soundfile`, and

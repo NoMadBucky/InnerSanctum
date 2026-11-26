@@ -102,7 +102,7 @@ private struct GameView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Periodical").font(.system(.largeTitle, design: .serif).bold())
+            Text("Milestones").font(.system(.largeTitle, design: .serif).bold())
             if !hasDrawn && round.turn == 1 {
                 Spacer()
                 Text("Your starting card").font(.headline)

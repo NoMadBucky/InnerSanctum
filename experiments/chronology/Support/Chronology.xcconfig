@@ -1,5 +1,5 @@
 PRODUCT_NAME = Chronology
-INFOPLIST_KEY_CFBundleDisplayName = Periodical
+INFOPLIST_KEY_CFBundleDisplayName = Milestones
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 PRODUCT_BUNDLE_IDENTIFIER = org.innersanctum.chronology
 SUPPORTED_PLATFORMS = iphoneos iphonesimulator

@@ -10,10 +10,10 @@ struct WelcomeView: View {
         VStack(spacing: 18) {
             Spacer()
             VStack(spacing: 4) {
-                Text("Periodical").font(.system(.largeTitle, design: .serif).bold())
+                Text("Milestones").font(.system(.largeTitle, design: .serif).bold())
                 Text("A Snap History Game").font(.subheadline).foregroundStyle(.secondary)
             }.accessibilityElement(children: .combine)
-            Text("Can you find your place in history?").bold().multilineTextAlignment(.center)
+            Text("Find your place in history.").bold().multilineTextAlignment(.center)
             Spacer()
             ModePicker(mode: $mode)
             Text(mode == .standard ? "Ten guesses to build your timeline." :
@@ -36,7 +36,7 @@ struct WelcomeView: View {
                 List {
                     Text("Diamond Sutra frontispiece · International Dunhuang Project\nThe Great Wave · Katsushika Hokusai\nFirst flight · John T. Daniels\nEarthrise · William Anders / NASA")
                     Link("Mandela voting in 1994 · Paul Weinberg", destination: URL(string: "https://commons.wikimedia.org/wiki/File:Mandela_voting_in_1994.jpg")!)
-                    Text("Images cropped, panned and crossfaded for Periodical.")
+                    Text("Images cropped, panned and crossfaded for Milestones.")
                     Link("Montage license: CC BY-SA 3.0", destination: URL(string: "https://creativecommons.org/licenses/by-sa/3.0/")!)
                 }.navigationTitle("Montage credits")
                     .toolbar { Button("Done") { credits = false } }

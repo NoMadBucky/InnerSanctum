@@ -15,7 +15,7 @@ struct StartupNewsreel: View {
             if reading {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Periodical Newsreel").font(.system(.largeTitle, design: .serif).bold())
+                        Text("Milestones Newsreel").font(.system(.largeTitle, design: .serif).bold())
                         Text("Begin with a dated event. Draw a card with its date hidden.")
                         Text("Slide the timeline to a gap, then tap Place Here.")
                         Text("A correct guess scores one point and keeps the card. A miss reveals the correct gap and discards the card.")
@@ -46,7 +46,7 @@ struct StartupNewsreel: View {
         .environment(\.colorScheme, .dark)
         .task {
             guard !reading else { return }
-            guard let url = Bundle.main.url(forResource: "PeriodicalNewsreel", withExtension: "mp4") else {
+            guard let url = Bundle.main.url(forResource: "MilestonesNewsreel", withExtension: "mp4") else {
                 showRules = true
                 return
             }
