@@ -36,6 +36,21 @@ publication, preserved the existing catalog entry and refused a stale catalog
 and a replaced source directory. The native upload rehearsal uses the practice
 adapter; physical-device Personal filing and live restore are not yet verified.
 
+### External restore rehearsal · November 26, 2026
+
+The two live trees were copied to a private checkpoint outside the checkout
+while holding the adopted OKF marker lock. No OKF publication was pending.
+Source and checkpoint manifests matched before releasing the lock. A separate
+restore from that checkpoint matched the manifests for 1,161 OKF files and
+95 source-store files, including hidden writer state. All 91 restored catalog
+entries resolved to files with the recorded sizes and SHA-256 digests.
+The checkpoint, restored copies, manifest and receipt are private on the Mac.
+
+This was a lock-coordinated capture and an external restore, not an in-place
+restore, service stop or independent off-Mac backup. Recheck the baseline
+and drain writers before an approved installation; repeat the checkpoint if
+anything has changed.
+
 `adapter/prepare_reactions.py` is a stopped, separately authorized operator
 step. It checks the exact checkout, expected OKF adoption and approved catalog
 SHA-256, creates the private `SourceFiles/.innersanctum-sources/` state and
