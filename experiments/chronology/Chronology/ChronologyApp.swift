@@ -29,6 +29,10 @@ private struct GameLoader: View {
                     else { throw CocoaError(.fileNoSuchFile) }
                     let deck = try JSONDecoder().decode([Event].self, from: Data(contentsOf: url))
                     #if DEBUG
+                    if ProcessInfo.processInfo.arguments.contains("-firstGuessFixture") {
+                        round = try Round(deck: deck.sorted { $0.year > $1.year }, shuffle: false)
+                        return
+                    }
                     if ProcessInfo.processInfo.arguments.contains("-lastGuessFixture") {
                         let sorted = deck.sorted { $0.year < $1.year }
                         // Make the final draw earlier than all ten dated table cards.
@@ -90,8 +94,12 @@ private struct GameView: View {
                 } else {
                     Button(round.turn == Round.guesses ? "See Results" : "Draw Next") {
                         showingAnswer = false
+                        scrolling = false
                         round.advance()
-                    }.buttonStyle(.borderedProminent).disabled(!showingAnswer || scrolling)
+                    }.buttonStyle(.borderedProminent)
+                        // Only a miss needs the brief "Your guess" preview.
+                        // Advancing a scored turn never depends on a scroll-idle callback.
+                        .disabled(round.reveal?.correct == false && !showingAnswer)
                 }
             } else {
                 Spacer()
@@ -104,8 +112,8 @@ private struct GameView: View {
         .padding(.vertical)
         .sheet(item: $reading) { EventReader(event: $0) }
         .task(id: round.reveal != nil) {
-            guard let reveal = round.reveal else { return }
-            if !reveal.correct && !reduceMotion {
+            guard let reveal = round.reveal, !reveal.correct else { return }
+            if !reduceMotion {
                 do { try await Task.sleep(for: .milliseconds(650)) } catch { return }
             }
             withAnimation(motion) {
