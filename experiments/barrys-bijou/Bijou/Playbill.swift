@@ -10,7 +10,8 @@ enum MarqueeFinish {
 
 /// Use the lobby lettering on both the playbill and the theatre in the reel.
 enum BijouWordmark {
-    static let text = Text("Bijou").font(.system(.largeTitle, design: .serif).weight(.medium))
+    static let font = Font.system(.largeTitle, design: .serif).weight(.medium)
+    static let text = Text("Bijou").font(font)
 }
 
 /// A brass picture rail with two setbacks at each corner.

@@ -1,4 +1,22 @@
+import AVFoundation
 import SwiftUI
+
+@MainActor
+private final class ReelAccompaniment: ObservableObject {
+    private var player: AVPlayer?
+
+    func play(from elapsed: TimeInterval) {
+        guard let url = Bundle.main.url(forResource: "ReelPiano", withExtension: "m4a") else { return }
+        let p = player ?? AVPlayer(url: url)
+        player = p
+        p.volume = 0.85
+        p.automaticallyWaitsToMinimizeStalling = false
+        p.seek(to: CMTime(seconds: elapsed, preferredTimescale: 44100), toleranceBefore: .zero, toleranceAfter: .zero)
+        p.play()
+    }
+
+    func stop() { player?.pause(); player = nil }
+}
 
 /// An original silent short in a 4:3 academy frame.
 struct OpeningReel: View {
@@ -6,6 +24,8 @@ struct OpeningReel: View {
     @Environment(\.scenePhase) private var phase
     @State private var started: Date?
     @State private var played: TimeInterval = 0
+    @StateObject private var piano = ReelAccompaniment()
+    @AppStorage("openingReelMuted") private var muted = false
     private let length = 12.0
 
     var body: some View {
@@ -30,21 +50,34 @@ struct OpeningReel: View {
             .accessibilityHidden(true)
             VStack {
                 Spacer()
-                Button("Skip intro", action: finish)
-                    .buttonStyle(.bordered).foregroundStyle(.white)
-                    .keyboardShortcut(.cancelAction).accessibilityIdentifier("skip-intro")
+                HStack {
+                    Button { muted.toggle() } label: {
+                        Label(muted ? "Unmute piano" : "Mute piano",
+                              systemImage: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").labelStyle(.iconOnly)
+                    }
+                    Button("Skip intro") { piano.stop(); finish() }
+                        .keyboardShortcut(.cancelAction).accessibilityIdentifier("skip-intro")
+                }.buttonStyle(.bordered).foregroundStyle(.white)
             }.padding(20)
         }
         .task(id: phase) {
             guard phase == .active else { return }
             let start = Date()
             started = start
+            if !muted { piano.play(from: played) }
             do { try await Task.sleep(for: .seconds(max(0, length - played))) }
             catch { return }
-            finish()
+            piano.stop(); finish()
+        }
+        .onDisappear { piano.stop() }
+        .onChange(of: muted) { _, silent in
+            if !silent, phase == .active, let started {
+                piano.play(from: played + max(0, Date().timeIntervalSince(started)))
+            } else { piano.stop() }
         }
         .onChange(of: phase) { _, next in
             if next != .active, let start = started {
+                piano.stop()
                 played += max(0, Date().timeIntervalSince(start)); started = nil
             }
         }
@@ -102,15 +135,18 @@ struct OpeningReel: View {
                    with: .color(Color(white: 0.35)), lineWidth: 1.5)
         var sign = set
         sign.translateBy(x: 340, y: 225)
-        sign.scaleBy(x: 1.3, y: 1.3)
-        sign.draw(BijouWordmark.text.foregroundStyle(Color(white: 0.14)), at: .zero)
+        let name = sign.resolve(Text(verbatim: "Bijou Theatre").font(BijouWordmark.font).foregroundStyle(Color(white: 0.14)))
+        let size = name.measure(in: CGSize(width: 1000, height: 200))
+        let scale = min(1.25, 213 / max(1, size.width), 47 / max(1, size.height))
+        sign.scaleBy(x: scale, y: scale)
+        sign.draw(name, at: .zero)
         for x in [230.0, 300.0, 370.0] {
             let lamp = CGPoint(x: x + 40, y: 265)
             set.fill(Path(ellipseIn: CGRect(x: lamp.x-8, y: lamp.y-8, width: 16, height: 16)),
                      with: .radialGradient(Gradient(colors: [.white, .clear]), center: lamp, startRadius: 2, endRadius: 8))
         }
-        for x in [218.0, 420.0] {
-            box(set, x, 224, 42, 2, 0.45); box(set, x+6, 230, 30, 1, 0.45)
+        for x in [204.0, 455.0] {
+            box(set, x, 224, 21, 2, 0.45); box(set, x+3, 230, 15, 1, 0.45)
         }
         box(c, 0, 371, 644, 111, 0.33)
         box(c, 0, 417, 644, 2, 0.62); box(c, 0, 430, 644, 2, 0.52)

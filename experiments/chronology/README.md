@@ -23,7 +23,7 @@ shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
-Before the welcome screen, a separate 18.83-second newsreel plays once per app
+Before the welcome screen, a separate 19.96-second newsreel plays once per app
 launch. Skip Intro opens the menu immediately. Read Rules, VoiceOver and
 Reduce Motion provide a text introduction to the rules. The Blonien Productions
 newsreel pairs its narrated question with these public-domain sources:
@@ -33,8 +33,12 @@ newsreel pairs its narrated question with these public-domain sources:
 - [The first Wright Flyer flight](https://commons.wikimedia.org/wiki/File:Wrightflyer.jpg),
   John T. Daniels’s photograph of Orville Wright piloting the Flyer (`Wrightflyer.jpg`).
 
-The announcer is Kokoro's British-English male voice Fable (`bm_fable`, `en-gb`).
+The announcer uses Kokoro's British male voice Lewis (`bm_lewis`) with British
+phonemes for “Blah-nee-in,” second-syllable stress on *presents*, and a
+midrange lift for the vintage newsreel sound.
 Shots follow the recorded phrases without stretching or accelerating the voice.
+An original fanfare leads in before the announcer and ducks beneath speech.
+The answer card compares the Wright flight (1903) with the earthquake (1906).
 Speech is rendered when building the film; the app only plays the audio track.
 To rebuild on macOS, place the two source files named above together with
 `kokoro-v1.0.int8.onnx` and `voices-v1.0.bin` from the

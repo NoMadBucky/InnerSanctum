@@ -11,20 +11,17 @@ from tempfile import TemporaryDirectory
 from PIL import Image, ImageDraw, ImageFont
 from kokoro_onnx import Kokoro
 import soundfile as sf
+import numpy as np
 
 root = Path(__file__).resolve().parents[1]
 sources = Path(sys.argv[1]).resolve()
 narrator = Kokoro(str(sources / "kokoro-v1.0.int8.onnx"), str(sources / "voices-v1.0.bin"))
 output = root / "Chronology/MilestonesNewsreel.mp4"
 chapters = [
-    (None, "", "It’s all about timing.", ["Which historical moment came first?"],
-     "Blonien Productions presents: Milestones. It’s all about timing. Which historical moment came first?"),
-    ("quake.ogv", "SAN FRANCISCO  /  MARKET STREET", "San Francisco’s great earthquake…", [],
-     "San Francisco’s great earthquake…"),
-    ("Wrightflyer.jpg", "KITTY HAWK  /  THE WRIGHT FLYER", "Or the first powered flight", ["by the Wright brothers?"],
-     "or the first powered flight by the Wright brothers?"),
-    (None, "", "Find your place in history.", ["The fate of our timeline is in your hands.", "Play Milestones now!"],
-     "The fate of our timeline is in your hands. Find your place in history. Play Milestones now!"),
+    (None, "", "It’s all about timing.", []),
+    ("quake.ogv", "SAN FRANCISCO  /  MARKET STREET", "Which moment came first —", ["San Francisco’s great earthquake…"]),
+    ("Wrightflyer.jpg", "KITTY HAWK  /  THE WRIGHT FLYER", "OR the first powered flight", ["by the Wright brothers?"]),
+    (None, "", "Find your place in history.", ["The fate of our timeline is in your hands.", "Play Milestones now!"]),
 ]
 
 
@@ -32,9 +29,83 @@ def run(*args):
     subprocess.run(args, check=True)
 
 
+def speak(text, speed, credit=False, contrast=False):
+    phones = narrator.tokenizer.phonemize(text, "en-gb")
+    if credit:
+        # BLAH-nee-in; pre-ZENTS (verb). Keep the printed title spelled normally.
+        _, colon, title = phones.partition(":")
+        assert colon
+        phones = "blˈɑːniːɪn pɹədˈʌkʃənz pɹɪzˈɛnts: " + title.lstrip()
+    if contrast:
+        # Use the full, stressed British vowel instead of reducing the conjunction.
+        phones = "ˈɔː " + phones.split(" ", 1)[1]
+    samples, rate = narrator.create(phones, voice="bm_lewis", is_phonemes=True, speed=speed)
+    # Keep consonant tails; use the explicit rests below rather than stacking
+    # them on top of the synthesizer's variable trailing silence.
+    active = np.flatnonzero(np.abs(samples) > 0.002)
+    if active.size:
+        samples = samples[max(0, active[0]-int(.035*rate)):active[-1]+int(.09*rate)]
+    return samples, rate
+
+
+credit, rate = speak("Blonien Productions presents: Milestones — A Snap History Game.", 1.14, credit=True)
+timing, _ = speak("It’s all about timing.", 1.04)
+first, _ = speak("Which moment came first — San Francisco’s great earthquake…", 1.09)
+alternative, _ = speak("Or the first powered flight by the Wright brothers?", 1.06, contrast=True)
+closing, _ = speak("The fate of our timeline is in your hands. Find your place in history. Play Milestones now!", 1.16)
+
+silence = lambda seconds: np.zeros(round(seconds * rate), dtype=np.float32)
+takes = [
+    np.concatenate((silence(0.55), credit, silence(0.35), timing, silence(0.80))),
+    np.concatenate((first, silence(0.18))),
+    np.concatenate((alternative, silence(0.50))), closing,
+]
+
+
+def overture(seconds, reveal):
+    """Original miniature fanfare: horn call, pulsing low strings and timpani."""
+    music = np.zeros(round(seconds * rate))
+
+    def note(at, duration, midi, gain, instrument):
+        pos = round(at * rate)
+        n = min(round(duration * rate), len(music) - pos)
+        if n <= 0:
+            return
+        t = np.arange(n) / rate
+        freq = 440 * 2 ** ((midi - 69) / 12)
+        phase = 2 * np.pi * freq * t
+        attack = np.minimum(t / 0.065, 1)
+        release = np.clip((duration - t) / 0.15, 0, 1)
+        if instrument == "drum":
+            tone = np.sin(phase + 7 * (1 - np.exp(-18*t))) * np.exp(-5*t)
+        elif instrument == "horn":
+            tone = sum(np.sin(h*phase) / h**1.15 for h in range(1, 8))
+        else:
+            tone = sum(np.sin(h*phase*detune) / h**1.6
+                       for h in range(1, 5) for detune in (0.998, 1.002)) / 2
+        music[pos:pos+n] += gain * tone * attack * release
+
+    # A rising open fifth, an unsettled question, then a major resolution.
+    for at, pitch, length in [(0, 50, .25), (.24, 57, .32), (.54, 62, 1.05),
+                              (reveal, 57, .36), (reveal+.36, 62, .55),
+                              (reveal+.91, 66, 1.3), (seconds-1.4, 62, 1.3)]:
+        note(at, length, pitch, .115, "horn")
+    for start, end, chord in [(0, reveal*.5, (38, 53, 57)),
+                              (reveal*.5, reveal, (33, 52, 55)),
+                              (reveal, seconds, (38, 54, 57))]:
+        for pitch in chord:
+            note(start, end-start, pitch, .040, "strings")
+        for tick in np.arange(start, end-.2, .50):
+            note(tick, .35, chord[0]+12, .050, "strings")
+        note(start, .85, chord[0], .16, "drum")
+    music *= np.clip((seconds - np.arange(len(music))/rate)/.40, 0, 1)
+    return music
+
+
 with TemporaryDirectory() as tmp:
     tmp = Path(tmp)
-    for i, (file, slug, title, lines, speech) in enumerate(chapters):
+    durations = [ceil(len(t)/rate*24)/24 for t in takes]
+    for i, (file, slug, title, lines) in enumerate(chapters):
         art = Image.new("RGBA", (640, 880), "#171813")
         draw = ImageDraw.Draw(art)
 
@@ -47,10 +118,15 @@ with TemporaryDirectory() as tmp:
         label(103, f"THE HISTORY DESK     /     REEL 01     /     {i+1} OF 4", 16, "Courier New Bold")
         if file:
             draw.rectangle((32, 147, 607, 522), fill=(0, 0, 0, 0))
-        else:
+        elif i == 0:
             label(213, "P R E S E N T S" if i == 0 else "F I N", 21, "Georgia")
             label(306, "MILESTONES", 66)
             label(363, "A Snap History Game", 34, "Georgia Italic")
+        else:
+            label(205, "T H E   A N S W E R", 22, "Georgia")
+            label(295, "1903", 92)
+            label(385, "The Wright brothers flew first.", 31)
+            label(455, "San Francisco’s earthquake followed in 1906.", 24, "Georgia")
         label(568, slug, 19, "Courier New Bold", "#d8c99b")
         draw.line((44, 608, 596, 608), fill="#c8ba91", width=2)
         label(664, title, 31 if i == 1 else 38)
@@ -59,11 +135,11 @@ with TemporaryDirectory() as tmp:
         overlay = tmp / "overlay.png"
         art.save(overlay)
         voice = tmp / "voice.wav"
-        samples, rate = narrator.create(speech, voice="bm_fable", lang="en-gb", speed=1.0)
+        samples = takes[i]
         sf.write(voice, samples, rate)
         length = len(samples) / rate
         print(f"Chapter {i+1}: {length:.2f}s of narration", flush=True)
-        duration = ceil((length + (0.32 if i == 1 else 0.16)) * 24) / 24
+        duration = durations[i]
         footage = (["-loop", "1", "-framerate", "24", "-i", str(sources / file)] if file == "Wrightflyer.jpg" else
                    ["-ss", "27", "-i", str(sources / file)] if file else
                    ["-f", "lavfi", "-i", "color=black:s=640x880:r=24"])
@@ -71,10 +147,17 @@ with TemporaryDirectory() as tmp:
             "-filter_complex",
             "[0:v]fps=24,scale=576:376:force_original_aspect_ratio=increase,crop=576:376,"
             "setsar=1,hue=s=0,pad=640:880:32:147[film];[film][1:v]overlay[v];"
-            "[2:a]highpass=f=65,adelay=60,apad[a]", "-map", "[v]", "-map", "[a]", "-t", str(duration),
+            "[2:a]highpass=f=135,equalizer=f=1050:t=q:w=1.4:g=3,"
+            "equalizer=f=2350:t=q:w=1:g=1.5,lowpass=f=6300,alimiter=limit=0.92:level=0,"
+            "apad[a]", "-map", "[v]", "-map", "[a]", "-t", str(duration),
             "-c:v", "libx264", "-crf", "22", "-pix_fmt", "yuv420p", "-c:a", "pcm_s16le",
             "-ar", "44100", str(tmp / f"{i}.mov"))
     manifest = tmp / "shots.txt"
     manifest.write_text("".join(f"file '{i}.mov'\n" for i in range(len(chapters))))
+    sf.write(tmp / "overture.wav", overture(sum(durations), sum(durations[:3])), rate)
     run("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(manifest),
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "80k", "-movflags", "+faststart", str(output))
+        "-i", str(tmp / "overture.wav"), "-filter_complex",
+        "[0:a]asplit[narration][key];[1:a][key]sidechaincompress=threshold=0.025:ratio=6:"
+        "attack=12:release=250[bed];[narration][bed]amix=inputs=2:duration=first:"
+        "normalize=0,alimiter=limit=0.94:level=0:latency=1[a]", "-map", "0:v", "-map", "[a]",
+        "-c:v", "copy", "-c:a", "aac", "-b:a", "112k", "-movflags", "+faststart", str(output))
