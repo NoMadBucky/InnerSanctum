@@ -834,7 +834,7 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
     install(state, state / PENDING, raw, absent=True)
 
 
-def create(root, routes, raw, actor, *, dry_run=False, successor=None, request_id=None):
+def create(root, routes, raw, actor, *, dry_run=False, successor=None, request_id=None, check_existing=None):
     check_authority(root, successor)
     request = write_request(request_id, "create", routes, digest(raw), actor)
     if dry_run:
@@ -847,6 +847,8 @@ def create(root, routes, raw, actor, *, dry_run=False, successor=None, request_i
         retained = replay(root, state, request)
         if retained is not None:
             return retained
+        if check_existing is not None and (existing := check_existing()) is not None:
+            return existing
         changes = plan_create(root, routes, raw, actor)
         # Freeze all before revisions and after bytes before the first canonical mutation.
         freeze(root, state, changes, request=request)

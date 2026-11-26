@@ -154,6 +154,52 @@ def validate(command):
             raise Refused("Invalid film reference.")
 
 
+def poster_url(data):
+    path = data.get("poster_path")
+    if isinstance(path, str) and re.fullmatch(r"/[a-zA-Z0-9_-]+\.(?:jpg|png)", path):
+        return "https://image.tmdb.org/t/p/w342" + path
+
+
+def add_watchlist(root, library, details, distinct_from, actor, successor=None):
+    cfg = personal_config(root, successor) if successor else binding(root)
+    mid, title = details.get("id"), details.get("title")
+    if (library != cfg["library"] or type(mid) is not int or mid < 1 or not isinstance(title, str)
+            or not title.strip() or not title.isprintable() or not isinstance(distinct_from, list)):
+        raise Refused("Invalid movie or library.")
+    url = f"https://www.themoviedb.org/movie/{mid}"
+    fields = dict(type="Video", title=title, video_type="Movie", video_status="watchlist", url=url)
+    day = details.get("release_date")
+    if day and date_value(day):
+        fields["release_date"] = day
+    if poster := poster_url(details):
+        fields["poster"] = poster
+    overview = details.get("overview") or ""
+    raw = ("---\n" + "".join(f"{k}: {json.dumps(v, ensure_ascii=False)}\n" for k, v in fields.items())
+           + "---\n\n" + (overview.strip() + "\n\n" if overview.strip() else "")
+           + f"Source: [TMDb]({url})\n").encode()
+
+    def existing():
+        films = inspect_catalog(root, cfg, all_movies=True)["films"]
+        exact = [f for f in films if f["tmdb"] == url]
+        if len(exact) > 1:
+            raise Conflict("Multiple Personal records already link to this TMDb movie. Review them before adding.")
+        if exact:
+            return {"film": exact[0]["ref"]}
+        def normalized(value):
+            return " ".join(value.casefold().split())
+        candidates = [f for f in films if not f["tmdb"] and normalized(f["title"]) == normalized(title)
+                      and (not fields.get("release_date") or not f["year"] or f["year"] == day[:4])]
+        paths = sorted(f["ref"]["path"] for f in candidates)
+        if paths != sorted(distinct_from):
+            if not candidates:
+                raise Conflict("The possible matches changed. Search again.")
+            return {"matches": [{k: f[k] for k in ("ref", "title", "year")} for f in candidates]}
+
+    routes = '[types.Video]\nschema="Resources/videos/index.md"\ndirectory="Resources/videos"\n'
+    result = w.create(root, routes, raw, actor, successor=successor, check_existing=existing)
+    return {"film": movie_ref(result["path"], result["id"])} if "path" in result else result
+
+
 def mark_watched(root, command, actor, successor=None):
     """Update just this movie's viewing fields through the revision-checked concept writer."""
     from . import concept

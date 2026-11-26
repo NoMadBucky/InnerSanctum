@@ -3,6 +3,22 @@ import XCTest
 @testable import BijouCore
 
 final class ReactionStoreTests: XCTestCase {
+    func testSilentAndAudibleSamplesWithIdenticalDurations() throws {
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 4800))
+        buffer.frameLength = 4800
+        for amplitude: Float in [0, 0.0005, 0.2] {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).wav")
+            defer { try? FileManager.default.removeItem(at: url) }
+            let track = try MicrophoneTrack(url: url, format: format)
+            for n in 0..<4800 { buffer.floatChannelData![0][n] = amplitude * sin(Float(n) * 0.1) }
+            for _ in 0..<10 { track.append(buffer) }
+            track.close()
+            XCTAssertEqual(track.progress.seconds, 1)
+            XCTAssertEqual(track.progress.peak, amplitude, accuracy: 0.0001)
+            XCTAssertEqual(try ReactionSignal.quietMessage(at: url) == nil, amplitude == 0.2)
+        }
+    }
     func testOfflineRelaunchKeepsTwoPlayableTakesAndIsolatesLibraries() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -18,9 +34,11 @@ final class ReactionStoreTests: XCTestCase {
             let id = UUID()
             try store.begin(id)
             do {
-                let audio = try AVAudioFile(forWriting: store.audio(id, draft: true),
-                                            settings: ReactionStore.recordingSettings)
-                for _ in 0..<(i == 2 ? 1 : 30) { try audio.write(from: buffer) }
+                let track = try MicrophoneTrack(url: store.audio(id, draft: true), format: format)
+                for _ in 0..<(i == 2 ? 1 : 30) { track.append(buffer) }
+                XCTAssertNil(track.progress.error)
+                XCTAssertEqual(track.progress.seconds, i == 2 ? 0.1 : 3, accuracy: 0.001)
+                track.close()
             }
             XCTAssertEqual(try open().list().count, ids.count)
             if i == 2 {
@@ -44,6 +62,9 @@ final class ReactionStoreTests: XCTestCase {
             XCTAssertEqual(try AVAudioPlayer(contentsOf: reopened.audio(take.id)).duration, take.seconds, accuracy: 0.001)
         }
         XCTAssertTrue(try open("personal").list().isEmpty)
+        try reopened.delete(ids[0])
+        XCTAssertEqual(try open().list().map(\.id), [ids[1]])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: store.audio(ids[0]).path))
         XCTAssertTrue(try ReactionStore(root: root, library: "fixture", film: FilmRef(path: "other", personalID: nil)).list().isEmpty)
     }
 }

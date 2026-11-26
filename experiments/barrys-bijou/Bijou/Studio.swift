@@ -89,6 +89,18 @@ final class Studio: ObservableObject {
         try mutate { try $0.receive(fresh) }
     }
 
+    func addMovie(_ id: Int, library: String, distinctFrom: [String]) async throws -> HomeClient.WatchlistReply {
+        guard !syncing, let creds = credentials, creds.library == library, journal?.base.library == library,
+              journal?.pending.isEmpty == true else { throw BijouError("Finish syncing your Personal library and try again.") }
+        syncing = true; defer { syncing = false }
+        let client = HomeClient(creds)
+        let reply = try await client.addMovie(id, library: library, distinctFrom: distinctFrom)
+        let fresh = try await client.catalog()
+        try mutate { try $0.receive(fresh) }
+        cache(fresh, client: client)
+        return reply
+    }
+
     func keepCurrent(on revision: String) throws {
         try mutate { try $0.resolve(on: revision, gap: nil) }
         Task { await sync() }

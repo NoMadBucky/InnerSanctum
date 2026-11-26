@@ -74,6 +74,21 @@ final class HomeClient {
     struct MovieHit: Decodable, Identifiable {
         let id: Int
         let title, year, overview: String
+        let poster: URL?
+    }
+    struct WatchlistReply: Decodable {
+        struct Candidate: Decodable { let ref: FilmRef; let title: String; let year: String? }
+        let film: FilmRef?
+        let matches: [Candidate]?
+    }
+    func addMovie(_ id: Int, library: String, distinctFrom: [String]) async throws -> WatchlistReply {
+        struct Selection: Encodable { let id: Int; let library: String; let distinctFrom: [String] }
+        let data = try JSONEncoder().encode(Selection(id: id, library: library, distinctFrom: distinctFrom))
+        do {
+            return try await JSONDecoder().decode(WatchlistReply.self, from: send("watchlist/add", data: data, timeout: 40))
+        } catch let error as HomeResponse where error.status == 404 {
+            throw BijouError("Restart the updated Personal Sync adapter to enable Add to Watchlist.")
+        }
     }
     struct MoviePage: Decodable {
         let results: [MovieHit]

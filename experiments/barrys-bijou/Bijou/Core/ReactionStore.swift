@@ -52,6 +52,9 @@ struct ReactionStore {
         let draft = folder(id, draft: true)
         if FileManager.default.fileExists(atPath: draft.path) { try FileManager.default.removeItem(at: draft) }
     }
+    func delete(_ id: UUID) throws {
+        try FileManager.default.removeItem(at: folder(id, draft: false))
+    }
     func keep(_ take: AudioReaction) throws {
         guard take.seconds.isFinite, take.seconds > 0, take.seconds <= Self.limit,
               abs(try recordedSeconds(take.id, expected: take.seconds) - take.seconds) < 0.01

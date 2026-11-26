@@ -34,6 +34,14 @@ def tmdb_search(payload):
     if (not isinstance(query, str) or not 1 <= len(query.strip()) <= 200
             or type(page) is not int or not 1 <= page <= 500):
         raise ValueError("Invalid movie search.")
+    data = tmdb_get("search/movie?" + urlencode({"query": query.strip(), "page": page}))
+    return {"results": [{"id": r["id"], "title": r["title"], "year": (r.get("release_date") or "")[:4],
+                         "overview": r.get("overview") or "",
+                         **({"poster": poster} if (poster := bijou.poster_url(r)) else {})} for r in data["results"]],
+            "pages": min(data["total_pages"], 500)}
+
+
+def tmdb_get(path):
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, *args):
             return None
@@ -43,14 +51,11 @@ def tmdb_search(payload):
                               capture_output=True, timeout=30, check=True).stdout.decode("ascii").strip()
     except (subprocess.SubprocessError, UnicodeError, OSError):
         raise Refused("Allow the Personal Sync adapter to read the TMDb token in the Mac’s login keychain.") from None
-    url = "https://api.themoviedb.org/3/search/movie?" + urlencode({"query": query.strip(), "page": page})
+    url = "https://api.themoviedb.org/3/" + path
     request = urllib.request.Request(url, headers={"Authorization": "Bearer " + cred, "Accept": "application/json"})
     try:
         with urllib.request.build_opener(NoRedirect()).open(request, timeout=5) as response:
-            data = json.load(response)
-        return {"results": [{"id": r["id"], "title": r["title"], "year": (r.get("release_date") or "")[:4],
-                             "overview": r.get("overview") or ""} for r in data["results"]],
-                "pages": min(data["total_pages"], 500)}
+            return json.load(response)
     except urllib.error.HTTPError as err:
         if err.code in (401, 403):
             raise Refused("TMDb rejected the Mac’s read token.") from None
@@ -198,6 +203,20 @@ class PersonalHome(Home):
         with self.target() as (root, successor):
             return bijou.place(root, payload, "human:barry", successor)
 
+    def add_movie(self, payload):
+        mid, library, reviewed = (payload.get(k) for k in ("id", "library", "distinctFrom"))
+        if (type(mid) is not int or not 0 < mid < 2**53 or library != self.cfg["library"]
+                or not isinstance(reviewed, list) or not all(isinstance(p, str) for p in reviewed)):
+            raise ValueError("Invalid movie selection.")
+        details = tmdb_get(f"movie/{mid}")
+        if details.get("id") != mid:
+            raise Refused("TMDb returned a different movie.")
+        with self.target() as (root, successor):
+            reply = bijou.add_watchlist(root, library, details, reviewed, "human:barry", successor)
+            if "film" in reply and bijou.poster_url(details):
+                cache_covers(root, self.state, self.art_hosts, only=reply["film"]["path"])
+            return reply
+
     def watch(self, payload):
         with self.target() as (root, successor):
             return bijou.mark_watched(root, payload, "human:barry", successor)
@@ -220,11 +239,12 @@ class ArtworkRedirects(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def cache_covers(root, directory, allowed):
+def cache_covers(root, directory, allowed, *, only=None):
     """Fetch only approved HTTPS artwork, including every redirect hop."""
     policy = ArtworkRedirects(allowed)
     opener = urllib.request.build_opener(policy)
-    for name, file in writer.visible_files(root):
+    files = [(only, writer.safe_target(root, only))] if only else writer.visible_files(root)
+    for name, file in files:
         if not bijou.MOVIE_PATH.fullmatch(name):
             continue
         data, _, _ = document(writer.read_file(file).decode())
@@ -300,6 +320,8 @@ def handler(home):
                     return self.reply(200, home.watch(payload))
                 if self.command == "POST" and self.path == "/tmdb/search" and isinstance(home, PersonalHome):
                     return self.reply(200, tmdb_search(payload))
+                if self.command == "POST" and self.path == "/watchlist/add" and isinstance(home, PersonalHome):
+                    return self.reply(200, home.add_movie(payload))
                 if self.command == "GET" and (m := re.fullmatch(r"/covers/([0-9a-f]{64})", self.path)):
                     p = home.state / (m[1] + ".jpg")
                     if p.is_file():
@@ -369,6 +391,7 @@ def main():
         print(home.invitation())
         return
     home.identity()
+    home.art_hosts = args.art_host
     server = http.server.ThreadingHTTPServer((args.host, args.port), handler(home))
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2

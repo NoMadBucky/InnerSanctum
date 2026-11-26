@@ -173,7 +173,10 @@ struct Theater: View {
         .sheet(isPresented: $home) { HomePanel() }
         .sheet(isPresented: $searchingTMDb) {
             if let creds = studio.credentials, let catalog = studio.journal?.base {
-                MovieDiscovery(credentials: creds, catalog: catalog, initial: query)
+                MovieDiscovery(credentials: creds, catalog: catalog, initial: query) { ref in
+                    searchingTMDb = false
+                    path.append(ref)
+                }
             }
         }
         .onChange(of: studio.journal?.base.library) { _, _ in path.removeAll() }

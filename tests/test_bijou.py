@@ -26,6 +26,37 @@ def canonical(root):
     return {path: f.read_bytes() for path, f in writer.visible_files(root)}
 
 
+def test_create_watchlist_movie_retry_then_watch_with_same_identity(root):
+    library = bijou.catalog(root)["library"]
+    details = dict(id=123, title="Fixture premiere", release_date="2025-09-02", overview="A fictional synopsis.",
+                   poster_path="/mock.jpg")
+    before = canonical(root)
+    def add():
+        return bijou.add_watchlist(root, library, details, [], "human:tester")["film"]
+    ref = add()
+    after = canonical(root)
+    assert set(after) - set(before) == {ref["path"]}
+    assert {p for p in before if before[p] != after[p]} == {"Resources/videos/index.md", "log.md"}
+    assert add() == ref and canonical(root) == after
+    film = next(f for f in bijou.catalog(root, all_movies=True)["films"] if f["ref"] == ref)
+    assert film["watchlist"] and not film["viewed"] and not film["inLibrary"] and film["year"] == "2025"
+    assert film["tmdb"].endswith("/123") and film["posterKey"] and details["overview"] in film["body"]
+    bijou.mark_watched(root, dict(library=library, film=ref, day="2025-10-10"), "human:tester")
+    assert add() == ref
+    assert any(f["ref"] == ref and f["watched"] == "2025-10-10" for f in bijou.catalog(root)["films"])
+
+
+def test_possible_match_requires_explicit_choice(root):
+    snap = bijou.catalog(root, all_movies=True)
+    old = next(f for f in snap["films"] if not f["tmdb"])
+    details = dict(id=456, title=old["title"], release_date=(old["year"] or "2025") + "-01-01")
+    before = canonical(root)
+    check = bijou.add_watchlist(root, snap["library"], details, [], "human:tester")
+    assert [c["ref"] for c in check["matches"]] == [old["ref"]] and canonical(root) == before
+    added = bijou.add_watchlist(root, snap["library"], details, [old["ref"]["path"]], "human:tester")
+    assert added["film"] != old["ref"]
+
+
 def test_watchlist_date_is_saved_without_ranking_or_duplicate_log(root):
     snap = bijou.catalog(root, all_movies=True)
     film = next(f for f in snap["films"] if f["watchlist"])
