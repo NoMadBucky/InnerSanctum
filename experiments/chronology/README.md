@@ -23,10 +23,11 @@ shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
-Before the welcome screen, a separate 30.1-second newsreel plays once per app
+Before the welcome screen, a separate newsreel plays once per app
 launch. Replay Intro on the welcome screen plays it again from the beginning.
-Skip Intro opens the menu immediately. Read Rules, VoiceOver and
-Reduce Motion provide a text introduction to the rules. The Blonien Productions
+Skip Intro opens the menu immediately. Rules beside New Game opens the field
+guide. With VoiceOver or Reduce Motion enabled, startup goes straight to the
+menu; Replay Intro is still available. The Blonien Productions
 newsreel pairs its narrated question with these public-domain sources:
 
 - [San Francisco earthquake aftermath](https://commons.wikimedia.org/wiki/File:San_Francisco_Earthquake_aftermath,_1906.ogv),
@@ -38,7 +39,9 @@ The announcer uses Kokoro's British male voice Lewis (`bm_lewis`) with British
 phonemes for “Blah-nee-in,” second-syllable stress on *presents*, and a
 midrange lift for the vintage newsreel sound.
 Shots follow the recorded phrases without stretching or accelerating the voice.
-An original fanfare leads in before the announcer and ducks beneath speech.
+The borderless hourglass opens in silence for 1.75 seconds. The fanfare then
+plays for three seconds before the announcer enters. The gold frame fades in
+with “A Snap History Game,” and the music ducks beneath the narration.
 The stereo score uses recorded French horn, bowed and plucked cellos, and
 timpani from [Versilian Studios Community Edition](https://github.com/sgossner/VSCO-2-CE)
 (CC0). The first rebuild downloads the selected WAVs into `vsco/` beside the
@@ -50,8 +53,9 @@ Speech is rendered when building the film; the app only plays the audio track.
 To rebuild on macOS, place the two source files named above together with
 `kokoro-v1.0.int8.onnx` and `voices-v1.0.bin` from the
 [Kokoro ONNX model release](https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0).
-Install FFmpeg and Python packages `kokoro-onnx==0.4.9`, `soundfile`, and
-`Pillow`, then run `python3 Tools/build_newsreel.py /path/to/originals`.
+Install FFmpeg and Python packages `kokoro-onnx==0.4.9`, `soundfile`,
+`opencv-python-headless`, and `Pillow`, then run
+`python3 Tools/build_newsreel.py /path/to/originals`.
 
 The 14.5-second, 60 fps loop dissolves between five images:
 

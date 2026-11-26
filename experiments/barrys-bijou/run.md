@@ -42,6 +42,21 @@ writer ownership, verification, and rollback.
 
 ## First screening
 
+### The opening print
+
+The [12-second opening reel](Bijou/BijouOpening.mp4) is a local 4:3 movie
+with the original piano rag on the same timeline. **Mute piano** silences
+the score without moving the picture; **Skip intro** goes straight to the
+lobby. Reduce Motion bypasses the reel.
+
+The [animation master](Tools/OpeningReel/main.swift) is cut to the half-second
+beat in [the score](Tools/render_reel_piano.swift). The street scene enters
+at 3 seconds, the trolley stops at 5, the first passengers step out at 5½,
+and the trolley leaves at 9. The end title holds through the closing chord at 11.
+To rebuild the print, run `bash Tools/render_opening_reel.sh` from the
+Bijou project on a Mac with Xcode and FFmpeg. The print is bundled in the
+app; no rendering tools are needed for playback.
+
 ### Use Personal as the main library
 
 The Personal adapter is distinct from practice. On home Wi-Fi, open

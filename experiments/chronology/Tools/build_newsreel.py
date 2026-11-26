@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from kokoro_onnx import Kokoro
 import soundfile as sf
 from overture import render
+from hourglass import HourglassShot
 import numpy as np
 
 root = Path(__file__).resolve().parents[1]
@@ -34,9 +35,7 @@ def speak(text, speed, credit=False, contrast=False):
     phones = narrator.tokenizer.phonemize(text, "en-gb")
     if credit:
         # BLAH-nee-in; pre-ZENTS (verb). Keep the printed title spelled normally.
-        _, colon, title = phones.partition(":")
-        assert colon
-        phones = "blˈɑːniːɪn pɹədˈʌkʃənz pɹɪzˈɛnts: " + title.lstrip()
+        phones = "blˈɑːniːɪn pɹədˈʌkʃənz pɹɪzˈɛnts:"
     if contrast:
         # Use the full, stressed British vowel instead of reducing the conjunction.
         phones = "ˈɔː " + phones.split(" ", 1)[1]
@@ -49,7 +48,8 @@ def speak(text, speed, credit=False, contrast=False):
     return samples, rate
 
 
-credit, rate = speak("Blonien Productions presents: Milestones.", 1.14, credit=True)
+credit, rate = speak("Blonien Productions presents:", 1.14, credit=True)
+name, _ = speak("Milestones.", 1.14)
 subtitle, _ = speak("A Snap History Game.", 1.14)
 timing, _ = speak("It’s all about timing.", 1.04)
 first, _ = speak("Which moment came first — San Francisco’s great earthquake…", 1.09)
@@ -69,7 +69,8 @@ def cue_track(*phrases):
     return np.concatenate(blocks), cues
 
 
-opening, intro = cue_track(("lead", silence(1.65)), ("credit", credit),
+opening, intro = cue_track(("hourglass", silence(1.75)), ("music", silence(3)), ("credit", credit),
+                          ("titleBeat", silence(.12)), ("name", name),
                           ("subtitle", subtitle), ("pause", silence(.35)),
                           ("timing", timing), ("hold", silence(.8)))
 ending, outro = cue_track(("guess", silence(3)), ("answer", silence(.85)),
@@ -87,11 +88,11 @@ with TemporaryDirectory() as tmp:
     tmp = Path(tmp)
     durations = [ceil(len(t)/rate*24)/24 for t in takes]
     for i, (file, slug, title, lines) in enumerate(chapters):
-        art = Image.new("RGBA", (640, 880), "#171813")
+        art = Image.new("RGBA", (640, 880), (0, 0, 0, 0) if i == 0 else "#171813")
         draw = ImageDraw.Draw(art)
         layers = []
 
-        def label(y, text, size, face="Georgia Bold", color="#f5efda", cue=None, until=None):
+        def label(y, text, size, face="Georgia Bold", color="#f5efda", cue=None, until=None, pop=False):
             font = ImageFont.truetype(f"/System/Library/Fonts/Supplemental/{face}.ttf", size)
             if cue is None:
                 draw.text((320, y), text, font=font, fill=color, anchor="mm")
@@ -99,17 +100,22 @@ with TemporaryDirectory() as tmp:
                 sprite = Image.new("RGBA", art.size)
                 ImageDraw.Draw(sprite).text((320, y), text, font=font, fill=color, anchor="mm")
                 box = sprite.getbbox()
-                layers.append((sprite.crop(box), box[:2], cue, until))
+                layers.append((sprite.crop(box), box[:2], cue, until, pop))
 
-        draw.rectangle((15, 15, 624, 864), outline="#c8ba91", width=2)
-        label(56, "BLONIEN PRODUCTIONS", 26)
-        label(103, f"THE HISTORY DESK     /     REEL 01     /     {i+1} OF 4", 16, "Courier New Bold")
+        border = Image.new("RGBA", art.size) if i == 0 else art
+        ImageDraw.Draw(border).rectangle((15, 15, 624, 864), outline="#c8ba91", width=2)
+        if i == 0:
+            layers.append((border, (0, 0), intro["subtitle"], None, False))
+        label(56, "BLONIEN PRODUCTIONS", 26, cue=intro["credit"] if i == 0 else None)
+        if i:
+            label(103, f"THE HISTORY DESK     /     REEL 01     /     {i+1} OF 4", 16, "Courier New Bold")
         if file:
             draw.rectangle((32, 147, 607, 522), fill=(0, 0, 0, 0))
         elif i == 0:
-            label(213, "P R E S E N T S" if i == 0 else "F I N", 21, "Georgia")
-            label(306, "MILESTONES", 66)
-            label(363, "A Snap History Game", 34, "Georgia Italic", cue=intro["subtitle"])
+            hourglass = HourglassShot(root / "Chronology/Assets.xcassets/AppIcon.appiconset/Chronology.png", art.size)
+            label(99, "P R E S E N T S", 21, "Georgia", cue=intro["credit"]+.25)
+            label(478, "MILESTONES", 66, cue=intro["name"], pop=True)
+            label(550, "A Snap History Game", 34, "Georgia Italic", cue=intro["subtitle"])
         else:
             label(302, "?", 125, cue=0, until=outro["answer"])
             label(205, "T H E   A N S W E R", 22, "Georgia", cue=outro["answer"])
@@ -117,7 +123,8 @@ with TemporaryDirectory() as tmp:
             label(385, "The Wright brothers flew first.", 31, cue=outro["answer"])
             label(455, "San Francisco’s earthquake followed in 1906.", 24, "Georgia", cue=outro["answer"])
         label(568, slug, 19, "Courier New Bold", "#d8c99b")
-        draw.line((44, 608, 596, 608), fill="#c8ba91", width=2)
+        if i:
+            draw.line((44, 608, 596, 608), fill="#c8ba91", width=2)
         label(664, title, 31 if i == 1 else 38,
               cue=intro["timing"] if i == 0 else outro["place"] if i == 3 else None)
         for j, line in enumerate(lines):
@@ -148,11 +155,20 @@ with TemporaryDirectory() as tmp:
         if layers:
             with subprocess.Popen(cmd, stdin=subprocess.PIPE) as encoder:
                 for frame in range(round(duration * 24)):
-                    canvas = art.copy()
-                    for sprite, xy, begin, end in layers:
+                    canvas = (Image.alpha_composite(hourglass.frame(frame/24, intro["name"]), art)
+                              if i == 0 else art.copy())
+                    for sprite, xy, begin, end, pop in layers:
                         t = frame / 24
-                        opacity = min(1, (t-begin)/.42, (end-t)/.30 if end is not None else 1)
+                        age = t - begin
+                        opacity = min(1, age/(.08 if pop else .42), (end-t)/.30 if end is not None else 1)
                         if opacity > 0:
+                            if pop and age < .34:
+                                # Grow from the optical center, overshoot, then settle.
+                                u = min(age/.34, 1) - 1
+                                scale = 1 + .34*(3.8*u**3 + 2.8*u**2)
+                                w, h = sprite.size
+                                sprite = sprite.resize((round(w*scale), round(h*scale)), Image.Resampling.LANCZOS)
+                                xy = (xy[0]+(w-sprite.width)//2, xy[1]+(h-sprite.height)//2)
                             canvas.paste(sprite, xy, sprite.getchannel("A").point(lambda a: a*opacity))
                     encoder.stdin.write(canvas.tobytes())
                 encoder.stdin.close()
@@ -162,7 +178,9 @@ with TemporaryDirectory() as tmp:
             run(*cmd)
     manifest = tmp / "shots.txt"
     manifest.write_text("".join(f"file '{i}.mov'\n" for i in range(len(chapters))))
-    sf.write(tmp / "overture.wav", render(sum(durations), sum(durations[:3]) + outro["answer"], sources / "vsco"), 48000)
+    start = intro["music"]
+    score = render(sum(durations) - start, sum(durations[:3]) + outro["answer"] - start, sources / "vsco")
+    sf.write(tmp / "overture.wav", np.pad(score, ((round(start*48000), 0), (0, 0))), 48000)
     run("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(manifest),
         "-i", str(tmp / "overture.wav"), "-filter_complex",
         "[0:a]asplit[narration][key];[1:a][key]sidechaincompress=threshold=0.025:ratio=6:"

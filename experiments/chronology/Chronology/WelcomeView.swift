@@ -6,6 +6,7 @@ struct WelcomeView: View {
     var showingScores = false
     @State private var credits = false
     @State private var replaying = false
+    @State private var rules = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -20,7 +21,11 @@ struct WelcomeView: View {
             Text(mode == .standard ? "Ten guesses to build your timeline." :
                     "Draw without repeats until three misses or the deck runs out.")
                 .font(.subheadline).multilineTextAlignment(.center)
-            Button("New Game", action: start).buttonStyle(.borderedProminent).controlSize(.large)
+            HStack {
+                Button("New Game", action: start).buttonStyle(.borderedProminent)
+                Button { rules = true } label: { Label("Rules", systemImage: "book.pages") }
+                    .buttonStyle(.bordered)
+            }.controlSize(.large)
             HStack(spacing: 24) {
                 Button("High Scores", action: scores)
                 Button("Replay Intro") { replaying = true }
@@ -28,7 +33,8 @@ struct WelcomeView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background { IntroBackdrop(visible: !showingScores && !credits && !replaying) }
+        .background { IntroBackdrop(visible: !showingScores && !credits && !replaying && !rules) }
+        .sheet(isPresented: $rules) { RulesView() }
         .fullScreenCover(isPresented: $replaying) {
             StartupNewsreel(explicitReplay: true) { replaying = false }
         }

@@ -36,8 +36,10 @@ final class TimelineTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-firstGuessFixture"]
         app.launch()
-        app.buttons["Read Rules"].tap()
-        app.buttons["Continue"].tap()
+        app.buttons["Skip Intro"].tap()
+        app.buttons["Rules"].tap()
+        XCTAssertTrue(app.navigationBars["Rules"].exists)
+        app.buttons["Done"].tap()
         app.buttons["New Game"].tap()
         let openingID = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tableCard.'"))
             .firstMatch.identifier

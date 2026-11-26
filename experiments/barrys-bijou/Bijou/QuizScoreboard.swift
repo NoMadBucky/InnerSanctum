@@ -46,7 +46,7 @@ struct QuizScoreboard: View {
                     }.font(.system(.body, design: .monospaced)).accessibilityElement(children: .combine)
                 }
             }
-            Text("Top ten on this device · Earlier scores win ties.").font(.caption).foregroundStyle(.secondary)
+            Text("Top \(QuizHighScores.capacity) on this device · Earlier scores win ties.").font(.caption).foregroundStyle(.secondary)
         }
     }
 }

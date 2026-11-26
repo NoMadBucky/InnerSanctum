@@ -7,8 +7,17 @@ struct QuizHighScores: Codable {
         let score: Int
     }
 
-    static let capacity = 10
+    static let capacity = 5
     private(set) var entries: [Entry] = []
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let saved = try container.decode([Entry].self, forKey: .entries)
+        // Older boards already stored the top ten in rank order, including ties.
+        entries = Array(saved.prefix(Self.capacity))
+    }
 
     static func initials(_ input: String) -> String {
         String(input.filter { $0.isASCII && $0.isLetter }.prefix(3)).uppercased()
