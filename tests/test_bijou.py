@@ -26,6 +26,24 @@ def canonical(root):
     return {path: f.read_bytes() for path, f in writer.visible_files(root)}
 
 
+def test_watchlist_date_is_saved_without_ranking_or_duplicate_log(root):
+    snap = bijou.catalog(root, all_movies=True)
+    film = next(f for f in snap["films"] if f["watchlist"])
+    request = dict(library=snap["library"], film=film["ref"], day="2024-02-29")
+    before = canonical(root)
+    with pytest.raises(Refused):
+        bijou.mark_watched(root, {**request, "day": "2025-02-29"}, "human:tester")
+    bijou.mark_watched(root, request, "human:tester")
+    after = canonical(root)
+    assert {p for p in before if before[p] != after[p]} == {film["ref"]["path"], "log.md"}
+    saved = next(f for f in bijou.catalog(root)["films"] if f["ref"] == film["ref"])
+    assert saved["watched"] == request["day"] and not saved["watchlist"]
+    bijou.mark_watched(root, request, "human:tester")
+    with pytest.raises(bijou.Conflict):
+        bijou.mark_watched(root, {**request, "day": "2024-03-01"}, "human:tester")
+    assert canonical(root) == after
+
+
 def test_artwork_redirects_check_every_hop():
     from urllib.request import Request
 

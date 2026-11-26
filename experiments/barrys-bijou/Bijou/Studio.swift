@@ -74,6 +74,21 @@ final class Studio: ObservableObject {
         if !isSample && !isSnapshot { Task { await sync() } }
     }
 
+    func markWatched(_ film: FilmRef, date: Date) async throws {
+        guard !syncing, let creds = credentials, let j = journal, j.base.library == creds.library,
+              j.frozen == nil else { throw BijouError("Finish syncing your paired library and try again.") }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        syncing = true; defer { syncing = false }
+        let client = HomeClient(creds)
+        try await client.markWatched(film, day: formatter.string(from: date), library: creds.library)
+        let fresh = try await client.catalog()
+        try mutate { try $0.receive(fresh) }
+    }
+
     func keepCurrent(on revision: String) throws {
         try mutate { try $0.resolve(on: revision, gap: nil) }
         Task { await sync() }

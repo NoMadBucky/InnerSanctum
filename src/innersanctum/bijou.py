@@ -154,6 +154,45 @@ def validate(command):
             raise Refused("Invalid film reference.")
 
 
+def mark_watched(root, command, actor, successor=None):
+    """Update just this movie's viewing fields through the revision-checked concept writer."""
+    from . import concept
+    cfg = personal_config(root, successor) if successor else binding(root)
+    if set(command) != {"library", "film", "day"} or command["library"] != cfg["library"] or not date_value(command["day"]):
+        raise Refused("Expected this library and a valid watched date.")
+    ref, day = command["film"], command["day"]
+    if (not isinstance(ref, dict) or not isinstance(ref.get("path"), str)
+            or not (match := MOVIE_PATH.fullmatch(ref["path"])) or ref != movie_ref(ref["path"], "bho:" + match[1])):
+        raise Refused("Expected an identified movie.")
+    old = concept.read(root, ref["path"], successor=successor)
+    fields, body, end = document(old["markdown"])
+    if old["id"] != ref["personalID"] or not movie(fields):
+        raise Conflict("The movie has changed.")
+    if watched(fields):
+        if str(fields.get("date_watched")) == day:
+            return {"day": day}
+        raise Conflict("Already marked watched. Sync to see the current date.")
+    lines, nl = w.lines_for(old["markdown"])
+    for key, value in (("video_status", "watched"), ("date_watched", day)):
+        if key not in fields:
+            lines.insert(1, f'{key}: "{value}"')
+            end += 1
+        else:
+            hits = [i for i in range(1, end - 1) if lines[i].startswith(key + ":")]
+            if len(hits) != 1:
+                raise Refused("Could not safely update the viewing fields.")
+            i = hits[0]
+            comment = re.search(r"\s+#.*$", lines[i])
+            lines[i] = f'{key}: "{value}"' + (comment[0] if comment else "")
+    replacement = nl.join(lines)
+    after, after_body, _ = document(replacement)
+    if after_body != body or not same(after, {**fields, "video_status": "watched", "date_watched": day}):
+        raise Refused("Viewing edit would change unrelated content.")
+    concept.change(root, ref["personalID"], old["revision"], actor, replacement=replacement.encode(),
+                   successor=successor, expected_path=ref["path"])
+    return {"day": day}
+
+
 def with_flag(text):
     data, body, offset = document(text)
     lines, nl = w.lines_for(text)

@@ -138,5 +138,13 @@ final class HomeClient {
     func place(_ p: Placement) async throws -> Receipt {
         try await JSONDecoder().decode(Receipt.self, from: send("place", data: JSONEncoder().encode(p)))
     }
+    func markWatched(_ film: FilmRef, day: String, library: String) async throws {
+        struct Watch: Encodable { let film: FilmRef; let day, library: String }
+        let data = try JSONEncoder().encode(Watch(film: film, day: day, library: library))
+        do { _ = try await send("watched", data: data) }
+        catch let error as HomeResponse where error.status == 404 {
+            throw BijouError("Restart the updated Bijou sync adapter on your Mac, then try again.")
+        }
+    }
     func cover(_ key: String) async throws -> Data { try await send("covers/\(key)") }
 }

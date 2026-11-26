@@ -209,6 +209,7 @@ struct FilmDetail: View {
     @Environment(\.colorScheme) private var scheme
     @State private var placing = false
     @State private var posterOpen = false
+    @State private var dating = false
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var plexUnavailable = false
     @Environment(\.openURL) private var openURL
@@ -258,6 +259,9 @@ struct FilmDetail: View {
                     if f.isViewed {
                         Button(rank == nil ? "Rank" : "Rerank") { placing = true }
                             .buttonStyle(.borderedProminent).disabled(j.needsReview).accessibilityIdentifier("rank-action")
+                    } else if studio.credentials?.library == j.base.library {
+                        Button { dating = true } label: { Label("Mark as watched", systemImage: "calendar.badge.checkmark") }
+                            .buttonStyle(AdmissionStyle())
                     }
                     if j.needsReview { Text("Open Home Sync to review the ranking.").font(.caption) }
                     if let store = studio.reactionStore(library: j.base.library, film: ref) {
@@ -290,6 +294,7 @@ struct FilmDetail: View {
                 }.frame(maxWidth: 700, alignment: .leading).padding(22).frame(maxWidth: .infinity)
             } else { Text("This film is no longer in the catalog.") }
         }.background(h.paper).foregroundStyle(h.ink)
+        .sheet(isPresented: $dating) { WatchedDateSheet(film: ref) }
         .sheet(isPresented: $placing) {
             if let j = studio.journal { PlacementEditor(film: ref, catalog: j.base, order: j.order, review: false) }
         }
@@ -318,5 +323,39 @@ struct FilmDetail: View {
                     .keyboardShortcut(.cancelAction)
             }
         }
+    }
+}
+
+private struct WatchedDateSheet: View {
+    let film: FilmRef
+    @EnvironmentObject private var studio: Studio
+    @Environment(\.dismiss) private var dismiss
+    @State private var date = Date()
+    @State private var saving = false
+    @State private var issue: String?
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Mark as watched").font(.system(.title, design: .serif))
+            Text(studio.journal?.base.title(film) ?? "Film").font(.headline)
+            DatePicker("Watched date", selection: $date, in: ...Date(), displayedComponents: .date)
+            if let issue { Text(issue).font(.callout) }
+            HStack {
+                Button("Cancel") { dismiss() }
+                Spacer()
+                Button(saving ? "Saving…" : "Save") {
+                    saving = true
+                    Task {
+                        defer { saving = false }
+                        do { try await studio.markWatched(film, date: date); dismiss() }
+                        catch { issue = error.localizedDescription }
+                    }
+                }.buttonStyle(AdmissionStyle()).disabled(studio.syncing)
+            }
+        }.padding(24).disabled(saving).interactiveDismissDisabled(saving)
+        #if os(iOS)
+        .presentationDetents([.medium, .large])
+        #else
+        .frame(minWidth: 340)
+        #endif
     }
 }

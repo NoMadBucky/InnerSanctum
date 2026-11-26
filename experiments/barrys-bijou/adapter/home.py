@@ -123,6 +123,9 @@ class Home:
     def place(self, payload):
         return bijou.place(self.root, payload, "process:bijou-fixture")
 
+    def watch(self, payload):
+        return bijou.mark_watched(self.root, payload, "process:bijou-fixture")
+
 
 class PersonalHome(Home):
     """Separate enrollment database, TLS identity and cache; never reuse practice tokens."""
@@ -162,6 +165,10 @@ class PersonalHome(Home):
     def place(self, payload):
         with self.target() as (root, successor):
             return bijou.place(root, payload, "human:barry", successor)
+
+    def watch(self, payload):
+        with self.target() as (root, successor):
+            return bijou.mark_watched(root, payload, "human:barry", successor)
 
 
 class ArtworkRedirects(urllib.request.HTTPRedirectHandler):
@@ -257,6 +264,8 @@ def handler(home):
                     return self.reply(200, home.catalog(all_movies=self.path == "/catalog/all"))
                 if self.command == "POST" and self.path == "/place":
                     return self.reply(200, home.place(payload))
+                if self.command == "POST" and self.path == "/watched":
+                    return self.reply(200, home.watch(payload))
                 if self.command == "GET" and (m := re.fullmatch(r"/covers/([0-9a-f]{64})", self.path)):
                     p = home.state / (m[1] + ".jpg")
                     if p.is_file():
