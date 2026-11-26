@@ -11,7 +11,7 @@ design = Path(__file__).resolve().parent
 assets = design.parent / "Bijou/Assets.xcassets/AppIcon.appiconset"
 with tempfile.TemporaryDirectory() as tmp:
     raster = Path(tmp) / "master.png"
-    subprocess.run(["/usr/bin/sips", "-s", "format", "png", str(design / "Marquee.svg"),
+    subprocess.run(["/usr/bin/sips", "-s", "format", "png", str(assets.parent / "LobbyMarquee.imageset/Marquee.svg"),
                     "--out", str(raster)], check=True, capture_output=True)
     with Image.open(raster) as image:
         master = image.convert("RGB")

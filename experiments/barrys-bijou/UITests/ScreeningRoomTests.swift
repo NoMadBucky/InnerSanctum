@@ -14,6 +14,9 @@ final class ScreeningRoomTests: XCTestCase {
             #endif
         }
         func openFilm() {
+            let enter = app.buttons["enter-theater"]
+            XCTAssertTrue(enter.waitForExistence(timeout: 8))
+            enter.tap()
             let film = app.buttons["film-Resources/videos/8100001.md"]
             XCTAssertTrue(film.waitForExistence(timeout: 8))
             film.tap()

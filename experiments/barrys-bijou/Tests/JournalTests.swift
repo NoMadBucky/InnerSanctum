@@ -3,6 +3,18 @@ import XCTest
 @testable import BijouCore
 
 final class JournalTests: XCTestCase {
+    func testWatchedSortKeepsUnrankedFilmsAndUnknownDatesLast() {
+        func film(_ title: String, _ date: String?) -> Film {
+            Film(ref: FilmRef(path: title, personalID: nil), title: title, watched: date,
+                 year: nil, description: nil, body: "", sources: [], posterKey: nil)
+        }
+        let a = film("A", "2026-01-01"), b = film("B", nil), c = film("C", "2026-03-03")
+        let d = film("D", nil), e = film("E", "2026-02-02")
+        let films = [e, d, c, b, a], ranks = [b.ref: 1, a.ref: 2]
+        XCTAssertEqual(WatchedSort.viewed.films(films, ranks: ranks).map(\.title), ["C", "E", "A", "B", "D"])
+        XCTAssertEqual(WatchedSort.ranked.films(films, ranks: ranks).map(\.title), ["B", "A", "C", "E", "D"])
+    }
+
     func testOfflineRelaunchAndConflictRetainLaterMoves() throws {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: tmp) }

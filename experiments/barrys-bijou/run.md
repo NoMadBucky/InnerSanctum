@@ -23,7 +23,7 @@ after stopping the job. Keep the Mac awake while syncing.
 ### Try the sample
 
 Open [Bijou.xcodeproj](Bijou.xcodeproj/) in Xcode 27.2. Choose scheme
-**Bijou**, select **My Mac**, and press **Run**. The app opens to **Watched**
+**Bijou**, select **My Mac**, and press **Run**. Choose **Enter theater** to open **Watched**
 with six fictional movies. Choose one, tap **Rank**, then **Confirm
 placement**. Rank a second film and **Rerank** the first. Quit and reopen:
 the positions persist, and the watched dates stay the same.

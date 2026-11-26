@@ -17,6 +17,7 @@ struct Poster: View {
     @EnvironmentObject var studio: Studio
     let film: Film?
     let width: CGFloat
+    var height: CGFloat? = nil
     var body: some View {
         let _ = studio.coverGeneration
         ZStack {
@@ -54,7 +55,7 @@ struct Poster: View {
                 }.foregroundStyle(Color(red: 0.95, green: 0.84, blue: 0.60)).padding(7)
             }
         }
-        .frame(width: width, height: width * 1.48).clipped()
+        .frame(width: width, height: height ?? (width * 1.48)).clipped()
         .accessibilityHidden(true)
     }
     private func image(_ url: URL) -> Image? {
@@ -72,10 +73,30 @@ struct Theater: View {
     @Environment(\.scenePhase) private var phase
     @State private var home = false
     @State private var query = ""
+    @State private var sort = WatchedSort.viewed
     @State private var path: [FilmRef] = []
+    @State private var entered = false
     var body: some View {
+        Group {
+            if entered {
+                watched
+            } else {
+                TheaterLobby { entered = true }
+            }
+        }
+        .task(id: phase) {
+            guard phase == .active else { return }
+            await studio.sync()
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(30)) } catch { return }
+                if studio.journal?.pending.isEmpty == false { await studio.sync() }
+            }
+        }
+    }
+
+    private var watched: some View {
         let h = House(scheme)
-        NavigationStack(path: $path) {
+        return NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -94,19 +115,25 @@ struct Theater: View {
                             Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "ticket")
                         }.buttonStyle(.plain).accessibilityHint("Opens home sync")
                         TextField("Find a film", text: $query).textFieldStyle(.roundedBorder)
-                        let films = j.base.films.sorted(by: Film.viewingOrder)
-                            .filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) }
+                        Picker("Sort watched films", selection: $sort) {
+                            Text("Recently viewed").tag(WatchedSort.viewed)
+                            Text("Ranked").tag(WatchedSort.ranked)
+                        }.pickerStyle(.segmented)
+                        let ranks = Dictionary(j.order.enumerated().map { ($0.element, $0.offset + 1) },
+                                               uniquingKeysWith: min)
+                        let matches = j.base.films.filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) }
+                        let films = sort.films(matches, ranks: ranks)
                         if films.isEmpty { Text(query.isEmpty ? "Your watched films will appear here." : "No matching films.") }
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(films) { film in
                                 Button { path.append(film.ref) } label: {
                                     HStack(spacing: 15) {
-                                        Poster(film: film, width: 46)
+                                        Poster(film: film, width: 64, height: 112)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(film.title).font(.system(.headline, design: .serif))
                                             Text([film.year, film.watched ?? "Watch date unknown"].compactMap { $0 }.joined(separator: "  ·  "))
                                                 .font(.subheadline).foregroundStyle(.secondary)
-                                            if let i = j.order.firstIndex(of: film.ref) { Text("Ranked · #\(i + 1)").font(.caption.bold()).foregroundStyle(h.brass) }
+                                            if let rank = ranks[film.ref] { Text("Ranked · #\(rank)").font(.caption.bold()).foregroundStyle(h.brass) }
                                         }
                                         Spacer()
                                         Image(systemName: "chevron.right").font(.caption)
@@ -125,14 +152,42 @@ struct Theater: View {
         }
         .sheet(isPresented: $home) { HomePanel() }
         .onChange(of: studio.journal?.base.library) { _, _ in path.removeAll() }
-        .task(id: phase) {
-            guard phase == .active else { return }
-            await studio.sync()
-            while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(30)) } catch { return }
-                if studio.journal?.pending.isEmpty == false { await studio.sync() }
+    }
+}
+
+private struct TheaterLobby: View {
+    @Environment(\.colorScheme) private var scheme
+    let enter: () -> Void
+
+    var body: some View {
+        let h = House(scheme)
+        GeometryReader { bounds in
+            ScrollView {
+                VStack(spacing: 18) {
+                    Image("LobbyMarquee").resizable().scaledToFit()
+                        .frame(width: min(192, bounds.size.width * 0.44, bounds.size.height * 0.32))
+                        .clipShape(RoundedRectangle(cornerRadius: 22))
+                        .accessibilityHidden(true)
+                    Text("Barry’s Bijou").font(.system(.largeTitle, design: .serif).weight(.medium))
+                        .accessibilityAddTraits(.isHeader)
+                    HStack {
+                        Rectangle().frame(width: 32, height: 1)
+                        Text("MOVIE JOURNAL").font(.caption.weight(.semibold)).tracking(2)
+                        Rectangle().frame(width: 32, height: 1)
+                    }.foregroundStyle(h.brass)
+                    Button(action: enter) {
+                        Label("Enter theater", systemImage: "ticket")
+                            .font(.headline).padding(.horizontal, 8).frame(minHeight: 36)
+                    }
+                    .buttonStyle(.borderedProminent).tint(h.ink).foregroundStyle(h.paper)
+                    .accessibilityHint("Opens your watched films")
+                    .accessibilityIdentifier("enter-theater")
+                    .padding(.top, 10)
+                }
+                .multilineTextAlignment(.center).padding(24)
+                .frame(maxWidth: .infinity, minHeight: bounds.size.height)
             }
-        }
+        }.background(h.paper).foregroundStyle(h.ink)
     }
 }
 

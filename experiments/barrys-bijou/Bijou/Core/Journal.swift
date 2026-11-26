@@ -32,6 +32,21 @@ struct Film: Codable, Identifiable {
     }
 }
 
+enum WatchedSort {
+    case viewed, ranked
+
+    func films(_ films: [Film], ranks: [FilmRef: Int]) -> [Film] {
+        films.sorted { a, b in
+            if self == .ranked {
+                let first = ranks[a.ref] ?? Int.max
+                let second = ranks[b.ref] ?? Int.max
+                if first != second { return first < second }
+            }
+            return Film.viewingOrder(a, b)
+        }
+    }
+}
+
 struct Catalog: Codable {
     let library: String
     var revision: String

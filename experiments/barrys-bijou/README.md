@@ -10,7 +10,8 @@ The [build and pairing guide](run.md) walks through a two-device trial
 against a disposable OKF bundle.
 
 Barry’s Bijou is a SwiftUI **movie journal for iPhone and Mac**, using the
-Personal OKF bundle as its film library. It opens to **Watched**, most recently
+Personal OKF bundle as its film library. Choose **Enter theater** on the opening
+marquee to see **Watched**, most recently
 watched first. Pick a film to see its details or give it a place in your
 personal rankings. The BHO bundle is not an input, and the app does not need
 Clerk or the Daily dashboard.
