@@ -150,28 +150,9 @@ struct Theater: View {
                         }
                         let films = sort.films(matches, ranks: ranks)
                         if films.isEmpty { Text(query.isEmpty ? "No films in this collection yet." : "No matching films.") }
-                        LazyVStack(alignment: .leading, spacing: 0) {
-                            ForEach(films) { film in
-                                Button { path.append(film.ref) } label: {
-                                    HStack(spacing: 15) {
-                                        Poster(film: film, width: 112 * 2 / 3)
-                                            .overlay { Rectangle().strokeBorder(h.brass.opacity(0.4)) }
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(film.title).font(.system(.headline, design: .serif))
-                                            Text([film.year, film.viewingLabel].compactMap { $0 }.joined(separator: "  ·  "))
-                                                .font(.subheadline).foregroundStyle(.secondary)
-                                            if let rank = ranks[film.ref] {
-                                                Text("Ranked · #\(rank)").font(.caption.monospacedDigit().weight(.semibold))
-                                                    .foregroundStyle(h.brass).padding(.horizontal, 7).padding(.vertical, 3)
-                                                    .background(h.brass.opacity(0.09))
-                                            }
-                                        }
-                                        Spacer()
-                                        Image(systemName: "chevron.right").font(.caption)
-                                    }.contentShape(Rectangle()).padding(.vertical, 12)
-                                }.buttonStyle(.plain).accessibilityIdentifier("film-\(film.id)")
-                                Divider()
-                            }
+                        else {
+                            FilmCardShelf(films: films, ranks: ranks) { path.append($0) }
+                                .id(shelf)
                         }
                         }
                     } else {
