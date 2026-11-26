@@ -4,11 +4,21 @@ import SwiftUI
 @MainActor
 private final class QuizVoice: ObservableObject {
     private let synth = AVSpeechSynthesizer()
+    @Published private(set) var choices: [AVSpeechSynthesisVoice] = []
+    func refresh() {
+        choices = AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.lowercased().split(separator: "-").first == "en" }
+            .sorted { Self.label($0).localizedStandardCompare(Self.label($1)) == .orderedAscending }
+    }
+    static func label(_ voice: AVSpeechSynthesisVoice) -> String {
+        let quality = voice.quality == .premium ? " · Premium" : voice.quality == .enhanced ? " · Enhanced" : ""
+        return "\(voice.name) · \(voice.language)\(quality)"
+    }
     func stop() { synth.stopSpeaking(at: .immediate) }
-    func read(_ clue: String) {
+    func read(_ clue: String, using id: String) {
         stop()
         let line = AVSpeechUtterance(string: clue)
-        line.voice = AVSpeechSynthesisVoice(language: "en-US")
+        line.voice = choices.first { $0.identifier == id } ?? AVSpeechSynthesisVoice(language: "en-US")
         synth.speak(line)
     }
 }
@@ -19,6 +29,7 @@ struct NameThatFilm: View {
     @Environment(\.scenePhase) private var phase
     @Environment(\.colorScheme) private var scheme
     @AppStorage("quizMuted") private var muted = false
+    @AppStorage("quizVoiceID") private var voiceID = ""
     @StateObject private var voice = QuizVoice()
     @State private var questions: [FilmQuiz.Question] = []
     @State private var answers: [String] = []
@@ -27,7 +38,7 @@ struct NameThatFilm: View {
     private func start() {
         let round = pool.round()
         questions = round; index = 0; answers = []
-        if !muted, let first = round.first { voice.read(first.clue) }
+        if !muted, let first = round.first { voice.read(first.clue, using: voiceID) }
     }
     var body: some View {
         ScrollView {
@@ -39,9 +50,21 @@ struct NameThatFilm: View {
                 }
                 Toggle("Read clues aloud", isOn: Binding(get: { !muted }, set: { enabled in
                     muted = !enabled
-                    if enabled, questions.indices.contains(index), answers.count == index { voice.read(questions[index].clue) }
+                    if enabled, questions.indices.contains(index), answers.count == index { voice.read(questions[index].clue, using: voiceID) }
                     else { voice.stop() }
                 }))
+                if !muted {
+                    Picker("Narrator", selection: $voiceID) {
+                        Text("Default English voice").tag("")
+                        if !voiceID.isEmpty && !voice.choices.contains(where: { $0.identifier == voiceID }) {
+                            Text("Unavailable · using default").tag(voiceID)
+                        }
+                        ForEach(voice.choices, id: \.identifier) { item in
+                            Text(QuizVoice.label(item)).tag(item.identifier)
+                        }
+                    }.pickerStyle(.menu)
+                    Button("Preview voice") { voice.read("Welcome to Bijou. Can you name that film?", using: voiceID) }
+                }
                 if questions.isEmpty {
                     Text("Ten clues from Watched. Four choices each. No timer.")
                     let available = pool.eligible.count
@@ -68,8 +91,13 @@ struct NameThatFilm: View {
                 }
             }.frame(maxWidth: 600, alignment: .leading).padding(24).frame(maxWidth: .infinity)
         }.background(House(scheme).paper).foregroundStyle(House(scheme).ink)
+        .onAppear { voice.refresh() }
+        .onChange(of: voiceID) { _, id in
+            if !muted, questions.indices.contains(index), answers.count == index { voice.read(questions[index].clue, using: id) }
+            else { voice.stop() }
+        }
         .onDisappear { voice.stop() }
-        .onChange(of: phase) { _, value in if value != .active { voice.stop() } }
+        .onChange(of: phase) { _, value in if value == .active { voice.refresh() } else { voice.stop() } }
         #if os(macOS)
         .frame(minWidth: 440, minHeight: 520)
         #endif
@@ -80,7 +108,7 @@ struct NameThatFilm: View {
         Text(q.clue).font(.system(.title3, design: .serif))
         if !muted && !answered {
             HStack {
-                Button("Replay clue") { voice.read(q.clue) }
+                Button("Replay clue") { voice.read(q.clue, using: voiceID) }
                 Button("Stop narration") { voice.stop() }
             }
         }
@@ -103,7 +131,7 @@ struct NameThatFilm: View {
             Button(index + 1 == questions.count ? "See score" : "Next question") {
                 guard answers.count == index + 1 else { return }
                 index += 1
-                if !muted, questions.indices.contains(index) { voice.read(questions[index].clue) }
+                if !muted, questions.indices.contains(index) { voice.read(questions[index].clue, using: voiceID) }
             }.buttonStyle(AdmissionStyle())
         }
     }
