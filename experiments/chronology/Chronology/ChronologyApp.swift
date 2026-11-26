@@ -82,6 +82,13 @@ private struct GameView: View {
         self.restart = restart
     }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
+    private var sand: Color {
+        scheme == .dark ? Color(red: 0.98, green: 0.78, blue: 0.39) : Color(red: 0.49, green: 0.32, blue: 0.03)
+    }
+    private var teal: Color {
+        scheme == .dark ? Color(red: 0.40, green: 0.85, blue: 0.81) : Color(red: 0, green: 0.38, blue: 0.36)
+    }
     private var motion: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.35) }
 
     var body: some View {
@@ -96,9 +103,18 @@ private struct GameView: View {
                 Spacer()
                 Button("Draw First Card") { hasDrawn = true }.buttonStyle(.borderedProminent)
             } else if let event = round.drawn {
-                Text(round.mode == .standard ? "Guess \(round.turn) of \(Round.guesses)  ·  \(round.score) correct" :
-                        "Long Play · \(round.score) correct · \(round.misses)/\(Round.missLimit) misses")
-                    .font(.subheadline.monospacedDigit())
+                if round.mode == .standard {
+                    Text("Guess \(round.turn) of \(Round.guesses)  ·  \(round.score) correct")
+                        .font(.subheadline.monospacedDigit())
+                } else {
+                    let remaining = Round.missLimit - round.misses
+                    HStack {
+                        Text("\(round.score) correct")
+                        Spacer()
+                        Text(remaining == 1 ? "1 miss left" : "\(remaining) misses left")
+                            .foregroundStyle(remaining == 1 ? (scheme == .dark ? Color.orange : Color(red: 0.61, green: 0.25, blue: 0.02)) : .secondary)
+                    }.font(.subheadline.bold().monospacedDigit()).padding(.horizontal)
+                }
                 Spacer(minLength: 0)
                 ViewThatFits(in: .vertical) {
                     drawCard(event)
@@ -108,11 +124,13 @@ private struct GameView: View {
                 timeline(event)
                 if round.reveal == nil {
                     HStack {
-                        jump("First", 0)
-                        jump("Earlier", gap - 1)
-                        jump("Later", gap + 1)
-                        jump("Last", round.table.count)
-                    }.buttonStyle(.bordered)
+                        jump("First", "backward.end", 0, edge: true)
+                        Spacer()
+                        jump("Earlier", "chevron.left", gap - 1)
+                        jump("Later", "chevron.right", gap + 1)
+                        Spacer()
+                        jump("Last", "forward.end", round.table.count, edge: true)
+                    }.padding(.horizontal)
                     Button("Place Here") {
                         guard !scrolling, round.reveal == nil else { return }
                         withAnimation(motion) { round.place(at: gap) }
@@ -122,12 +140,14 @@ private struct GameView: View {
                     }.disabled(scrolling)
                         .accessibilityValue(gapDescription)
                         .buttonStyle(.borderedProminent)
+                        .tint(teal).foregroundStyle(scheme == .dark ? .black : .white)
                 } else {
                     Button(round.isFinalReveal ? "See Results" : "Draw Next") {
                         showingAnswer = false
                         scrolling = false
                         round.advance()
                     }.buttonStyle(.borderedProminent)
+                        .tint(teal).foregroundStyle(scheme == .dark ? .black : .white)
                         // Only a miss needs the brief "Your guess" preview.
                         // Advancing a scored turn never depends on a scroll-idle callback.
                         .disabled(round.reveal?.correct == false && !showingAnswer)
@@ -173,7 +193,7 @@ private struct GameView: View {
                     if let reveal = round.reveal {
                         Label(reveal.correct ? "Correct!" : "Not quite",
                               systemImage: reveal.correct ? "sparkles" : "arrow.uturn.left.circle")
-                            .foregroundStyle(reveal.correct ? Color.green : .orange)
+                            .foregroundStyle(reveal.correct ? Color.green : .secondary)
                             .transition(.scale.combined(with: .opacity))
                     } else {
                         Text("YOUR DRAW").font(.caption.bold()).foregroundStyle(.secondary)
@@ -181,7 +201,6 @@ private struct GameView: View {
                     Text(event.title).font(.system(.title2, design: .serif).bold())
                     if round.reveal != nil {
                         Text(event.date).bold()
-                        Text(event.note).font(.subheadline)
                         Button("Learn More") { reading = event }
                     }
                 }
@@ -196,8 +215,15 @@ private struct GameView: View {
         timelinePosition.scrollTo(x: CGFloat(index) * TimelineSnap.pitch)
     }
 
-    private func jump(_ title: String, _ index: Int) -> some View {
-        Button(title) { withAnimation(motion) { centerGap(index) } }
+    private func jump(_ title: String, _ icon: String, _ index: Int, edge: Bool = false) -> some View {
+        Button { withAnimation(motion) { centerGap(index) } } label: {
+            Image(systemName: icon)
+                .foregroundStyle(edge ? Color.secondary : teal)
+                .frame(minWidth: 44, minHeight: 44)
+                .background(teal.opacity(edge ? 0 : 0.10), in: RoundedRectangle(cornerRadius: 10))
+                .contentShape(Rectangle())
+        }.buttonStyle(.plain)
+            .accessibilityLabel(title)
             .disabled(!(0...round.table.count).contains(index) || gap == index)
     }
 
@@ -206,8 +232,9 @@ private struct GameView: View {
         let slot: CGFloat = 24
         return VStack(spacing: 4) {
             if let r = round.reveal, !r.correct, showingAnswer, gap == r.actual {
-                Text("Belongs here: \(event.title) · \(event.date)")
-                    .padding(8).overlay(RoundedRectangle(cornerRadius: 8).stroke(style: StrokeStyle(dash: [4])))
+                Text("\(String(event.year)) belongs here")
+                    .font(.subheadline.bold().monospacedDigit())
+                    .foregroundStyle(sand)
                     .accessibilityIdentifier("ghost")
             } else if let r = round.reveal {
                 Text(r.correct ? "Added · Tap any card to explore" :
@@ -215,9 +242,9 @@ private struct GameView: View {
             } else {
                 Text("Gap \(gap + 1) of \(round.table.count + 1)").font(.caption)
             }
-            Image(systemName: "arrowtriangle.down.fill").foregroundStyle(.teal).accessibilityHidden(true)
+            Image(systemName: "arrowtriangle.down.fill").foregroundStyle(sand).accessibilityHidden(true)
             ScrollView(.horizontal) {
-                HStack(spacing: 0) {
+                HStack(alignment: .top, spacing: 0) {
                     ForEach(0...round.table.count, id: \.self) { index in
                         Color.clear.frame(width: slot, height: 1)
                         if index < round.table.count {
@@ -240,7 +267,7 @@ private struct GameView: View {
             .onScrollPhaseChange { _, phase in scrolling = phase != .idle }
             .fixedSize(horizontal: false, vertical: true)
             .overlay {
-                Capsule().fill(.teal).frame(width: 3)
+                Capsule().fill(sand).frame(width: 3)
                     .allowsHitTesting(false).accessibilityHidden(true)
             }
             Text(positionCaption)
@@ -255,12 +282,15 @@ private struct GameView: View {
     }
 
     private func card(_ event: Event) -> some View {
-        Button { reading = event } label: {
-            VStack {
-                Text(event.date).bold().foregroundStyle(.teal)
-                Text(event.title).font(.subheadline)
+        let year = String(event.year)
+        let detail = event.date == year ? "" : String(event.date.dropLast(year.count)).trimmingCharacters(in: .whitespaces)
+        return Button { reading = event } label: {
+            VStack(spacing: 3) {
+                Text(year).font(.headline.monospacedDigit()).foregroundStyle(teal)
+                if !detail.isEmpty { Text(detail).font(.caption).foregroundStyle(.secondary) }
+                Text(event.title).font(.subheadline).lineLimit(3)
             }.multilineTextAlignment(.center)
-                .padding(8).frame(maxWidth: .infinity, minHeight: 95)
+                .padding(8).frame(maxWidth: .infinity, minHeight: 95, alignment: .top)
                 .background(.teal.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
@@ -271,7 +301,7 @@ private struct GameView: View {
 
     private var finalTable: some View {
         ScrollView(.horizontal) {
-            HStack {
+            HStack(alignment: .top) {
                 ForEach(round.table) { card($0).frame(width: TimelineSnap.pitch) }
             }.padding(.horizontal)
         }.fixedSize(horizontal: false, vertical: true)
