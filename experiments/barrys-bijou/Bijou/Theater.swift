@@ -225,12 +225,31 @@ private struct TheaterLobby: View {
                     .padding(.top, 10)
                     Button(action: play) { Label("Name That Film", systemImage: "questionmark.diamond") }
                         .buttonStyle(.plain).foregroundStyle(MarqueeFinish.gold)
+                    definition
                 }
                 .multilineTextAlignment(.center).padding(.vertical, 18)
                 .modifier(MarqueePanel()).frame(maxWidth: 520).padding(18)
                 .frame(maxWidth: .infinity, minHeight: bounds.size.height)
             }
         }.background(h.paper).foregroundStyle(h.ink)
+    }
+
+    private var definition: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Rectangle().fill(MarqueeFinish.gold.opacity(0.5)).frame(height: 1)
+                .padding(.bottom, 6).accessibilityHidden(true)
+            Text("bijou").font(.system(.title2, design: .serif).italic())
+                .accessibilityAddTraits(.isHeader)
+            Text("adjective · before noun · mainly UK").font(.subheadline)
+            Text("US /ˈbiː.ʒuː/   UK /ˈbiː.ʒuː/").font(.caption).foregroundStyle(MarqueeFinish.gold)
+            Text("(especially of a building) small but attractive:")
+                .font(.system(.body, design: .serif)).padding(.vertical, 3)
+            Text("The street is lined with bijou cafés and bars.")
+            Text("The agent described the flat as a bijou residence.")
+        }
+        .font(.system(.subheadline, design: .serif).italic())
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: 380, alignment: .leading)
     }
 }
 
