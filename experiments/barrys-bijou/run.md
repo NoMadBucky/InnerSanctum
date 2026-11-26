@@ -17,6 +17,8 @@ A pending OKF publication requires the existing fixture recovery command
 before retry. Removing a filed take from the phone leaves the archive intact.
 Legacy AAC imports, adoption of the live source catalog, and installation of
 the reaction schema in Personal are outside this rehearsal.
+See the [Personal reaction rollout plan](personal-reaction-rollout.md) for
+writer ownership, verification, and rollback.
 
 ## Open a library movie in Plex on iPhone
 
