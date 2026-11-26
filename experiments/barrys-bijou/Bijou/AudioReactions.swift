@@ -232,6 +232,7 @@ struct AudioReactions: View {
     @StateObject private var room: ReactionRoom
     @Environment(\.scenePhase) private var phase
     @State private var deleting: AudioReaction?
+    @State private var transcribing: AudioReaction?
     @EnvironmentObject private var studio: Studio
     @State private var filing: UUID?
     @State private var download: Task<Void, Never>?
@@ -324,6 +325,11 @@ struct AudioReactions: View {
                             }
                         }.disabled(filing != nil)
                     }
+                    if local || remote?.transcript != nil {
+                        Button(remote?.transcript != nil ? "Read transcript" : "Transcribe / review") {
+                            room.stopPlayback(); transcribing = take
+                        }.disabled(room.recording || room.requesting)
+                    }
                     if local {
                         Button(role: .destructive) { deleting = take } label: {
                             Label(filed ? "Remove from this device" : "Delete recording", systemImage: "trash")
@@ -336,6 +342,9 @@ struct AudioReactions: View {
             if room.needsUnmute { Button("Unmute microphone") { room.unmute() } }
         }
         .onAppear { room.reload() }
+        .sheet(item: $transcribing) { take in
+            ReactionTranscript(take: take, store: room.store, remote: archived.first { $0.id == take.id })
+        }
         .alert("Delete recording?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
                presenting: deleting) { take in
             Button("Delete", role: .destructive) { room.delete(take) }

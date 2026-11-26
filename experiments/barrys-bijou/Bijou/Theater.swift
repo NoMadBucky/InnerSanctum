@@ -118,7 +118,7 @@ struct Theater: View {
                         Button { home = true } label: {
                             Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "ticket")
                         }.buttonStyle(.plain).accessibilityHint("Opens home sync")
-                        TextField("Find a film", text: $query).textFieldStyle(.roundedBorder)
+                        TextField("Find a film or transcript", text: $query).textFieldStyle(.roundedBorder)
                         if j.base.origin == "personal", studio.credentials?.library == j.base.library {
                             Button { searchingTMDb = true } label: { Label("Search TMDb", systemImage: "magnifyingglass") }
                                 .buttonStyle(AdmissionStyle())
@@ -136,7 +136,10 @@ struct Theater: View {
                         }.pickerStyle(.segmented)
                         let ranks = Dictionary(j.order.enumerated().map { ($0.element, $0.offset + 1) },
                                                uniquingKeysWith: min)
-                        let matches = shelfFilms.filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) }
+                        let matches = shelfFilms.filter { film in
+                            query.isEmpty || film.title.localizedCaseInsensitiveContains(query) ||
+                                film.archivedReactions?.contains { $0.transcript?.localizedCaseInsensitiveContains(query) == true } == true
+                        }
                         let films = sort.films(matches, ranks: ranks)
                         if films.isEmpty { Text(query.isEmpty ? "No films in this collection yet." : "No matching films.") }
                         LazyVStack(alignment: .leading, spacing: 0) {

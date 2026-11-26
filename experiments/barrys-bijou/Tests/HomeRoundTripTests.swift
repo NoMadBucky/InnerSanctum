@@ -181,5 +181,16 @@ final class HomeRoundTripTests: XCTestCase {
         try clean.cache(bytes, take: remote.take, receipt: remote.receipt)
         XCTAssertNil(try ReactionSignal.quietMessage(at: clean.audio(remote.id)))
         XCTAssertEqual(try AVAudioPlayer(contentsOf: clean.audio(remote.id)).duration, take.seconds, accuracy: 0.01)
+        let reviewed = "I liked the final scene.\n\nEspecially the lighting."
+        let base = try XCTUnwrap(remote.revision)
+        let updated = try await client.saveTranscript(reviewed, record: remote, library: library, revision: base)
+        let replay = try await client.saveTranscript(reviewed, record: remote, library: library, revision: base)
+        XCTAssertEqual(updated, replay)
+        do {
+            _ = try await client.saveTranscript("Conflicting edit", record: remote, library: library, revision: base)
+            XCTFail("Stale transcript edit overwrote reviewed text.")
+        } catch let error as HomeResponse { XCTAssertEqual(error.status, 409) }
+        let synced = try await client.catalog()
+        XCTAssertEqual(synced.films.first(where: { $0.ref == film })?.archivedReactions?.first?.transcript, reviewed)
     }
 }

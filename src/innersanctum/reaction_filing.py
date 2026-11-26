@@ -199,6 +199,46 @@ def file_personal(root, successor, pin, meta, audio):
                  successor=successor, cursor=state / "catalog-revision")
 
 
+TRANSCRIPT = "\n## Reviewed transcript\n\n"
+
+
+def split_transcript(text):
+    head, marker, quote = text.partition(TRANSCRIPT)
+    if not marker:
+        return text, None
+    lines = quote.rstrip("\n").split("\n")
+    if not all(line.startswith("> ") for line in lines):
+        raise Refused("Transcript section has other content; review the concept on the Mac.")
+    return head, "\n".join(line[2:] for line in lines)
+
+
+def save_transcript(root, library, payload, successor=None):
+    from . import concept
+    path = payload.get("path")
+    text = payload.get("text")
+    if (payload.get("library") != library or not isinstance(path, str)
+            or not re.fullmatch(r"Documents/reactions/[0-9]{7}\.md", path)
+            or not isinstance(text, str) or not text.strip() or len(text.encode()) > 24000
+            or any(ord(c) < 32 and c not in "\n\t" for c in text)):
+        raise Refused("Invalid transcript or reaction.")
+    old = concept.read(root, path, successor=successor)
+    fields = document(old["markdown"])[0]
+    if fields.get("type") != "Film Reaction" or fields.get("take_id") != payload.get("take"):
+        raise Refused("Reaction identity changed.")
+    head, current = split_transcript(old["markdown"])
+    text = text.strip()
+    if current != text:
+        if old["revision"] != payload.get("revision"):
+            raise bijou.Conflict("This reaction changed on the Mac. Keep your draft, sync and review before saving.")
+        replacement = head + TRANSCRIPT + "\n".join("> " + line for line in text.split("\n")) + "\n"
+        concept.change(root, old["id"], old["revision"], "human:barry" if successor else "process:bijou-fixture",
+                       replacement=replacement.encode(), successor=successor, expected_path=path)
+    saved = concept.read(root, path, successor=successor)
+    if split_transcript(saved["markdown"])[1] != text:
+        raise Refused("Transcript read-back failed. Keep the local draft.")
+    return {"revision": saved["revision"], "text": text}
+
+
 def archived(root, store, *, take=None):
     """Resolve only filed Film Reactions; no client-selected filesystem paths."""
     w.require_idle(root)
@@ -208,7 +248,8 @@ def archived(root, store, *, take=None):
         path = concept.relative_to(root).as_posix()
         if not re.fullmatch(r"Documents/reactions/[0-9]{7}\.md", path):
             continue
-        fields = document(bijou.source(root, path))[0]
+        markdown = bijou.source(root, path)
+        fields = document(markdown)[0]
         if fields.get("type") != "Film Reaction":
             continue
         tid = str(uuid.UUID(fields["take_id"]))
@@ -231,6 +272,7 @@ def archived(root, store, *, take=None):
             id=tid, recordedAt=stamp.timestamp() - 978307200,  # Foundation's reference date
             viewingDate=str(fields["viewing_date"]) if fields.get("viewing_date") else None,
             seconds=fields["duration_ms"] / 1000,
+            revision=w.digest(markdown.encode()), transcript=split_transcript(markdown)[1],
             receipt=dict(id=fields["id"], path=path, sha256=digest, take=tid)))
     return results if take is None else None
 

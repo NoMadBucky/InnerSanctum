@@ -17,7 +17,7 @@ final class TimelineTests: XCTestCase {
         expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: ghost)
         waitForExpectations(timeout: 4)
         XCTAssertTrue(ghost.label.contains("1215"))
-        XCTAssertTrue(app.staticTexts["Beginning"].isHittable)
+        XCTAssertTrue(app.staticTexts["Beginning · Before 1453"].isHittable)
         app.buttons["See Results"].tap()
         XCTAssertTrue(app.staticTexts["9 of 10 placed correctly"].exists)
     }

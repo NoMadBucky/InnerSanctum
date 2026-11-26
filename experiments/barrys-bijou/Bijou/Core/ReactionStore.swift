@@ -20,6 +20,8 @@ struct ArchivedReaction: Codable, Identifiable {
     let viewingDate: String?
     let seconds: Double
     let receipt: FilingReceipt
+    let revision: String?
+    let transcript: String?
     var take: AudioReaction { AudioReaction(id: id, recordedAt: recordedAt, viewingDate: viewingDate, seconds: seconds) }
 }
 
@@ -86,6 +88,14 @@ struct ReactionStore {
     }
     func filed(_ id: UUID) -> Bool {
         FileManager.default.fileExists(atPath: folder(id, draft: false).appendingPathComponent("filed.json").path)
+    }
+    func draftTranscript(_ id: UUID) throws -> String? {
+        let url = folder(id, draft: false).appendingPathComponent("transcript.txt")
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return try String(contentsOf: url, encoding: .utf8)
+    }
+    func saveTranscript(_ text: String, for id: UUID) throws {
+        try text.write(to: folder(id, draft: false).appendingPathComponent("transcript.txt"), atomically: true, encoding: .utf8)
     }
     func keep(_ take: AudioReaction) throws {
         guard take.seconds.isFinite, take.seconds > 0, take.seconds <= Self.limit,

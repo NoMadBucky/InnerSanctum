@@ -2,7 +2,10 @@
 
 Open `Chronology.xcodeproj`, select the Chronology scheme and run on a portrait
 iPhone (iOS 18 or later). Each round deals one dated anchor and ten guesses.
-Flick horizontally through the gaps or use First, Earlier, Later and Last.
+Slide the continuous row of dated cards under the fixed center marker.
+A flick coasts across multiple cards; when it settles, the marker and year
+caption identify the proposed insertion gap. First, Earlier, Later and Last
+also move the timeline.
 Only Place Here commits. A correct guess grows the table; a miss shows the
 correct gap until Draw Next. A perfect round has eleven dated cards.
 

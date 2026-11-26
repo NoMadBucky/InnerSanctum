@@ -187,6 +187,14 @@ final class HomeClient {
     func archivedAudio(_ id: UUID) async throws -> Data {
         try await send("reactions/\(id.uuidString.lowercased())/audio", timeout: 40)
     }
+    func saveTranscript(_ text: String, record: ArchivedReaction, library: String, revision: String) async throws -> String {
+        let payload = ["text": text, "library": library, "revision": revision, "take": record.id.uuidString.lowercased(), "path": record.receipt.path]
+        let data = try JSONEncoder().encode(payload)
+        let bytes = try await send("reactions/transcript", data: data)
+        let reply = try JSONDecoder().decode([String: String].self, from: bytes)
+        guard reply["text"] == text, let revision = reply["revision"] else { throw BijouError("Transcript was not confirmed.") }
+        return revision
+    }
     func fileReaction(_ take: AudioReaction, url: URL, film: FilmRef, library: String, personal: Bool = false) async throws -> FilingReceipt {
         guard url.pathExtension == "wav" else { throw BijouError("Filing supports WAV recordings.") }
         let audio = try Data(contentsOf: url)

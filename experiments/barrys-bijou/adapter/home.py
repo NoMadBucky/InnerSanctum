@@ -348,7 +348,7 @@ def handler(home):
                     return self.reply(200, reaction_filing.file_take(home.root, meta, audio))
                 if self.command == "POST":
                     length = int(self.headers.get("Content-Length", "0"))
-                    if not 0 < length <= 8192:
+                    if not 0 < length <= (65536 if self.path == "/reactions/transcript" else 8192):
                         return self.reply(400, {"error": "Invalid request size."})
                     payload = json.loads(self.rfile.read(length))
                     if not isinstance(payload, dict):
@@ -366,6 +366,16 @@ def handler(home):
                     return self.reply(401, {"error": "Pair this device."})
                 if self.command == "GET" and self.path in {"/catalog", "/catalog/all"}:
                     return self.reply(200, home.catalog(all_movies=self.path == "/catalog/all"))
+                if self.command == "POST" and self.path == "/reactions/transcript":
+                    if isinstance(home, PersonalHome):
+                        if not home.source_pin:
+                            return self.reply(404, {"error": "Personal reaction filing is not enabled."})
+                        with home.target() as (root, successor):
+                            reaction_filing.personal_binding(root, successor, home.source_pin)
+                            reply = reaction_filing.save_transcript(root, home.cfg["library"], payload, successor)
+                    else:
+                        reply = reaction_filing.save_transcript(home.root, home.cfg["library"], payload)
+                    return self.reply(200, reply)
                 if self.command == "GET" and (m := re.fullmatch(r"/reactions/([0-9a-f-]{36})/audio", self.path)):
                     audio = home.reaction_audio(m[1])
                     if audio is not None:

@@ -55,7 +55,7 @@ def main():
         reaction, = set(after) - set(before)
         assert reaction.startswith("Documents/reactions/") and after["log.md"].count(b"**Placement**") == 4
         assert after["Documents/reactions/index.md"].count(Path(reaction).name.encode()) == 1
-        assert after["log.md"].count(reaction.encode()) == 1
+        assert after["log.md"].count(reaction.encode()) == 2  # Create, then the reviewed transcript update.
         fields, body, _ = document(after[reaction].decode())
         movie = next(f for f in bijou.catalog(root)["films"] if f["title"] == "The Last Projection")
         assert fields["film_id"] == movie["ref"]["personalID"] and movie["ref"]["path"] in body
