@@ -13,6 +13,7 @@ from innersanctum.schema import Refused
 
 
 EXPERIMENT = Path(__file__).resolve().parents[1]
+CHECKOUT = EXPERIMENT.parents[1]
 ROUTES = '[types."Film Ranking"]\nschema="Documents/rankings/index.md"\ndirectory="Documents/rankings"\n'
 VIDEO_SCHEMA = """# Videos
 
@@ -73,15 +74,14 @@ def poster(number):
 
 
 def create(directory):
-    root = Path(directory).expanduser().absolute()
-    writer.external_root(root.parent, EXPERIMENT.parents[1])
+    root = writer.external_root(directory, CHECKOUT, new=True)
     if any(writer.present(p / writer.MARKER) or writer.present(p / writer.STATE)
            or (writer.present(p / "index.md") and writer.present(p / "log.md")) for p in root.parents):
         raise Refused("Create the disposable fixture outside existing bundles.")
     if root.name.startswith(".") or "/" in root.name or root.name in {".", ".."}:
         raise Refused("Choose a new, visible fixture directory.")
     root.mkdir(mode=0o700, exist_ok=False)
-    writer.open_bundle(root, EXPERIMENT.parents[1])
+    writer.open_bundle(root, CHECKOUT)
     for folder in ("Resources/videos", "Documents/rankings", "Art"):
         (root / folder).mkdir(parents=True)
     (root / "index.md").write_text('---\nokf_version: "0.3"\n---\n\n# Bijou fixture\n\n'
@@ -124,4 +124,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("new_directory")
     os.umask(0o077)
-    print(create(parser.parse_args().new_directory))
+    try:
+        print(create(parser.parse_args().new_directory))
+    except (Refused, OSError) as error:
+        parser.exit(2, f"{parser.prog}: {error}\n")

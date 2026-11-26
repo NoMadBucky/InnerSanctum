@@ -30,6 +30,37 @@ def move(snap, film, **gap):
     return dict(library=snap["library"], revision=snap["revision"], requestID=uuid.uuid4().hex, film=film, gap=gap)
 
 
+def test_documented_home_fixture_when_checkout_is_also_under_home(tmp_path, monkeypatch):
+    fixture = adapter("fixture")
+    home = tmp_path.resolve()
+    checkout = home / "GitHub/InnerSanctum"
+    (checkout / ".git").mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(fixture, "CHECKOUT", checkout)
+    room = fixture.create("~/BijouPractice")
+    assert room == home / "BijouPractice" and len(bijou.catalog(room)["films"]) == 6
+    before = canonical(room)
+    with pytest.raises(Refused, match="already exists"):
+        fixture.create(room)
+    assert canonical(room) == before
+
+
+def test_forbidden_new_fixture_leaves_no_directory(tmp_path):
+    fixture = adapter("fixture")
+    parent = tmp_path.resolve()
+    repo = parent / "repo"
+    (repo / ".git").mkdir(parents=True)
+    linked = parent / "alias"
+    linked.symlink_to(parent, target_is_directory=True)
+    managed = parent / "managed"
+    managed.mkdir()
+    (managed / writer.MARKER).touch()
+    for dest in (repo / "practice", linked / "practice", managed / "practice", parent / "SynologyDrive"):
+        with pytest.raises(Refused):
+            fixture.create(dest)
+        assert not dest.exists()
+
+
 def test_catalog_and_placement_round_trip(root, tmp_path, capsys):
     assert cli.main(["bijou", "catalog", "--bundle", str(root)]) == 0
     s = json.loads(capsys.readouterr().out)

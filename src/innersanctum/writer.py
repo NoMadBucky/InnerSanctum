@@ -60,9 +60,14 @@ def check_authority(root, successor=None):
         raise Refused("The approved InnerSanctum writer marker changed.")
 
 
-def external_root(path, checkout):
+def external_root(path, checkout, *, new=False):
     root = Path(path).expanduser().absolute()
-    if (root.resolve(strict=True) != root or not root.is_dir()
+    if new and present(root):
+        raise Refused("The destination already exists. Choose a new directory.")
+    # A new root has no inode yet. Check its physical parent, but apply the
+    # repository and sync exclusions to the destination itself.
+    existing = root.parent if new else root
+    if (existing.resolve(strict=True) != existing or not existing.is_dir()
             or root.is_relative_to(checkout) or checkout.is_relative_to(root)
             or any(folded(part) == "synologydrive" for part in root.parts)
             or any(present(parent / ".git") for parent in (root, *root.parents))):
