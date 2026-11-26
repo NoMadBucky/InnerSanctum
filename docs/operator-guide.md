@@ -88,10 +88,14 @@ to keep conversation exports outside OKF and link their exact snapshots
 from the edit audit. It is available for standalone rehearsals only.
 
 The [Barry’s Bijou rehearsal](../experiments/barrys-bijou/run.md) adds
-`bijou catalog` and `bijou place` for an explicitly bound external fixture.
+`bijou catalog` and `bijou place` for an explicitly bound external fixture
+or an adopted Personal checkout with `--expect-adoption`.
 First placement coordinates a ranking, a movie membership flag and one audit
-entry; reranking leaves the movie file alone. Both commands accept
-`--bundle` only.
+entry; reranking leaves the movie file alone. `bijou import` initializes
+Personal from an exact exported Markdown order under the shared writer
+lock, journaling the new collection, parent listing, membership flags and
+one audit entry. The import receipt binds future operations to the ranking
+ID and path. A different export cannot replace the initial import.
 
 ## Personal journal
 

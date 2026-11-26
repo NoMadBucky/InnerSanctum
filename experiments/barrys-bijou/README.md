@@ -1,6 +1,9 @@
 # Barry’s Bijou
 
-**Status: buildable prototype, 2026-11-25.** Open the
+**Status: Personal home sync activated, 2026-11-25.** The adopted Personal
+OKF library now holds the ordered ranking imported from the phone. Pair
+with the separate [Personal adapter](run.md#use-personal-as-the-main-library)
+to open the real Watched catalog and save subsequent placements. Open the
 [Xcode project](Bijou.xcodeproj/) to try six fictional films on iPhone or
 Mac. Browse Watched, rank offline, quit, and revisit the same order.
 The [build and pairing guide](run.md) walks through a two-device trial
@@ -113,7 +116,7 @@ fallback, not a required step for routine use.
   are best-effort. Show **Saved on this device**, **Synced to OKF**, or
   **Needs review**.
 * **Writer boundary:** the Mac adapter accepts authenticated placement
-  requests for its disposable fixture. InnerSanctum validates the film,
+  requests for its selected Personal or practice library. InnerSanctum validates the film,
   neighbors and revision, then journals the ranking, first-placement flag
   and one audit entry together. Snapshots use the writer lock; a pending
   publication blocks new snapshots. The receipt follows canonical read-back.
@@ -126,7 +129,7 @@ fallback, not a required step for routine use.
 
 The [design decisions](design-decisions.md) record the device and home-sync
 choices and the working design for storage, pairing, and conflict review.
-Live activation is a separate operational decision.
+The Personal and practice adapters use separate device enrollments.
 
 ## Prototype and verification
 
@@ -141,8 +144,8 @@ Live activation is a separate operational decision.
 3. Once the app exists, check film detail and offline poster rendering on
    a separately approved private Personal snapshot. The catalog review
    verified references, not image availability. Keep mutation tests on
-   disposable data; live sync needs separate operational approval.
+   disposable data; use the activated Personal adapter for actual rankings.
 
 The first device targets are iOS 27 and macOS 27. The first phone test can
-use free Personal Team signing. For any eventual live integration,
+use free Personal Team signing. For live integration,
 [InnerSanctum remains the sole OKF writer](../../create-cutover.md).

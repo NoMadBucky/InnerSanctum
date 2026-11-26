@@ -83,7 +83,8 @@ struct Theater: View {
                         Text("Watched").font(.system(size: 44, weight: .medium, design: .serif))
                         Rectangle().fill(h.brass).frame(height: 2)
                         HStack {
-                            Text(studio.isSample ? "SAMPLE PROGRAM" : studio.isSnapshot ? "SCREENING COPY" : "HOME PROGRAM")
+                            Text(studio.isSample ? "SAMPLE PROGRAM" : studio.isSnapshot ? "SCREENING COPY" :
+                                    studio.journal?.base.origin == "personal" ? "PERSONAL OKF" : "HOME PROGRAM")
                             Spacer()
                             Text("\(studio.journal?.base.films.count ?? 0) FILMS")
                         }.font(.caption.monospaced()).foregroundStyle(h.brass)

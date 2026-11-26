@@ -39,6 +39,7 @@ struct Catalog: Codable {
     var order: [FilmRef]
     var labels: [String: String]
     var issues: [String]
+    var origin: String? = nil
 
     func title(_ ref: FilmRef) -> String {
         films.first { $0.ref == ref }?.title ?? labels[ref.path] ?? ref.path

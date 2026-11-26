@@ -2,6 +2,26 @@
 
 ## First screening
 
+### Use Personal as the main library
+
+The Personal adapter is distinct from practice. On home Wi-Fi, open
+**Home Sync**, select **Bijou Personal on …** (or enter the Mac’s address
+with port **8766**), and pair with a fresh code from the Mac’s private
+**New Pairing Code.command**. Each device needs its own code. Pairing opens
+Watched from Personal and makes it the startup library. Older builds call
+it **Paired home library**. Confirmed edits are queued offline and published
+to Personal when home; **Synced to OKF** means the writer read them back.
+Screening copies remain independent. Sync pending practice edits before
+switching a device to a different paired library.
+
+The separately launched job is `org.innersanctum.bijou.personal`; its
+private pairing database, certificate and thumbnail cache are outside OKF.
+**Stop Personal Sync.command** stops access without reverting records. Use
+**Start Personal Sync.command** on the Mac after logging in again or
+after stopping the job. Keep the Mac awake while syncing.
+
+### Try the sample
+
 Open [Bijou.xcodeproj](Bijou.xcodeproj/) in Xcode 27.2. Choose scheme
 **Bijou**, select **My Mac**, and press **Run**. The app opens to **Watched**
 with six fictional movies. Choose one, tap **Rank**, then **Confirm
@@ -133,7 +153,8 @@ uv run --locked innersanctum concept recover --bundle "$ROOM"
 The clients keep the original request until they obtain its receipt. For a
 read-back of the disposable library, use `innersanctum bijou catalog
 --bundle "$ROOM"` through `uv run --locked`. These commands and the adapter
-do not provide a live ranking integration.
+target the practice fixture. Use the separately paired Personal adapter for
+real rankings.
 
 The **BijouUITests** target exercises the native window: Watched → film →
 cancel → confirm → quit → reopen. It uses an isolated temporary sample

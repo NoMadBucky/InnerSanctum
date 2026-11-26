@@ -42,7 +42,8 @@ struct HomePanel: View {
                     Button("Done") { dismiss() }
                 }
                 if let j = studio.journal {
-                    Text(studio.isSample ? "Sample screening room" : studio.isSnapshot ? "Private screening copy" : "Paired home library").font(.headline)
+                    Text(studio.isSample ? "Sample screening room" : studio.isSnapshot ? "Private screening copy" :
+                            j.base.origin == "personal" ? "Personal OKF library" : "Paired home library").font(.headline)
                     Text(studio.isSample
                          ? "These fictional films are yours to try offline. Sample placements stay on this device."
                          : studio.isSnapshot ? "Rankings on this copy stay on this device. You can export them as Markdown."

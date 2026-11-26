@@ -15,13 +15,17 @@ from . import clerk_archive, concept, journal, migration, readiness, timestamp_c
 def parser():
     command = argparse.ArgumentParser(prog="innersanctum", description=__doc__)
     groups = command.add_subparsers(required=True)
-    bijou = groups.add_parser("bijou", help="Rehearse movie rankings on an external Bijou fixture")
+    bijou = groups.add_parser("bijou", help="Manage movie rankings on a fixture or adopted Personal checkout")
     bijou_actions = bijou.add_subparsers(required=True)
-    for name in ("catalog", "place"):
+    for name in ("catalog", "place", "import"):
         cmd = bijou_actions.add_parser(name)
         cmd.set_defaults(action=f"bijou-{name}")
-        cmd.add_argument("--bundle", required=True)
-        if name == "place":
+        target = cmd.add_mutually_exclusive_group(required=True)
+        if name != "import":
+            target.add_argument("--bundle")
+        target.add_argument("--live-checkout")
+        cmd.add_argument("--expect-adoption")
+        if name in {"place", "import"}:
             cmd.add_argument("--from", dest="source", default="-", help="Placement JSON; defaults to stdin")
             cmd.add_argument("--actor", required=True)
     concepts = groups.add_parser("concept")
@@ -231,14 +235,18 @@ def main(argv=None):
                     raise Refused("Pin the exact adoption checkpoint for an adopted Clerk operation.")
                 if args.action.startswith("bijou-"):
                     from . import bijou
+                    if successor and expected is None:
+                        raise Refused("Pin the adopted checkout for Personal Bijou.")
                     if args.action == "bijou-catalog":
-                        result = bijou.catalog(root)
+                        result = bijou.catalog(root, successor)
+                    elif args.action == "bijou-import":
+                        result = bijou.initialize(root, successor, read_text(input_bytes(args.source)), args.actor)
                     else:
                         try:
                             ordering = json.loads(input_bytes(args.source, limit=8192))
                         except (ValueError, RecursionError):
                             raise Refused("Expected a UTF-8 placement JSON object.") from None
-                        result = bijou.place(root, ordering, args.actor)
+                        result = bijou.place(root, ordering, args.actor, successor)
                 elif args.action == "clerk-bind":
                     result = clerk_archive.bind(root, successor, args.owner, args.namespace)
                 elif args.action == "clerk-binding":

@@ -1,4 +1,4 @@
-"""Barry's Bijou: catalog and recoverable placements on an external fixture only."""
+"""Barry's Bijou: watched movies and recoverable placements."""
 
 from datetime import datetime
 import json
@@ -113,11 +113,14 @@ def inspect_catalog(root, cfg):
     return catalog_rows(root, cfg["library"], w.digest(text.encode()), entries)
 
 
-def catalog(root):
-    cfg = binding(root)
-    with w.locked(root):
+def catalog(root, successor=None):
+    cfg = personal_config(root, successor) if successor else binding(root)
+    with w.locked(root, successor):
         w.require_idle(root)
-        return inspect_catalog(root, cfg)
+        snapshot = inspect_catalog(root, cfg)
+        if successor:
+            snapshot["origin"] = "personal"
+        return snapshot
 
 
 def validate(command):
@@ -185,7 +188,7 @@ def plan(cfg, command, originals, actor, when):
     return changes
 
 
-def verify(root, changes, request, review):
+def verify(root, changes, request, review, successor=None):
     if set(review) != {"command", "originals", "actor", "at"}:
         raise Refused("Invalid frozen placement.")
     command, originals, actor = (review[k] for k in ("command", "originals", "actor"))
@@ -193,19 +196,22 @@ def verify(root, changes, request, review):
     if type(originals) is not list or len(originals) != 3 or any(type(s) is not str for s in originals):
         raise Refused("Invalid placement preimages.")
     when = datetime.fromisoformat(review["at"])
-    if (when.utcoffset() is None or request != w.write_request(command["requestID"], OP, command, actor)
-            or changes != plan(binding(root), command, originals, actor, when)):
+    cfg = personal_config(root, successor) if successor else binding(root)
+    operation = PERSONAL_PLACE if successor else OP
+    if (when.utcoffset() is None or request != w.write_request(command["requestID"], operation, command, actor)
+            or changes != plan(cfg, command, originals, actor, when)):
         raise Refused("Frozen placement does not match the original request.")
 
 
-def place(root, command, actor):
-    cfg = binding(root)
+def place(root, command, actor, successor=None):
+    cfg = personal_config(root, successor) if successor else binding(root)
     validate(command)
     if cfg["library"] != command["library"]:
-        raise Refused("Wrong disposable library.")
+        raise Refused("Wrong Bijou library.")
     w.validate_actor(actor)
-    request = w.write_request(command["requestID"], OP, command, actor)
-    with w.locked(root) as state:
+    operation = PERSONAL_PLACE if successor else OP
+    request = w.write_request(command["requestID"], operation, command, actor)
+    with w.locked(root, successor) as state:
         w.require_idle(root)
         if (prior := w.replay(root, state, request)) is not None:
             return prior
@@ -227,5 +233,136 @@ def place(root, command, actor):
         for c in changes:
             read_text(c.after.encode())
         review = dict(command=command, originals=originals, actor=actor, at=when.isoformat())
-        w.freeze(root, state, changes, operation=OP, request=request, bijou_review=review)
-        return w.publish(root, state, changes, operation=OP, request=request)
+        w.freeze(root, state, changes, operation=operation, request=request, bijou_review=review)
+        return w.publish(root, state, changes, operation=operation, request=request, successor=successor)
+
+
+PERSONAL_PLACE = "bijou-personal-place"
+IMPORT = "bijou-personal-import"
+IMPORT_ID = "bijou-personal-first-import-v1"
+PARENT = "Documents/index.md"
+INDEX = RANKINGS + "/index.md"
+SCHEMA = """# Film Rankings
+
+```yaml
+okf_schema:
+  type: Film Ranking
+  directory: Documents/rankings
+  required: [id, type, title]
+  fields:
+    id: {type: bho}
+    type: {const: Film Ranking}
+    title: {type: string}
+```
+
+## Directory Listing
+"""
+
+
+def library_key(root, successor):
+    from .handover import SUCCESSOR, binding as adopted_binding
+    if not successor or not (m := SUCCESSOR.fullmatch(successor)) or m[1] != adopted_binding(root):
+        raise Refused("Expected the adopted Personal checkout.")
+    w.check_authority(root, successor)
+    return w.digest(b"bijou-personal-v1\0" + successor)[:32]
+
+
+def personal_config(root, successor):
+    key = library_key(root, successor)
+    receipt = w.read_receipt(root, root / w.STATE, IMPORT_ID)
+    if not receipt:
+        raise Refused("Personal Bijou has not been initialized.")
+    record = receipt[1]
+    rank = RANK_PATH.fullmatch(record.get("path", ""))
+    if not rank or record.get("operation") != IMPORT or record.get("id") != "bho:" + rank[1]:
+        raise Refused("The initial Personal ranking receipt is invalid.")
+    return {"library": key, "path": record["path"], "id": record["id"]}
+
+
+def ordered_rows(export):
+    lines = export.splitlines()
+    if lines[:4] != ["# Barry’s Bijou", "", "## Ranking", ""] or not 1 <= len(lines[4:]) <= 1000:
+        raise Refused("Expected a nonempty Bijou Markdown ranking export.")
+    rows = {}
+    for i, line in enumerate(lines[4:], 1):
+        match = ENTRY.fullmatch(line)
+        if not match or match[1] != str(i) or match[3] in rows:
+            raise Refused("Invalid, duplicate or out-of-order exported link.")
+        rows[match[3]] = match[2]
+    return rows
+
+
+def import_plan(review):
+    if set(review) != {"export", "parent", "audit", "records", "id", "actor", "at", "library"}:
+        raise Refused("Invalid import preimages.")
+    rows = ordered_rows(review["export"])
+    identity, actor = review["id"], review["actor"]
+    at = datetime.fromisoformat(review["at"])
+    w.validate_actor(actor)
+    if not ID.fullmatch(identity) or at.utcoffset() is None or set(review["records"]) != set(rows):
+        raise Refused("Invalid import identity, time or movie set.")
+    path = f"{RANKINGS}/{identity[4:]}.md"
+    title = "Barry’s Film Ranking"
+    rank = (f'---\nid: "{identity}"\ntype: Film Ranking\ntitle: {title}\ngenerated:\n'
+            f'  by: {json.dumps(actor)}\n  at: "{at.isoformat()}"\n---\n\n## Ranking\n\n')
+    movies = []
+    for i, (p, label) in enumerate(rows.items(), 1):
+        original = review["records"][p]
+        fields = document(original)[0]
+        name = fields["title"]
+        export_label = name.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+        if not watched(fields) or fields.get("id") != "bho:" + MOVIE_PATH.fullmatch(p)[1] or label != export_label:
+            raise Refused("An exported link no longer matches the exact watched movie.")
+        rank += f"{i}. [{w.escape_label(name)}](/{p})\n"
+        movies.append(w.Change(p, w.digest(original.encode()), with_flag(original)))
+    parent, audit = review["parent"], review["audit"]
+    return [w.Change(path, None, rank),
+            w.Change(INDEX, None, w.edit_index(SCHEMA, identity[4:] + ".md", title)),
+            w.Change(PARENT, w.digest(parent.encode()), w.edit_index(parent, "rankings/index.md", "Film Rankings")),
+            *movies, w.Change("log.md", w.digest(audit.encode()), w.edit_log(
+                audit, path, f"Imported {len(rows)} film rankings", actor, at, action="Ranking import"))]
+
+
+def import_request(library, export, actor):
+    return w.write_request(IMPORT_ID, IMPORT, library, w.digest(export.encode()), actor)
+
+
+def verify_import(root, changes, request, review, successor):
+    if (library_key(root, successor) != review["library"]
+            or request != import_request(review["library"], review["export"], review["actor"])
+            or changes != import_plan(review)):
+        raise Refused("Invalid frozen Personal ranking import.")
+
+
+def initialize(root, successor, export, actor):
+    from .schema import declarations
+    library = library_key(root, successor)
+    request = import_request(library, export, actor)
+    rows = ordered_rows(export)
+    with w.locked(root, successor) as state:
+        w.require_idle(root)
+        if (receipt := w.replay(root, state, request)) is not None:
+            return receipt
+        if w.present(w.safe_target(root, RANKINGS, missing=True)):
+            raise Refused("Rankings already exist; refusing to replace them.")
+        indexes, ids = w.inventory(root, collect_ids=True)
+        if any(k == "Film Ranking" for text in indexes.values() for k, _ in declarations(text)):
+            raise Refused("A Film Ranking declaration already exists.")
+        if catalog_rows(root, library, "", {})["issues"]:
+            raise Refused("Existing movie identities or ranked flags need review.")
+        log = source(root, "log.md")
+        review = dict(library=library, export=export, actor=actor, at=datetime.now().astimezone().isoformat(timespec="seconds"),
+                      id=w.allocate_id(ids | w.retired_ids(log)), parent=source(root, PARENT), audit=log,
+                      records={p: source(root, p) for p in rows})
+        changes = import_plan(review)
+        video = resolve_schema("Video", MOVIES, indexes, declaring=MOVIES + "/index.md")
+        if video.fields.get("ranked") not in ("bool", {"type": "bool"}) or "ranked" in video.required:
+            raise Refused("Expected optional Video.ranked boolean.")
+        for c in changes[3:-1]:
+            video.validate(document(c.after)[0])
+        resolve_schema("Film Ranking", RANKINGS, {**indexes, INDEX: changes[1].after}, declaring=INDEX).validate(
+            document(changes[0].after)[0])
+        for c in changes:
+            read_text(c.after.encode())
+        w.freeze(root, state, changes, operation=IMPORT, request=request, bijou_review=review)
+        return w.publish(root, state, changes, operation=IMPORT, request=request, successor=successor, directory=RANKINGS)

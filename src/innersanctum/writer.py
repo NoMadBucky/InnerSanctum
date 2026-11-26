@@ -481,7 +481,7 @@ def bundle_identity(root):
     return [info.st_dev, info.st_ino]
 
 
-def read_changes(root, state):
+def read_changes(root, state, *, successor=None):
     try:
         data = json.loads(read_file(state / PENDING, limit=PLAN_LIMIT))
         if type(data) is not dict or type(data.get("version")) is not int:
@@ -539,6 +539,12 @@ def read_changes(root, state):
                     or data["operation"] != "bijou-place" or request is None or clerk_session is not None):
                 raise ValueError
             operation, directory, identity = "bijou-place", None, None
+        elif version == 11:
+            if (set(data) != {"version", "bundle", "changes", "operation", "bijou_review"}
+                    or data["operation"] not in {"bijou-personal-import", "bijou-personal-place"}
+                    or request is None or clerk_session is not None or successor is None):
+                raise ValueError
+            operation, directory, identity = data["operation"], None, None
         else:
             raise ValueError
         changes = [Change(**item) for item in data["changes"]]
@@ -563,6 +569,14 @@ def read_changes(root, state):
 
             verify(root, changes, request, data["bijou_review"])
             return changes, operation, None, None, request, None, None
+        if version == 11:
+            from . import bijou
+            if operation == bijou.IMPORT:
+                bijou.verify_import(root, changes, request, data["bijou_review"], successor)
+                directory = bijou.RANKINGS
+            else:
+                bijou.verify(root, changes, request, data["bijou_review"], successor)
+            return changes, operation, directory, None, request, None, None
         if operation == VIDEO_STATUS_OPERATION:
             from .migration import verify_changes
 
@@ -673,6 +687,8 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
             request=None, clerk_session=None, successor=None, archive_pin=None, maintenance=False):
     if operation == "bijou-place" and successor is not None:
         raise Refused("Bijou placements are standalone-fixture operations only.")
+    if operation in {"bijou-personal-import", "bijou-personal-place"} and successor is None:
+        raise Refused("Personal ranking writes require the adopted checkout.")
     if operation == VIDEO_STATUS_OPERATION and successor is not None and not maintenance:
         raise Refused("Use stopped-checkpoint Video migration recovery on the adopted checkout.")
     if operation == TIMESTAMP_OPERATION and successor is not None and not maintenance:
@@ -751,7 +767,11 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
 
 
 def describe(changes, status, *, operation="create", directory=None, identity=None, clerk_session=None):
-    if operation == "bijou-place":
+    if operation == "bijou-personal-import":
+        path = changes[0].path
+        return {"status": "imported", "operation": operation, "path": path, "id": "bho:" + PurePosixPath(path).stem,
+                "count": len(changes) - 4, "revision": changes[0].revision}
+    if operation in {"bijou-place", "bijou-personal-place"}:
         return {"status": "placed", "revision": changes[0].revision, "files": [c.path for c in changes]}
     if operation == VIDEO_STATUS_OPERATION:
         return {"status": "migrated", "operation": operation, "renames": len(changes) - 2,
@@ -796,10 +816,10 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
         if request is None or version_review is None:
             raise Refused("Version declaration requires a durable request and reviewed preimages.")
         data.update(version=9, operation=operation, version_review=version_review)
-    elif operation == "bijou-place":
+    elif operation in {"bijou-place", "bijou-personal-import", "bijou-personal-place"}:
         if request is None or bijou_review is None:
             raise Refused("Bijou placement requires a durable request and its preimages.")
-        data.update(version=10, operation=operation, bijou_review=bijou_review)
+        data.update(version=10 if operation == "bijou-place" else 11, operation=operation, bijou_review=bijou_review)
     if request is not None:
         data = {"version": 4, "plan": data, "request": request}
     if clerk_session is not None:
@@ -838,7 +858,7 @@ def recover(root, *, successor=None, archive_pin=None):
     if not present(root / STATE / PENDING):
         raise Refused("No Create, concept edit, journal write or Video migration is pending.")
     with locked(root, successor) as state:
-        changes, operation, directory, identity, request, clerk_session, retained_pin = read_changes(root, state)
+        changes, operation, directory, identity, request, clerk_session, retained_pin = read_changes(root, state, successor=successor)
         if retained_pin != archive_pin or (clerk_session is not None and (successor is None) != (archive_pin is None)):
             raise Refused("Recovery requires the original archive binding.")
         return publish(root, state, changes, recovering=True, operation=operation,

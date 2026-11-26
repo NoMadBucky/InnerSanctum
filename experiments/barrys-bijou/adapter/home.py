@@ -21,7 +21,7 @@ import time
 from urllib.parse import urlsplit
 import urllib.request
 
-from innersanctum import bijou, writer
+from innersanctum import bijou, handover, writer
 from innersanctum.schema import Refused, document
 
 
@@ -46,6 +46,9 @@ class Home:
         self.root = root
         self.cfg = bijou.binding(root)
         self.state = root / ".bijou-home"
+        self.prepare_state(root)
+
+    def prepare_state(self, root):
         self.state.mkdir(mode=0o700, exist_ok=True)
         writer.validate_state(root, self.state)
         self.db = self.state / "devices.sqlite"
@@ -113,6 +116,41 @@ class Home:
 
     def cache_covers(self, allowed):
         cache_covers(self.root, self.state, allowed)
+
+    def catalog(self):
+        return bijou.catalog(self.root)
+
+    def place(self, payload):
+        return bijou.place(self.root, payload, "process:bijou-fixture")
+
+
+class PersonalHome(Home):
+    """Separate enrollment database, TLS identity and cache; never reuse practice tokens."""
+    def __init__(self, checkout, expected):
+        if checkout != Path(__file__).resolve().parents[3]:
+            raise Refused("Select this adapter's exact InnerSanctum checkout.")
+        self.checkout, self.expected = checkout, expected
+        with self.target() as (root, successor):
+            self.cfg = bijou.personal_config(root, successor)
+            self.root = root
+        parent = Path.home() / "Library/Application Support"
+        self.state = parent / ("BijouPersonal-" + self.cfg["library"])
+        self.prepare_state(parent)
+
+    @contextmanager
+    def target(self):
+        with handover.live_checkout(self.checkout) as (root, successor):
+            if handover.SUCCESSOR.fullmatch(successor)[2].decode() != self.expected:
+                raise Refused("Personal adoption changed.")
+            yield root, successor
+
+    def catalog(self):
+        with self.target() as (root, successor):
+            return bijou.catalog(root, successor)
+
+    def place(self, payload):
+        with self.target() as (root, successor):
+            return bijou.place(root, payload, "human:barry", successor)
 
 
 class ArtworkRedirects(urllib.request.HTTPRedirectHandler):
@@ -205,9 +243,9 @@ def handler(home):
                 if not auth.startswith("Bearer ") or not home.authenticated(auth[7:]):
                     return self.reply(401, {"error": "Pair this device."})
                 if self.command == "GET" and self.path == "/catalog":
-                    return self.reply(200, bijou.catalog(home.root))
+                    return self.reply(200, home.catalog())
                 if self.command == "POST" and self.path == "/place":
-                    return self.reply(200, bijou.place(home.root, payload, "process:bijou-fixture"))
+                    return self.reply(200, home.place(payload))
                 if self.command == "GET" and (m := re.fullmatch(r"/covers/([0-9a-f]{64})", self.path)):
                     p = home.state / (m[1] + ".jpg")
                     if p.is_file():
@@ -227,13 +265,13 @@ def handler(home):
 
 
 @contextmanager
-def advertise(address, port):
+def advertise(address, port, *, personal=False):
     """Announce a locator only. A loopback server is discoverable only on this Mac."""
     if ipaddress.ip_address(address).is_unspecified:
         raise ValueError("Choose a home-network address, or 127.0.0.1 for a Mac-only trial.")
     # NWBrowser sees multicast on lo0; DNSService's special LocalOnly index is not a network path.
     options = ["-i", "lo0"] if ipaddress.ip_address(address).is_loopback else []
-    name = "Bijou on " + socket.gethostname().split(".")[0][:35]
+    name = ("Bijou Personal on " if personal else "Bijou on ") + socket.gethostname().split(".")[0][:35]
     try:
         process = subprocess.Popen(
             ["/usr/bin/dns-sd", *options, "-R", name, "_bijou-home._tcp", "local.", str(port),
@@ -253,14 +291,18 @@ def advertise(address, port):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("action", choices=["serve", "invite", "devices", "revoke"])
-    p.add_argument("--bundle", type=Path, required=True)
+    target = p.add_mutually_exclusive_group(required=True)
+    target.add_argument("--bundle", type=Path)
+    target.add_argument("--live-checkout", type=Path)
+    p.add_argument("--expect-adoption")
     p.add_argument("--host", default="127.0.0.1", help="Serve on loopback or the Mac's home LAN address")
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--device", help="Device ID to revoke")
     p.add_argument("--art-host", action="append", default=[], help="Allow this HTTPS artwork hostname")
     args = p.parse_args()
     os.umask(0o077)
-    home = Home(args.bundle.absolute())
+    home = (PersonalHome(args.live_checkout.absolute(), args.expect_adoption)
+            if args.live_checkout else Home(args.bundle.absolute()))
     if args.action in {"devices", "revoke"}:
         with closing(sqlite3.connect(home.db)) as con, con:
             if args.action == "devices":
@@ -286,7 +328,7 @@ def main():
         address, port = server.server_address
         if ipaddress.ip_address(address).is_unspecified:
             p.error("Choose the Mac’s home-network address, or 127.0.0.1 for a Mac-only trial.")
-        with advertise(address, port):
+        with advertise(address, port, personal=bool(args.live_checkout)):
             print(f"Mac address: https://{address}:{port}\nPairing code (one use, ten minutes): {home.invitation()}", flush=True)
             threading.Thread(target=home.cache_covers, args=(args.art_host,), daemon=True).start()
             try:
