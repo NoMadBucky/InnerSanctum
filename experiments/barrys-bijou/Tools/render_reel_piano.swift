@@ -41,13 +41,21 @@ func renderPiano(to url: URL) throws {
             chord(t+beat, [60,65,69], 0.18, 54)
             continue
         }
+        if bar == 7 {
+            // A clipped dominant seventh and a B pickup leave space for the tonic.
+            chord(ReelCue.title, [43,55,65,71,79], 0.27, 70)
+            chord(ReelCue.title+beat, [55,65,71,86], 0.17, 73)
+            strike(ReelCue.title+1.5*beat, 83, 0.13, 78)
+            continue
+        }
         strike(t, bass[bar], 0.31, 61)
         chord(t+beat, voicings[bar], 0.23, 53)
         strike(t, tune[bar][0], 0.29, 76)
         strike(t+0.36, tune[bar][1], 0.27, 70)
         strike(t+0.76, tune[bar][2], 0.19, 67)
     }
-    chord(ReelCue.lastChord, [48,55,64,69,72,84], 0.53, 67)
+    // Bass octaves and a rolled C-major triad; let the high C ring into black.
+    chord(ReelCue.lastChord, [36,48,55,64,67,72,84], 0.76, 80)
     notes.sort { $0.frame < $1.frame }
 
     let engine = AVAudioEngine(), piano = AVAudioUnitSampler()

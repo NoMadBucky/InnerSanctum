@@ -67,25 +67,42 @@ struct Film: Codable, Identifiable {
         return watchlist == true ? "Watchlist" : "Not marked watched"
     }
     var id: String { ref.path }
+    var releaseOrderKey: String {
+        if let release = metadata?["release_date"], release.first?.isNumber == true { return String(release.prefix(10)) }
+        return year ?? ""
+    }
 
     static func viewingOrder(_ a: Film, _ b: Film) -> Bool {
         if a.watched != b.watched { return (a.watched ?? "") > (b.watched ?? "") }
+        return titleOrder(a, b)
+    }
+    static func titleOrder(_ a: Film, _ b: Film) -> Bool {
         let comparison = a.title.localizedStandardCompare(b.title)
         return comparison == .orderedSame ? a.id < b.id : comparison == .orderedAscending
     }
 }
 
-enum WatchedSort {
-    case viewed, ranked
+enum FilmSort: String, CaseIterable {
+    case released = "Date released", reviewed = "Date reviewed", alphabetical = "Alphabetical"
+    case viewed = "Date watched", ranked = "Ranked"
 
-    func films(_ films: [Film], ranks: [FilmRef: Int]) -> [Film] {
+    func films(_ films: [Film], ranks: [FilmRef: Int], reviews: [FilmRef: Date] = [:]) -> [Film] {
         films.sorted { a, b in
-            if self == .ranked {
+            switch self {
+            case .released:
+                if a.releaseOrderKey != b.releaseOrderKey { return a.releaseOrderKey > b.releaseOrderKey }
+            case .reviewed:
+                let first = reviews[a.ref] ?? .distantPast, second = reviews[b.ref] ?? .distantPast
+                if first != second { return first > second }
+            case .alphabetical: break
+            case .viewed: return Film.viewingOrder(a, b)
+            case .ranked:
                 let first = ranks[a.ref] ?? Int.max
                 let second = ranks[b.ref] ?? Int.max
                 if first != second { return first < second }
+                return Film.viewingOrder(a, b)
             }
-            return Film.viewingOrder(a, b)
+            return Film.titleOrder(a, b)
         }
     }
 }

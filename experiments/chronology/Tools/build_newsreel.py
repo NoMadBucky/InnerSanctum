@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 from PIL import Image, ImageDraw, ImageFont
 from kokoro_onnx import Kokoro
 import soundfile as sf
-from overture import render
+from overture import PIZZ_BEAT, render
 from hourglass import HourglassShot
 import numpy as np
 
@@ -87,12 +87,15 @@ takes = [
 with TemporaryDirectory() as tmp:
     tmp = Path(tmp)
     durations = [ceil(len(t)/rate*24)/24 for t in takes]
+    last_in_score = sum(durations[:3]) - intro["music"]
+    reveal = last_in_score + outro["answer"]
+    stamp_flight = .16
     for i, (file, slug, title, lines) in enumerate(chapters):
         art = Image.new("RGBA", (640, 880), (0, 0, 0, 0) if i == 0 else "#171813")
         draw = ImageDraw.Draw(art)
         layers = []
 
-        def label(y, text, size, face="Georgia Bold", color="#f5efda", cue=None, until=None, pop=False):
+        def label(y, text, size, face="Georgia Bold", color="#f5efda", cue=None, until=None, effect=None):
             font = ImageFont.truetype(f"/System/Library/Fonts/Supplemental/{face}.ttf", size)
             if cue is None:
                 draw.text((320, y), text, font=font, fill=color, anchor="mm")
@@ -100,7 +103,7 @@ with TemporaryDirectory() as tmp:
                 sprite = Image.new("RGBA", art.size)
                 ImageDraw.Draw(sprite).text((320, y), text, font=font, fill=color, anchor="mm")
                 box = sprite.getbbox()
-                layers.append((sprite.crop(box), box[:2], cue, until, pop))
+                layers.append((sprite.crop(box), box[:2], cue, until, effect))
 
         border = Image.new("RGBA", art.size) if i == 0 else art
         ImageDraw.Draw(border).rectangle((15, 15, 624, 864), outline="#c8ba91", width=2)
@@ -114,10 +117,10 @@ with TemporaryDirectory() as tmp:
         elif i == 0:
             hourglass = HourglassShot(root / "Chronology/Assets.xcassets/AppIcon.appiconset/Chronology.png", art.size)
             label(99, "P R E S E N T S", 21, "Georgia", cue=intro["credit"]+.25)
-            label(478, "MILESTONES", 66, cue=intro["name"], pop=True)
+            label(478, "MILESTONES", 66, cue=intro["name"], effect="pop")
             label(550, "A Snap History Game", 34, "Georgia Italic", cue=intro["subtitle"])
         else:
-            label(302, "?", 125, cue=0, until=outro["answer"])
+            label(302, "?", 125, cue=0, until=outro["answer"], effect="pulse")
             label(205, "T H E   A N S W E R", 22, "Georgia", cue=outro["answer"])
             label(295, "1903", 92, cue=outro["answer"])
             label(385, "The Wright brothers flew first.", 31, cue=outro["answer"])
@@ -128,6 +131,18 @@ with TemporaryDirectory() as tmp:
         label(664, title, 31 if i == 1 else 38,
               cue=intro["timing"] if i == 0 else outro["place"] if i == 3 else None)
         for j, line in enumerate(lines):
+            if i == 3 and j == 1:
+                # A broad ink impression in the gap between the answer and
+                # sign-off; the date and both supporting lines remain legible.
+                stamp = Image.new("RGBA", (578, 82))
+                ink = ImageDraw.Draw(stamp)
+                ink.rounded_rectangle((3, 3, 574, 78), 5, fill="#31251a", outline="#e9bc78", width=4)
+                font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Georgia Bold.ttf", 40)
+                ink.text((289, 40), "PLAY MILESTONES NOW!", font=font, fill="#f4cd8e", anchor="mm")
+                stamp = stamp.rotate(5, Image.Resampling.BICUBIC, expand=True)
+                layers.append((stamp, ((640-stamp.width)//2, 545-stamp.height//2),
+                               outro["cta"], None, "stamp"))
+                continue
             label(738 + 44*j, line, 28, "Georgia",
                   cue=outro[("fate", "cta")[j]] if i == 3 else None)
         overlay = tmp / "overlay.png"
@@ -155,17 +170,25 @@ with TemporaryDirectory() as tmp:
         if layers:
             with subprocess.Popen(cmd, stdin=subprocess.PIPE) as encoder:
                 for frame in range(round(duration * 24)):
-                    canvas = (Image.alpha_composite(hourglass.frame(frame/24, intro["name"]), art)
+                    canvas = (Image.alpha_composite(hourglass.frame(frame/24, intro["music"], intro["name"]), art)
                               if i == 0 else art.copy())
-                    for sprite, xy, begin, end, pop in layers:
+                    for sprite, xy, begin, end, effect in layers:
                         t = frame / 24
                         age = t - begin
-                        opacity = min(1, age/(.08 if pop else .42), (end-t)/.30 if end is not None else 1)
+                        opacity = min(1, age/(.08 if effect in ("pop", "stamp") else .42), (end-t)/.30 if end is not None else 1)
                         if opacity > 0:
-                            if pop and age < .34:
+                            scale = 1
+                            if effect == "pop" and age < .34:
                                 # Grow from the optical center, overshoot, then settle.
                                 u = min(age/.34, 1) - 1
                                 scale = 1 + .34*(3.8*u**3 + 2.8*u**2)
+                            elif effect == "pulse":
+                                # Same origin and period as the question's cello plucks.
+                                phase = (last_in_score + t - reveal*.5) % PIZZ_BEAT
+                                scale += .19*np.exp(-phase/.17)
+                            elif effect == "stamp" and age < stamp_flight:
+                                scale += .46*(1-age/stamp_flight)**2
+                            if scale != 1:
                                 w, h = sprite.size
                                 sprite = sprite.resize((round(w*scale), round(h*scale)), Image.Resampling.LANCZOS)
                                 xy = (xy[0]+(w-sprite.width)//2, xy[1]+(h-sprite.height)//2)
@@ -179,7 +202,7 @@ with TemporaryDirectory() as tmp:
     manifest = tmp / "shots.txt"
     manifest.write_text("".join(f"file '{i}.mov'\n" for i in range(len(chapters))))
     start = intro["music"]
-    score = render(sum(durations) - start, sum(durations[:3]) + outro["answer"] - start, sources / "vsco")
+    score = render(sum(durations) - start, reveal, last_in_score + outro["cta"] + stamp_flight, sources / "vsco")
     sf.write(tmp / "overture.wav", np.pad(score, ((round(start*48000), 0), (0, 0))), 48000)
     run("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(manifest),
         "-i", str(tmp / "overture.wav"), "-filter_complex",

@@ -73,12 +73,14 @@ struct Theater: View {
     @Environment(\.scenePhase) private var phase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var openingFinished = false
-    @State private var home = false
+    @State private var settings = false
     @State private var searchingTMDb = false
     @State private var query = ""
     @State private var reactionCount = 0
-    @State private var sort = WatchedSort.viewed
-    @State private var shelf = MovieShelf.watched
+    @State private var sort = FilmSort.released
+    @State private var shelf = MovieShelf.library
+    @State private var reviewDates: [FilmRef: Date] = [:]
+    @State private var reviewReload = 0
     @State private var path: [FilmRef] = []
     @State private var entered = false
     @State private var quiz = false
@@ -89,13 +91,14 @@ struct Theater: View {
             } else if entered {
                 watched
             } else {
-                TheaterLobby(enter: { entered = true }, play: { quiz = true })
+                TheaterLobby(enter: { entered = true }, play: { quiz = true }, settings: { settings = true })
             }
         }
         .onChange(of: reduceMotion, initial: true) { _, reduced in
             if reduced { openingFinished = true }
         }
         .sheet(isPresented: $quiz) { NameThatFilm().id(studio.journal?.base.library) }
+        .sheet(isPresented: $settings) { HomePanel() }
         .task(id: phase) {
             guard phase == .active else { return }
             await studio.sync()
@@ -125,9 +128,9 @@ struct Theater: View {
                         }.font(.caption.monospaced()).foregroundStyle(h.brass)
                     }
                     if let j = studio.journal {
-                        Button { home = true } label: {
-                            Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "arrow.triangle.2.circlepath")
-                        }.buttonStyle(.plain).accessibilityHint("Opens home sync")
+                        if j.needsReview {
+                            Button { settings = true } label: { Label("Review ranking conflict", systemImage: "exclamationmark.circle") }
+                        }
                         if shelf != .reactions {
                             TextField("Find a film or transcript", text: $query).textFieldStyle(.roundedBorder)
                         }
@@ -145,22 +148,25 @@ struct Theater: View {
                         if shelf == .reactions {
                             ReactionsShelf(count: $reactionCount).id(j.base.library)
                         } else {
-                        Picker("Sort movies", selection: $sort) {
-                            Text("Recently viewed").tag(WatchedSort.viewed)
-                            Text("Ranked").tag(WatchedSort.ranked)
-                        }.pickerStyle(.segmented)
-                        let ranks = Dictionary(j.order.enumerated().map { ($0.element, $0.offset + 1) },
-                                               uniquingKeysWith: min)
-                        let matches = shelfFilms.filter { film in
-                            query.isEmpty || film.title.localizedCaseInsensitiveContains(query) ||
-                                film.archivedReactions?.contains { $0.transcript?.localizedCaseInsensitiveContains(query) == true } == true
-                        }
-                        let films = sort.films(matches, ranks: ranks)
-                        if films.isEmpty { Text(query.isEmpty ? "No films in this collection yet." : "No matching films.") }
-                        else {
-                            FilmCardShelf(films: films, ranks: ranks) { path.append($0) }
-                                .id(shelf)
-                        }
+                            HStack {
+                                Text("Sort by").font(.subheadline.bold())
+                                Spacer()
+                                Picker("Sort movies", selection: $sort) {
+                                    ForEach(FilmSort.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                                }.pickerStyle(.menu).labelsHidden()
+                            }
+                            let ranks = Dictionary(j.order.enumerated().map { ($0.element, $0.offset + 1) },
+                                                   uniquingKeysWith: min)
+                            let matches = shelfFilms.filter { film in
+                                query.isEmpty || film.title.localizedCaseInsensitiveContains(query) ||
+                                    film.archivedReactions?.contains { $0.transcript?.localizedCaseInsensitiveContains(query) == true } == true
+                            }
+                            let films = sort.films(matches, ranks: ranks, reviews: reviewDates)
+                            if films.isEmpty { Text(query.isEmpty ? "No films in this collection yet." : "No matching films.") }
+                            else {
+                                FilmCardShelf(films: films, ranks: ranks) { path.append($0) }
+                                    .id(shelf)
+                            }
                         }
                     } else {
                         Text(studio.notice ?? "Loading the film catalog…")
@@ -168,12 +174,32 @@ struct Theater: View {
                 }.frame(maxWidth: 720).padding(22).frame(maxWidth: .infinity)
             }.background(h.paper).foregroundStyle(h.ink)
             .toolbar {
-                Button { quiz = true } label: { Label("Name That Film", systemImage: "questionmark.diamond") }
-                Button { home = true } label: { Label("Home Sync", systemImage: "house") }
+                Button { entered = false } label: { Label("Home", systemImage: "house") }
+                Button { settings = true } label: { Label("Settings", systemImage: "gearshape") }
             }
             .navigationDestination(for: FilmRef.self) { ref in FilmDetail(ref: ref) }
         }
-        .sheet(isPresented: $home) { HomePanel() }
+        .onReceive(studio.$journal) { _ in if sort == .reviewed { reviewReload += 1 } }
+        .onChange(of: path) { _, new in if new.isEmpty && sort == .reviewed { reviewReload += 1 } }
+        .onChange(of: sort) { _, _ in reviewReload += 1 }
+        .task(id: reviewReload) {
+            guard sort == .reviewed, let catalog = studio.journal?.base, let root = studio.reactionShelfRoot else { return }
+            let worker = Task.detached(priority: .userInitiated) {
+                var dates: [FilmRef: Date] = [:]
+                for film in catalog.films {
+                    try Task.checkCancellation()
+                    let store = ReactionStore(root: root, library: catalog.library, film: film.ref)
+                    let local = try store.list().map(\.recordedAt)
+                    dates[film.ref] = (local + (film.archivedReactions ?? []).map(\.recordedAt)).max()
+                }
+                return dates
+            }
+            do {
+                let dates = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+                try Task.checkCancellation()
+                reviewDates = dates
+            } catch { if !Task.isCancelled { studio.notice = error.localizedDescription } }
+        }
         .sheet(isPresented: $searchingTMDb) {
             if let creds = studio.credentials, let catalog = studio.journal?.base {
                 MovieDiscovery(credentials: creds, catalog: catalog, initial: query) { ref in
@@ -182,7 +208,7 @@ struct Theater: View {
                 }
             }
         }
-        .onChange(of: studio.journal?.base.library) { _, _ in path.removeAll() }
+        .onChange(of: studio.journal?.base.library) { _, _ in path.removeAll(); reviewDates = [:] }
     }
 }
 
@@ -190,6 +216,7 @@ private struct TheaterLobby: View {
     @Environment(\.colorScheme) private var scheme
     let enter: () -> Void
     let play: () -> Void
+    let settings: () -> Void
 
     var body: some View {
         let h = House(scheme)
@@ -203,16 +230,13 @@ private struct TheaterLobby: View {
                     BijouWordmark.text
                         .accessibilityAddTraits(.isHeader)
                     BillingLine(title: "MOVIE JOURNAL").foregroundStyle(MarqueeFinish.gold)
-                    Button(action: enter) {
-                        Label("Enter theater", systemImage: "arrow.right")
-                            .font(.headline).padding(.horizontal, 8).frame(minHeight: 36)
+                    VStack(spacing: 10) {
+                        destination("Film Journal", "Browse your library and record reactions.", "books.vertical", enter)
+                            .accessibilityIdentifier("enter-theater")
+                        destination("Name That Film", "Play a quiz from your watched films.", "questionmark.diamond", play)
                     }
-                    .buttonStyle(.borderedProminent).tint(MarqueeFinish.ivory).foregroundStyle(MarqueeFinish.enamel)
-                    .accessibilityHint("Opens your watched films")
-                    .accessibilityIdentifier("enter-theater")
-                    .padding(.top, 10)
-                    Button(action: play) { Label("Name That Film", systemImage: "questionmark.diamond") }
-                        .buttonStyle(.plain).foregroundStyle(MarqueeFinish.gold)
+                    Button(action: settings) { Label("Settings", systemImage: "gearshape") }
+                        .buttonStyle(.plain).foregroundStyle(MarqueeFinish.gold).frame(minHeight: 44)
                     definition
                 }
                 .multilineTextAlignment(.center).padding(.vertical, 18)
@@ -220,6 +244,23 @@ private struct TheaterLobby: View {
                 .frame(maxWidth: .infinity, minHeight: bounds.size.height)
             }
         }.background(h.paper).foregroundStyle(h.ink)
+    }
+
+    private func destination(_ title: String, _ subtitle: String, _ symbol: String,
+                             _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: symbol).font(.title2).frame(width: 32)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.system(.title3, design: .serif).weight(.semibold))
+                    Text(subtitle).font(.caption)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption)
+            }.multilineTextAlignment(.leading).padding(14)
+                .background(MarqueeFinish.ivory, in: RoundedRectangle(cornerRadius: 9))
+                .foregroundStyle(MarqueeFinish.enamel)
+        }.buttonStyle(.plain)
     }
 
     private var definition: some View {

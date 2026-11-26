@@ -36,7 +36,7 @@ writer ownership, verification, and rollback.
    unambiguous TMDb-to-Plex matches in the Personal adapter’s Application
    Support folder. You do not need to download or send an XML file.
 4. With the updated Personal adapter running and the new Bijou build on your
-   phone, choose **Home Sync → Sync now**. Open **Library**, select a matched
+   phone, choose **Settings → Sync now**. Open **Library**, select a matched
    film, and tap **Open movie in Plex**. Unmatched films show **Open Plex**.
    Rerun the helper after adding movies or rebuilding your Plex library.
 
@@ -60,10 +60,9 @@ app; no rendering tools are needed for playback.
 ### Use Personal as the main library
 
 The Personal adapter is distinct from practice. On home Wi-Fi, open
-**Home Sync**, select **Bijou Personal on …** (or enter the Mac’s address
+**Settings**, select **Bijou Personal on …** (or enter the Mac’s address
 with port **8766**), and pair with a fresh code from the Mac’s private
-**New Pairing Code.command**. Each device needs its own code. Pairing opens
-Watched from Personal and makes it the startup library. Older builds call
+**New Pairing Code.command**. Each device needs its own code. Pairing makes Personal the startup data source for the journal. Older builds call
 it **Paired home library**. Confirmed edits are queued offline and published
 to Personal when home; **Synced to OKF** means the writer read them back.
 Screening copies remain independent. Sync pending practice edits before
@@ -78,8 +77,8 @@ after stopping the job. Keep the Mac awake while syncing.
 ### Try the sample
 
 Open [Bijou.xcodeproj](Bijou.xcodeproj/) in Xcode 27.2. Choose scheme
-**Bijou**, select **My Mac**, and press **Run**. Choose **Enter theater** to open **Watched**
-with six fictional movies. Choose one, tap **Rank**, then **Confirm
+**Bijou**, select **My Mac**, and press **Run**. Choose **Film Journal** to open **Library**
+with fictional library titles. **All Movies** shows all six. Choose one, tap **Rank**, then **Confirm
 placement**. Rank a second film and **Rerank** the first. Quit and reopen:
 the positions persist, and the watched dates stay the same.
 
@@ -129,7 +128,7 @@ credentials. For a new pairing, use the short code from the restarted Mac.
    uv run --locked python "$BIJOU/adapter/home.py" serve --bundle "$ROOM" --host "$HOME_IP"
    ```
 
-3. **Pair one app.** On the same home Wi-Fi, open **Home Sync** and allow
+3. **Pair one app.** On the same home Wi-Fi, open **Settings** and allow
    Local Network access if prompted. Bijou finds your Mac automatically;
    choose it if more than one appears. Type the **seven-character code**
    from the Mac’s Terminal and tap **Pair this device**. Uppercase and
@@ -156,7 +155,7 @@ credentials. For a new pairing, use the short code from the restarted Mac.
    use. If a poster was still being prepared, **Sync now** retries it.
 5. **Try a conflict.** Sync both devices. Disconnect the phone, move a film
    and relaunch. Add a different film on the Mac. Reconnect the phone and
-   tap **Sync now**. **Home Sync** shows both orders and lets you place the
+   tap **Sync now**. **Settings** shows both orders and lets you place the
    affected film in the Mac’s latest list. An unresolved decision stays
    saved on the phone. **Export ranking as Markdown** works offline.
 
@@ -178,7 +177,7 @@ destinations. For TMDb, pass `--art-host media.themoviedb.org --art-host image.t
 The packer never opens
 the input as a writer and checks the scoped files again before exporting.
 
-Transfer that private file to the test device and choose **Home Sync →
+Transfer that private file to the test device and choose **Settings →
 Open screening copy…**. This library has its own local ranking. Its changes
 cannot be sent to the fixture or back to Personal. For an immediate trial,
 use the synthetic practice bundle as the snapshot instead.

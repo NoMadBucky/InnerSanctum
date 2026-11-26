@@ -7,7 +7,10 @@ import numpy as np
 import soundfile as sf
 
 
-def render(seconds, reveal, cache, rate=48000):
+PIZZ_BEAT = 1.04
+
+
+def render(seconds, reveal, impact, cache, rate=48000):
     cache.mkdir(parents=True, exist_ok=True)
     base = "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/"
     mix = np.zeros((round(seconds * rate), 2))
@@ -49,13 +52,15 @@ def render(seconds, reveal, cache, rate=48000):
         (reveal, seconds-2.8, "D2", "F2", 1),
     ]:
         # Rebow sustained parts and alternate pizzicato takes under the question.
-        for beat, at in enumerate(np.arange(begin, end-.18, 1.04)):
+        for beat, at in enumerate(np.arange(begin, end-.18, PIZZ_BEAT)):
             play(f"Strings/Cello Section/pizzT/pizzT_{bass}_v1_RR{1+beat%2}.wav",
                  at, min(.96, end-at), .105 if beat % 2 == 0 else .075, pan=.21)
         for at in np.arange(begin, end-.18, 2.8):
             play(f"Strings/Cello Section/susvib/susvib_{upper}_v1_1.wav",
                  at, min(2.92, end-at), .12, shift, .12)
         play("Percussion/Timpani/Timpani1_Hit_v1_rr1_Sum.wav", begin, 1.65, .24)
+
+    play("Percussion/Anvil_Hit1_v1_Sum.wav", impact, 1.7, .29, pan=.10, release=.42)
 
     # Leave the final register to the horn. Give its release a stereo room tail
     # instead of playing a sustained sample right up to the last video frame.

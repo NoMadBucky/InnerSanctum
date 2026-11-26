@@ -3,6 +3,19 @@ import XCTest
 @testable import BijouCore
 
 final class JournalTests: XCTestCase {
+    func testLibrarySortsByReleaseDayLatestReviewOrTitle() {
+        func film(_ title: String, _ release: String?) -> Film {
+            Film(ref: FilmRef(path: title, personalID: nil), title: title, watched: "2026-01-01",
+                 year: release.map { String($0.prefix(4)) }, description: nil, body: "", sources: [], posterKey: nil,
+                 metadata: release.map { ["release_date": $0] })
+        }
+        let a = film("A", nil), b = film("B", "2020-02-01"), c = film("C", "2020-10-03T01:00:00Z")
+        let films = [b, c, a], reviews = [a.ref: Date(timeIntervalSince1970: 2), c.ref: Date(timeIntervalSince1970: 1)]
+        XCTAssertEqual(FilmSort.released.films(films, ranks: [:]).map(\.title), ["C", "B", "A"])
+        XCTAssertEqual(FilmSort.reviewed.films(films, ranks: [:], reviews: reviews).map(\.title), ["A", "C", "B"])
+        XCTAssertEqual(FilmSort.alphabetical.films(films, ranks: [:]).map(\.title), ["A", "B", "C"])
+    }
+
     func testWatchedSortKeepsUnrankedFilmsAndUnknownDatesLast() {
         func film(_ title: String, _ date: String?) -> Film {
             Film(ref: FilmRef(path: title, personalID: nil), title: title, watched: date,
@@ -11,8 +24,8 @@ final class JournalTests: XCTestCase {
         let a = film("A", "2026-01-01"), b = film("B", nil), c = film("C", "2026-03-03")
         let d = film("D", nil), e = film("E", "2026-02-02")
         let films = [e, d, c, b, a], ranks = [b.ref: 1, a.ref: 2]
-        XCTAssertEqual(WatchedSort.viewed.films(films, ranks: ranks).map(\.title), ["C", "E", "A", "B", "D"])
-        XCTAssertEqual(WatchedSort.ranked.films(films, ranks: ranks).map(\.title), ["B", "A", "C", "E", "D"])
+        XCTAssertEqual(FilmSort.viewed.films(films, ranks: ranks).map(\.title), ["C", "E", "A", "B", "D"])
+        XCTAssertEqual(FilmSort.ranked.films(films, ranks: ranks).map(\.title), ["B", "A", "C", "E", "D"])
     }
 
     func testOfflineRelaunchAndConflictRetainLaterMoves() throws {

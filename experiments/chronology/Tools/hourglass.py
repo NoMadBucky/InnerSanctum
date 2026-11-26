@@ -31,7 +31,7 @@ class HourglassShot:
         edge = ((u-w/2)/(w*.66))**2 + ((v-h*.49)/(h*.62))**2
         self.vignette = np.clip(1-.40*edge, .42, 1).astype("float32")[:, :, None]
 
-    def frame(self, t, announce):
+    def frame(self, t, music, announce):
         photo = self.plate.copy()
         for phase, speed, drift, offset, radius, color in self.grains:
             u = (phase+t*speed) % 1
@@ -48,8 +48,13 @@ class HourglassShot:
         u = np.clip((t-announce)/1.12, 0, 1)
         ease = u*u*(3-2*u)
         scale = (1.53 + .07*min(t/announce, 1))*(1-ease) + .91*ease
+        # Open on just the falling column, arriving at the original camera
+        # framing on the first horn note. The subsequent title move is unchanged.
+        close = 1 - np.clip(t/music, 0, 1)
+        close = close*close*(3-2*close)
+        scale += 2.15*close
         transform = np.array([[scale, 0, 320-512*scale],
-                              [0, scale, 355+94*ease-517*scale]])
+                              [0, scale, 355+94*ease-(517+115*close)*scale]])
         shot = cv2.warpAffine(photo, transform, self.size, flags=cv2.INTER_CUBIC,
                               borderMode=cv2.BORDER_REPLICATE)
         if ease > .01:

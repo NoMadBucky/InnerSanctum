@@ -48,6 +48,7 @@ struct Ink {
     let numerals = (1...3).map { plate(Text(verbatim: "\($0)").font(.system(size: 177, weight: .medium, design: .serif)).foregroundStyle(.black)) }
     let route = plate(Text(verbatim: "CITY LINE").font(.system(size: 13, weight: .semibold, design: .serif)).tracking(2).foregroundStyle(.white))
     let title = plate(Text(verbatim: "A Bijou Presentation").font(BijouWordmark.font).foregroundStyle(.white))
+    let studio = plate(Text(verbatim: "Blonien Productions").font(BijouWordmark.font).foregroundStyle(.white))
     let tickets = plate(Text(verbatim: "TICKETS").font(.system(size: 9, weight: .bold)).tracking(1.2).foregroundStyle(.black))
     let fleet = plate(Text(verbatim: "27").font(.system(size: 9, weight: .bold, design: .serif)).foregroundStyle(.white))
     let stock = plate(Text(verbatim: "BIJOU   •   SAFETY FILM    /    No. 01").font(.system(size: 9, design: .monospaced)).foregroundStyle(.black))
@@ -80,8 +81,21 @@ func stamp(_ ink: Ink, _ image: CGImage, center: XY, width: Double, maxHeight: D
     stamp(g, p.stock, center: (320,443), width: 211, maxHeight: 12)
 }
 
-@MainActor func streetscape(_ g: Ink, _ p: Plates) {
-    g.box(-32, -8, 722, 498, 0.72)
+@MainActor func streetscape(_ g: Ink, _ p: Plates, _ t: Double) {
+    g.box(-32, -8, 722, 498, 0.57)
+    // Carbon-arc searchlights: feather the beam edges and let the skyline
+    // occlude them. The lamps swing inward, then settle apart for the credit.
+    for side in [-1.0, 1.0] {
+        let origin = 340 + side * 112
+        let aim = 340 + side * (42 + 136 * cos((t-ReelCue.streetCut)*0.94 + side*0.18))
+        for band in 0..<12 {
+            let halfWidth = 38 - Double(band)*2.1
+            g.layer {
+                g.c.setAlpha(0.036)
+                g.shape([(origin-2,158),(aim-halfWidth,-10),(aim+halfWidth,-10),(origin+2,158)], 1)
+            }
+        }
+    }
     for i in 0..<9 {
         let x = Double(i) * 93 - 47, roof = Double([111,135,91,123][i % 4])
         let stone = 0.37 + Double(i % 3)*0.06
@@ -360,18 +374,19 @@ private struct Stock {
                         let pan = -17*ease((t-ReelCue.streetCut)/(ReelCue.lastChord-ReelCue.streetCut))
                         g.layer {
                             ctx.translateBy(x: pan, y: 0)
-                            streetscape(g,plates)
+                            streetscape(g,plates,t)
                             let people = Pedestrian.onStreet(t)
                             // The car crosses the sightline only once it has left the stop.
                             if t > ReelCue.departure { for person in people { person.draw(g) } }
                             g.layer { trolley(g,plates,t) }
                             if t <= ReelCue.departure { for person in people { person.draw(g) } }
                         }
-                        if t >= ReelCue.title {
+                        if t >= ReelCue.departure + ReelCue.beat {
                             g.layer {
-                                ctx.setAlpha(ease((t-ReelCue.title)/ReelCue.beat))
-                                for x in [146.0,426] { g.line([(x,450),(x+68,450)],0.68); g.line([(x+10,454),(x+59,454)],0.48) }
-                                stamp(g,plates.title,center: (320,449),width: 205,maxHeight: 33)
+                                ctx.setAlpha(ease((t-ReelCue.departure-ReelCue.beat)/ReelCue.beat))
+                                for x in [157.0,415] { g.line([(x,449),(x+68,449)],0.68); g.line([(x+10,453),(x+59,453)],0.48) }
+                                stamp(g,plates.studio,center: (320,445),width: 183,maxHeight: 28)
+                                stamp(g,plates.title,center: (320,465),width: 125,maxHeight: 17)
                             }
                         }
                     }
