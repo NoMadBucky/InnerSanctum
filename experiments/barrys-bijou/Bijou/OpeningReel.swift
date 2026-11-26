@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// An original silent short, drawn in a 4:3 academy frame at silent-film speed.
+/// An original silent short in a 4:3 academy frame.
 struct OpeningReel: View {
     let finish: () -> Void
     @Environment(\.scenePhase) private var phase
@@ -11,15 +11,14 @@ struct OpeningReel: View {
     var body: some View {
         ZStack {
             Color(white: 0.045).ignoresSafeArea()
-            TimelineView(.animation(minimumInterval: 1 / 18, paused: phase != .active)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 60, paused: phase != .active)) { timeline in
                 let t = played + (started.map { max(0, timeline.date.timeIntervalSince($0)) } ?? 0)
                 Canvas { context, size in
                     var c = context
                     c.scaleBy(x: size.width / 640, y: size.height / 480)
                     let frame = CGRect(x: 0, y: 0, width: 640, height: 480)
                     c.clip(to: Path(roundedRect: frame, cornerRadius: 14))
-                    let tick = Int(t * 18)
-                    c.translateBy(x: sin(Double(tick) * 1.7) * 0.7, y: cos(Double(tick) * 0.9) * 0.7)
+                    let tick = Int(t * 12) // Age the print, not the camera movement.
                     if t < 3 { leader(c, t) } else { street(c, t - 3) }
                     wear(c, tick)
                     c.fill(Path(frame), with: .radialGradient(Gradient(colors: [.clear, .black.opacity(0.4)]),
@@ -77,7 +76,8 @@ struct OpeningReel: View {
     private func street(_ c: GraphicsContext, _ t: Double) {
         box(c, -2, -2, 644, 484, 0.71)
         var set = c
-        set.translateBy(x: -t * 5, y: 0)
+        let pan = -t * 3
+        set.translateBy(x: pan, y: 0)
         // Shopfronts and individually lit upper windows behind the theatre.
         for i in 0..<9 {
             let x = Double(i) * 93 - 47, y = Double([108, 135, 94, 120][i % 4])
@@ -98,22 +98,85 @@ struct OpeningReel: View {
         for i in 0..<4 { box(set, 257+Double(i)*43, 286, 34, 68, 0.38) }
         box(set, 183, 193, 315, 77, 0.23)
         box(set, 188, 198, 305, 62, 0.84)
-        letters(set, "B I J O U", at: CGPoint(x: 340, y: 227), size: 50, gray: 0.18)
-        for i in 0..<26 { box(set, 190+Double(i)*12, 263, 4, 3, 0.86) }
+        set.stroke(SteppedRail().path(in: CGRect(x: 193, y: 202, width: 295, height: 54)),
+                   with: .color(Color(white: 0.35)), lineWidth: 1.5)
+        var sign = set
+        sign.translateBy(x: 340, y: 225)
+        sign.scaleBy(x: 1.3, y: 1.3)
+        sign.draw(BijouWordmark.text.foregroundStyle(Color(white: 0.14)), at: .zero)
+        for x in [230.0, 300.0, 370.0] {
+            let lamp = CGPoint(x: x + 40, y: 265)
+            set.fill(Path(ellipseIn: CGRect(x: lamp.x-8, y: lamp.y-8, width: 16, height: 16)),
+                     with: .radialGradient(Gradient(colors: [.white, .clear]), center: lamp, startRadius: 2, endRadius: 8))
+        }
+        for x in [218.0, 420.0] {
+            box(set, x, 224, 42, 2, 0.45); box(set, x+6, 230, 30, 1, 0.45)
+        }
         box(c, 0, 371, 644, 111, 0.33)
         box(c, 0, 417, 644, 2, 0.62); box(c, 0, 430, 644, 2, 0.52)
-        // The passing streetcar briefly masks the doors, then clears the marquee.
+        // Ease into the stop, hold while the passengers alight, then accelerate out.
+        let arrival = max(0, 1 - t / 1.9)
+        let departure = max(0, t - 5.9)
+        let stopX = -26.0
+        let carX = stopX - 260 * arrival * arrival + 64 * departure * departure
+        if departure > 0 { crowd(set, t: t) }
         var car = c
-        car.translateBy(x: -285 + t * 122, y: 0)
+        car.translateBy(x: carX + pan, y: 0)
         box(car, 6, 288, 261, 10, 0.17); box(car, 0, 298, 274, 107, 0.26)
-        for i in 0..<8 { box(car, 8+Double(i)*33, 305, 25, 38, 0.65) }
+        for i in 0..<7 { box(car, 8+Double(i)*31, 305, 24, 38, 0.65) }
         box(car, 2, 352, 270, 3, 0.75)
         letters(car, "C I T Y   L I N E", at: CGPoint(x: 138, y: 375), size: 14, gray: 0.85)
         for x in [34, 212] { cWheel(car, x: x) }
-        if t > 5 {
+        box(car, 228, 302, 36, 99, 0.12)
+        let door = min(smooth((t - 1.7) / 0.4), 1 - smooth((t - 5.45) / 0.45))
+        for x in [228.0, 246 + 18 * door] { box(car, x, 302, 18 * (1 - door), 97, 0.46) }
+        if departure == 0 { crowd(set, t: t) }
+        if t > 6.5 {
             var title = c
-            title.opacity = min(1, t - 5)
+            title.opacity = smooth(t - 6.5)
             letters(title, "A Bijou Presentation", at: CGPoint(x: 320, y: 451), size: 28, gray: 0.95)
+        }
+    }
+    private func smooth(_ fraction: Double) -> Double {
+        let u = min(1, max(0, fraction))
+        return u * u * (3 - 2 * u)
+    }
+
+    private func crowd(_ c: GraphicsContext, t: Double) {
+        // Draw the earlier arrivals (further upstage) first. Two streams split
+        // around one another on the pavement and converge on four entrance bays.
+        for i in 0..<30 {
+            let age = t - 2 - Double(i) * 0.109
+            let travel = 2.15 + Double(i % 4) * 0.15
+            guard age >= 0, age < travel else { continue }
+            let u = age / travel
+            let lane = Double((i * 7) % 13)
+            let endX = 274.0 + Double((i * 3) % 4) * 43
+            let x = 219 + (endX - 219) * smooth(u) + sin(.pi * u) * (33 + lane)
+            let y = 398 - 39 * smooth(u) + sin(.pi * 2 * u) * (8 + lane)
+            let gait = sin(age * (15 + Double(i % 3)) + Double(i))
+            var p = c
+            p.opacity = smooth(age / 0.14) * smooth((travel - age) / 0.23)
+            p.translateBy(x: x, y: y - abs(gait) * 0.7)
+            let scale = (0.92 + Double(i % 5) * 0.055) * (1 - u * 0.27)
+            p.scaleBy(x: scale, y: scale)
+            let ink = Color(white: 0.09 + Double(i % 6) * 0.035)
+            var legs = Path()
+            for side in [-1.0, 1.0] {
+                legs.move(to: CGPoint(x: side * 2, y: -11))
+                legs.addLine(to: CGPoint(x: side * (2 + gait * 4), y: 0))
+            }
+            p.stroke(legs, with: .color(ink), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            var coat = Path()
+            coat.move(to: CGPoint(x: -3, y: -23)); coat.addLine(to: CGPoint(x: 4, y: -23))
+            coat.addLine(to: CGPoint(x: i.isMultiple(of: 3) ? 8 : 5, y: -8))
+            coat.addLine(to: CGPoint(x: -5, y: -9)); coat.closeSubpath()
+            p.fill(coat, with: .color(ink))
+            p.fill(Path(ellipseIn: CGRect(x: -3, y: -30, width: 7, height: 8)), with: .color(Color(white: 0.44)))
+            if !i.isMultiple(of: 3) {
+                box(p, -5, -29, 11, 2, 0.15); box(p, -3, -32, 7, 4, 0.19)
+            }
+            if i.isMultiple(of: 5) { box(p, 4 + gait, -13, 7, 6, 0.27) }
         }
     }
     private func cWheel(_ c: GraphicsContext, x: Int) {

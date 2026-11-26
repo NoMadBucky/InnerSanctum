@@ -8,8 +8,13 @@ enum MarqueeFinish {
     static let ivory = Color(red: 0.99, green: 0.95, blue: 0.85)
 }
 
+/// Use the lobby lettering on both the playbill and the theatre in the reel.
+enum BijouWordmark {
+    static let text = Text("Bijou").font(.system(.largeTitle, design: .serif).weight(.medium))
+}
+
 /// A brass picture rail with two setbacks at each corner.
-private struct SteppedRail: Shape {
+struct SteppedRail: Shape {
     func path(in rect: CGRect) -> Path {
         let x = rect.minX, y = rect.minY, r = rect.maxX, b = rect.maxY
         let s = min(5, rect.width / 8, rect.height / 8)

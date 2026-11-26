@@ -200,7 +200,7 @@ private struct TheaterLobby: View {
                         .frame(width: min(192, bounds.size.width * 0.44, bounds.size.height * 0.32))
                         .clipShape(RoundedRectangle(cornerRadius: 22))
                         .accessibilityHidden(true)
-                    Text("Bijou").font(.system(.largeTitle, design: .serif).weight(.medium))
+                    BijouWordmark.text
                         .accessibilityAddTraits(.isHeader)
                     BillingLine(title: "MOVIE JOURNAL").foregroundStyle(MarqueeFinish.gold)
                     Button(action: enter) {
