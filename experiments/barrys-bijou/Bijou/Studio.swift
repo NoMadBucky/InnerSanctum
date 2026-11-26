@@ -45,6 +45,7 @@ final class Studio: ObservableObject {
     }
 
     var isSample: Bool { journal?.base.library == Self.sampleID }
+    var reactionShelfRoot: URL? { storage?.directory }
     func reactionStore(library: String, film: FilmRef) -> ReactionStore? {
         storage.map { ReactionStore(root: $0.directory, library: library, film: film) }
     }

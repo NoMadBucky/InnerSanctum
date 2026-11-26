@@ -240,7 +240,9 @@ struct AudioReactions: View {
     let archived: [ArchivedReaction]
     let film: FilmRef
     let viewed: String?
-    init(store: ReactionStore, viewed: String?, film: FilmRef, archived: [ArchivedReaction]) {
+    let focusedTake: UUID?
+    init(store: ReactionStore, viewed: String?, film: FilmRef, archived: [ArchivedReaction], focusedTake: UUID? = nil) {
+        self.focusedTake = focusedTake
         self.archived = archived
         _room = StateObject(wrappedValue: ReactionRoom(store: store)); self.viewed = viewed; self.film = film
     }
@@ -251,7 +253,7 @@ struct AudioReactions: View {
     private var takes: [AudioReaction] {
         var merged = Dictionary(room.takes.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         for record in archived { merged[record.id] = record.take }
-        return merged.values.sorted { $0.recordedAt > $1.recordedAt }
+        return merged.values.filter { focusedTake == nil || $0.id == focusedTake }.sorted { $0.recordedAt > $1.recordedAt }
     }
     private func downloadAndPlay(_ take: AudioReaction, remote: ArchivedReaction?) {
         guard downloading == nil else { return }
@@ -276,6 +278,7 @@ struct AudioReactions: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if focusedTake == nil {
             Text("Audio reactions").font(.headline)
             Text("Up to two minutes per take · Saved on this device").font(.caption).foregroundStyle(.secondary)
             if room.recording {
@@ -293,6 +296,8 @@ struct AudioReactions: View {
                     Label(room.requesting ? "Waiting for microphone…" : "Record reaction", systemImage: "mic")
                 }.disabled(room.requesting)
             }
+            }
+            if focusedTake != nil && takes.isEmpty { Text("This recording is no longer on this device.") }
             ForEach(takes) { take in
                 let remote = archived.first { $0.id == take.id }
                 let filed = remote != nil || room.store.filed(take.id)
@@ -300,6 +305,17 @@ struct AudioReactions: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(take.recordedAt.formatted(date: .abbreviated, time: .shortened)).font(.subheadline.bold())
                     if let day = take.viewingDate { Text("Viewing: \(day)").font(.caption) }
+                    if focusedTake != nil {
+                        if let text = remote?.transcript {
+                            Text("Reviewed transcript").font(.headline)
+                            Text(text).textSelection(.enabled)
+                        }
+                        if let draft = try? room.store.draftTranscript(take.id), !draft.isEmpty, draft != remote?.transcript {
+                            Text("Local draft").font(.headline)
+                            Text(draft).textSelection(.enabled)
+                        } else if remote?.transcript == nil { Text("No transcript yet.").foregroundStyle(.secondary) }
+                        if !filed { Label("Only on this device", systemImage: "internaldrive") }
+                    }
                     if local {
                         Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { Task { await room.play(take) } }
                             .disabled(room.recording || room.requesting)

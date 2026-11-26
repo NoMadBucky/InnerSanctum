@@ -90,13 +90,14 @@ enum WatchedSort {
 }
 
 enum MovieShelf: String, CaseIterable {
-    case watched = "Watched", watchlist = "Watchlist", library = "Library", all = "All Movies"
+    case watched = "Watched", watchlist = "Watchlist", library = "Library", all = "All Movies", reactions = "Reactions"
     func includes(_ film: Film) -> Bool {
         switch self {
         case .watched: return film.isViewed
         case .watchlist: return film.watchlist ?? (film.metadata?["video_status"] == "watchlist")
         case .library: return film.isInLibrary
         case .all: return true
+        case .reactions: return false // This shelf lists individual takes rather than films.
         }
     }
 }

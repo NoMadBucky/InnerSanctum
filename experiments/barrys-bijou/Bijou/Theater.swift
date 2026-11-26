@@ -74,6 +74,7 @@ struct Theater: View {
     @State private var home = false
     @State private var searchingTMDb = false
     @State private var query = ""
+    @State private var reactionCount = 0
     @State private var sort = WatchedSort.viewed
     @State private var shelf = MovieShelf.watched
     @State private var path: [FilmRef] = []
@@ -111,15 +112,17 @@ struct Theater: View {
                             Text(studio.isSample ? "SAMPLE PROGRAM" : studio.isSnapshot ? "SCREENING COPY" :
                                     studio.journal?.base.origin == "personal" ? "PERSONAL OKF" : "HOME PROGRAM")
                             Spacer()
-                            Text("\(shelfFilms.count) FILMS")
+                            Text(shelf == .reactions ? "\(reactionCount) TAKES" : "\(shelfFilms.count) FILMS")
                         }.font(.caption.monospaced()).foregroundStyle(MarqueeFinish.gold)
                     }.modifier(MarqueePanel())
                     if let j = studio.journal {
                         Button { home = true } label: {
                             Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "ticket")
                         }.buttonStyle(.plain).accessibilityHint("Opens home sync")
-                        TextField("Find a film or transcript", text: $query).textFieldStyle(.roundedBorder)
-                        if j.base.origin == "personal", studio.credentials?.library == j.base.library {
+                        if shelf != .reactions {
+                            TextField("Find a film or transcript", text: $query).textFieldStyle(.roundedBorder)
+                        }
+                        if shelf != .reactions, j.base.origin == "personal", studio.credentials?.library == j.base.library {
                             Button { searchingTMDb = true } label: { Label("Search TMDb", systemImage: "magnifyingglass") }
                                 .buttonStyle(AdmissionStyle())
                         }
@@ -130,6 +133,9 @@ struct Theater: View {
                                 ForEach(MovieShelf.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                             }.pickerStyle(.menu).labelsHidden()
                         }
+                        if shelf == .reactions {
+                            ReactionsShelf(count: $reactionCount).id(j.base.library)
+                        } else {
                         Picker("Sort movies", selection: $sort) {
                             Text("Recently viewed").tag(WatchedSort.viewed)
                             Text("Ranked").tag(WatchedSort.ranked)
@@ -164,6 +170,7 @@ struct Theater: View {
                                 }.buttonStyle(.plain).accessibilityIdentifier("film-\(film.id)")
                                 Divider()
                             }
+                        }
                         }
                     } else {
                         Text(studio.notice ?? "Loading the film catalog…")
