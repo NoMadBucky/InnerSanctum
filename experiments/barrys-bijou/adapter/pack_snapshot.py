@@ -44,7 +44,7 @@ def pack(snapshot, output, art_hosts=()):
         entries, _, _ = bijou.parse_order(bijou.source(root, path), "bho:" + bijou.RANK_PATH.fullmatch(path)[1])
         revision = original[path]
     library = "snapshot-" + writer.digest(writer.json_bytes(original))
-    catalog = bijou.catalog_rows(root, library, revision, entries)
+    catalog = bijou.catalog_rows(root, library, revision, entries, all_movies=True)
     with TemporaryDirectory(dir=parent) as scratch:
         folder = Path(scratch)
         cache_covers(root, folder, art_hosts)
@@ -78,4 +78,4 @@ if __name__ == "__main__":
     parser.add_argument("--art-host", action="append", default=[])
     args = parser.parse_args()
     os.umask(0o077)
-    print("Watched films: %d; thumbnails: %d." % pack(args.snapshot, args.output, args.art_host))
+    print("Movies: %d; thumbnails: %d." % pack(args.snapshot, args.output, args.art_host))

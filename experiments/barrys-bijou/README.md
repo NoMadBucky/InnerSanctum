@@ -1,4 +1,4 @@
-# Barry’s Bijou
+# Bijou
 
 **Status: Personal home sync activated, 2026-11-25.** The adopted Personal
 OKF library now holds the ordered ranking imported from the phone. Pair
@@ -9,7 +9,7 @@ Mac. Browse Watched, rank offline, quit, and revisit the same order.
 The [build and pairing guide](run.md) walks through a two-device trial
 against a disposable OKF bundle.
 
-Barry’s Bijou is a SwiftUI **movie journal for iPhone and Mac**, using the
+Bijou is a SwiftUI **movie journal for iPhone and Mac**, using the
 Personal OKF bundle as its film library. Choose **Enter theater** on the opening
 marquee to see **Watched**, most recently
 watched first. Pick a film to see its details or give it a place in your

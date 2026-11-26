@@ -21,7 +21,7 @@ def main():
         before = {p: f.read_bytes() for p, f in writer.visible_files(root)}
         whole = {f.relative_to(root): f.read_bytes() for f in root.rglob("*") if f.is_file()}
         package = root.parent / "practice.bijou.json"
-        assert pack(root, package) == (6, 5)
+        assert pack(root, package) == (7, 5)
         assert whole == {f.relative_to(root): f.read_bytes() for f in root.rglob("*") if f.is_file()}
         home = Home(root)
         home.identity()

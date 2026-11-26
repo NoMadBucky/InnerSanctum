@@ -23,6 +23,47 @@ struct Film: Codable, Identifiable {
     let sources: [Source]
     let posterKey: String?
     var metadata: [String: String]? = nil
+    var viewed: Bool? = nil
+    var watchlist: Bool? = nil
+    var inLibrary: Bool? = nil
+    var tmdb: String? = nil
+    var plex: String? = nil
+    var plexMovieLinks: (app: URL, web: URL)? {
+        // Existing synced catalogs store the older preplay link; reuse its exact match.
+        guard let plex, let parts = URLComponents(string: plex),
+              parts.scheme == "plex", parts.host == "preplay",
+              let server = parts.queryItems?.first(where: { $0.name == "server" })?.value,
+              server.range(of: #"^[A-Za-z0-9-]{8,128}\z"#, options: .regularExpression) != nil,
+              let key = parts.queryItems?.first(where: { $0.name == "metadataKey" })?.value,
+              key.range(of: #"^/library/metadata/[1-9][0-9]*\z"#, options: .regularExpression) != nil else { return nil }
+        let segment = key.replacingOccurrences(of: "/", with: "%2F")
+        guard let app = URL(string: "plex://libraries/\(server)/unmatched/\(segment)"),
+              let web = URL(string: "https://app.plex.tv/desktop/#!/server/\(server)/details?key=\(segment)") else { return nil }
+        return (app, web)
+    }
+    var tmdbEntry: URL? {
+        for text in [tmdb].compactMap({ $0 }) + sources.map(\.address) {
+            if let u = URL(string: text), ["https", "http"].contains(u.scheme?.lowercased() ?? ""),
+               ["www.themoviedb.org", "themoviedb.org", "tmdb.org"].contains(u.host?.lowercased() ?? ""),
+               let range = u.path.range(of: #"^/movie/[1-9][0-9]*(?=[-/]|$)"#, options: .regularExpression) {
+                return URL(string: "https://www.themoviedb.org" + u.path[range])
+            }
+        }
+        return nil
+    }
+    var tmdbSearch: URL? {
+        var parts = URLComponents(string: "https://www.themoviedb.org/search/movie")
+        parts?.queryItems = [URLQueryItem(name: "query", value: title)]
+        return parts?.url
+    }
+    // Catalogs from before these fields existed contained watched movies only.
+    var isViewed: Bool { viewed ?? true }
+    var isInLibrary: Bool { inLibrary ?? (metadata?["in_library"]?.lowercased() == "true") }
+    var viewingLabel: String {
+        if let watched { return "Watched \(watched)" }
+        if isViewed { return "Watch date unknown" }
+        return watchlist == true ? "Watchlist" : "Not marked watched"
+    }
     var id: String { ref.path }
 
     static func viewingOrder(_ a: Film, _ b: Film) -> Bool {
@@ -43,6 +84,18 @@ enum WatchedSort {
                 if first != second { return first < second }
             }
             return Film.viewingOrder(a, b)
+        }
+    }
+}
+
+enum MovieShelf: String, CaseIterable {
+    case watched = "Watched", watchlist = "Watchlist", library = "Library", all = "All Movies"
+    func includes(_ film: Film) -> Bool {
+        switch self {
+        case .watched: return film.isViewed
+        case .watchlist: return film.watchlist ?? (film.metadata?["video_status"] == "watchlist")
+        case .library: return film.isInLibrary
+        case .all: return true
         }
     }
 }
@@ -115,7 +168,7 @@ struct Journal: Codable {
     var needsReview: Bool { review != nil || !base.issues.isEmpty }
 
     mutating func confirm(_ film: FilmRef, gap: Gap) throws {
-        guard !needsReview, base.films.contains(where: { $0.ref == film }) else {
+        guard !needsReview, base.films.contains(where: { $0.ref == film && $0.isViewed }) else {
             throw BijouError("Review the catalog before changing this film.")
         }
         let next = try gap.placing(film, in: order)
@@ -200,6 +253,6 @@ struct Journal: Codable {
                 .replacingOccurrences(of: "[", with: "\\[").replacingOccurrences(of: "]", with: "\\]")
             return "\(offset + 1). [\(title)](/\(ref.path))"
         }
-        return (["# Barry’s Bijou", "", "## Ranking", ""] + lines).joined(separator: "\n") + "\n"
+        return (["# Bijou", "", "## Ranking", ""] + lines).joined(separator: "\n") + "\n"
     }
 }

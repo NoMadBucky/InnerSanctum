@@ -1,4 +1,24 @@
-# Build and try Barry’s Bijou
+# Build and try Bijou
+
+## Open a library movie in Plex on iPhone
+
+1. On the Mac, open Plex Web. Select a movie **from your server’s Movies
+   library**, then choose **⋯ → Get Info → View XML**. Copy the address of
+   the XML page. It can include a Plex access token; keep it local.
+2. In Terminal, from the InnerSanctum checkout, run:
+
+   ```sh
+   uv run --locked python experiments/barrys-bijou/adapter/plex_export.py
+   ```
+
+3. Paste the address at the hidden prompt and press Return. The helper reads
+   all movie sections visible to you on that server and saves exact,
+   unambiguous TMDb-to-Plex matches in the Personal adapter’s Application
+   Support folder. You do not need to download or send an XML file.
+4. With the updated Personal adapter running and the new Bijou build on your
+   phone, choose **Home Sync → Sync now**. Open **Library**, select a matched
+   film, and tap **Open movie in Plex**. Unmatched films show **Open Plex**.
+   Rerun the helper after adding movies or rebuilding your Plex library.
 
 ## First screening
 

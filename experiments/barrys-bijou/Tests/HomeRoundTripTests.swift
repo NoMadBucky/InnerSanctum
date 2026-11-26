@@ -77,7 +77,7 @@ final class HomeRoundTripTests: XCTestCase {
             throw XCTSkip("Run adapter/rehearse.py to include the screening copy.")
         }
         let copy = try ScreeningCopy.read(URL(fileURLWithPath: path))
-        XCTAssertEqual(copy.catalog.films.count, 6); XCTAssertEqual(copy.covers.count, 5)
+        XCTAssertEqual(copy.catalog.films.count, 7); XCTAssertEqual(copy.covers.count, 5)
         XCTAssertTrue(copy.catalog.library.hasPrefix("snapshot-"))
         var local = Journal(copy.catalog)
         let film = try XCTUnwrap(local.base.films.first)
@@ -104,8 +104,10 @@ final class HomeRoundTripTests: XCTestCase {
         catch let e as HomeResponse { XCTAssertEqual(e.status, 403) }
         let mac = HomeClient(try await HomeClient.pair(PairCode.parse(macCode), at: address))
         let initial = try await phone.catalog()
-        XCTAssertEqual(initial.films.count, 6); XCTAssertTrue(initial.order.isEmpty)
-        let sorted = initial.films.sorted(by: Film.viewingOrder)
+        XCTAssertEqual(initial.films.count, 7); XCTAssertTrue(initial.order.isEmpty)
+        XCTAssertEqual(initial.films.filter(MovieShelf.watchlist.includes).count, 1)
+        let sorted = initial.films.filter(MovieShelf.watched.includes).sorted(by: Film.viewingOrder)
+        XCTAssertEqual(sorted.count, 6)
         XCTAssertEqual(sorted.map(\.title).prefix(3), ["The Last Projection", "A Balcony for Two", "Northbound at Midnight"])
         XCTAssertNil(sorted.last?.watched)
         let a = sorted[0].ref, b = sorted[1].ref, c = sorted[2].ref

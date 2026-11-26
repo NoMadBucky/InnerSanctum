@@ -17,11 +17,12 @@ struct Poster: View {
     @EnvironmentObject var studio: Studio
     let film: Film?
     let width: CGFloat
+    var fit = false
     var body: some View {
         let _ = studio.coverGeneration
         ZStack {
             if let key = film?.posterKey, let url = studio.coverURL(key), let image = image(url) {
-                image.resizable().scaledToFill()
+                image.resizable().aspectRatio(contentMode: fit ? .fit : .fill)
             } else {
                 let colors: [Color] = [Color(red: 0.17, green: 0.29, blue: 0.32), Color(red: 0.33, green: 0.17, blue: 0.24),
                                        Color(red: 0.18, green: 0.29, blue: 0.23), Color(red: 0.20, green: 0.22, blue: 0.34)]
@@ -73,6 +74,7 @@ struct Theater: View {
     @State private var home = false
     @State private var query = ""
     @State private var sort = WatchedSort.viewed
+    @State private var shelf = MovieShelf.watched
     @State private var path: [FilmRef] = []
     @State private var entered = false
     var body: some View {
@@ -95,18 +97,19 @@ struct Theater: View {
 
     private var watched: some View {
         let h = House(scheme)
+        let shelfFilms = studio.journal?.base.films.filter(shelf.includes) ?? []
         return NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("B A R R Y ’ S   B I J O U").font(.caption.weight(.bold)).foregroundStyle(h.brass)
-                        Text("Watched").font(.system(size: 44, weight: .medium, design: .serif))
+                        Text("B I J O U").font(.caption.weight(.bold)).foregroundStyle(h.brass).frame(maxWidth: .infinity)
+                        Text(shelf.rawValue).font(.system(size: 44, weight: .medium, design: .serif)).frame(maxWidth: .infinity)
                         Rectangle().fill(h.brass).frame(height: 2)
                         HStack {
                             Text(studio.isSample ? "SAMPLE PROGRAM" : studio.isSnapshot ? "SCREENING COPY" :
                                     studio.journal?.base.origin == "personal" ? "PERSONAL OKF" : "HOME PROGRAM")
                             Spacer()
-                            Text("\(studio.journal?.base.films.count ?? 0) FILMS")
+                            Text("\(shelfFilms.count) FILMS")
                         }.font(.caption.monospaced()).foregroundStyle(h.brass)
                     }
                     if let j = studio.journal {
@@ -114,15 +117,18 @@ struct Theater: View {
                             Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "ticket")
                         }.buttonStyle(.plain).accessibilityHint("Opens home sync")
                         TextField("Find a film", text: $query).textFieldStyle(.roundedBorder)
-                        Picker("Sort watched films", selection: $sort) {
+                        Picker("Show movies", selection: $shelf) {
+                            ForEach(MovieShelf.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        }.pickerStyle(.menu)
+                        Picker("Sort movies", selection: $sort) {
                             Text("Recently viewed").tag(WatchedSort.viewed)
                             Text("Ranked").tag(WatchedSort.ranked)
                         }.pickerStyle(.segmented)
                         let ranks = Dictionary(j.order.enumerated().map { ($0.element, $0.offset + 1) },
                                                uniquingKeysWith: min)
-                        let matches = j.base.films.filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) }
+                        let matches = shelfFilms.filter { query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) }
                         let films = sort.films(matches, ranks: ranks)
-                        if films.isEmpty { Text(query.isEmpty ? "Your watched films will appear here." : "No matching films.") }
+                        if films.isEmpty { Text(query.isEmpty ? "No films in this collection yet." : "No matching films.") }
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(films) { film in
                                 Button { path.append(film.ref) } label: {
@@ -130,7 +136,7 @@ struct Theater: View {
                                         Poster(film: film, width: 112 * 2 / 3)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(film.title).font(.system(.headline, design: .serif))
-                                            Text([film.year, film.watched ?? "Watch date unknown"].compactMap { $0 }.joined(separator: "  ·  "))
+                                            Text([film.year, film.viewingLabel].compactMap { $0 }.joined(separator: "  ·  "))
                                                 .font(.subheadline).foregroundStyle(.secondary)
                                             if let rank = ranks[film.ref] { Text("Ranked · #\(rank)").font(.caption.bold()).foregroundStyle(h.brass) }
                                         }
@@ -167,7 +173,7 @@ private struct TheaterLobby: View {
                         .frame(width: min(192, bounds.size.width * 0.44, bounds.size.height * 0.32))
                         .clipShape(RoundedRectangle(cornerRadius: 22))
                         .accessibilityHidden(true)
-                    Text("Barry’s Bijou").font(.system(.largeTitle, design: .serif).weight(.medium))
+                    Text("Bijou").font(.system(.largeTitle, design: .serif).weight(.medium))
                         .accessibilityAddTraits(.isHeader)
                     HStack {
                         Rectangle().frame(width: 32, height: 1)
@@ -195,25 +201,52 @@ struct FilmDetail: View {
     @EnvironmentObject private var studio: Studio
     @Environment(\.colorScheme) private var scheme
     @State private var placing = false
+    @State private var posterOpen = false
+    @State private var plexUnavailable = false
+    @Environment(\.openURL) private var openURL
     var body: some View {
         let h = House(scheme)
         ScrollView {
             if let j = studio.journal, let f = j.base.films.first(where: { $0.ref == ref }) {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(alignment: .top, spacing: 18) {
-                        Poster(film: f, width: 96)
+                        Button { posterOpen = true } label: { Poster(film: f, width: 96) }
+                            .buttonStyle(.plain).accessibilityLabel("View full poster for \(f.title)")
                         VStack(alignment: .leading, spacing: 8) {
                             Text("FILM DETAIL").font(.caption.monospaced()).foregroundStyle(h.brass)
                             Text(f.title).font(.system(.title, design: .serif).weight(.medium))
                             if let year = f.year { Text(year).font(.headline) }
-                            Text(f.watched.map { "Watched \($0)" } ?? "Watch date unknown").font(.subheadline)
+                            Text(f.viewingLabel).font(.subheadline)
                         }
                     }
                     if let d = f.description { Text(d).font(.system(.title3, design: .serif)) }
+                    VStack(alignment: .leading, spacing: 10) {
+                        if let destination = f.tmdbEntry ?? f.tmdbSearch {
+                            Link(destination: destination) {
+                                Label(f.tmdbEntry == nil ? "Search TMDb" : "View on TMDb", systemImage: "film")
+                            }
+                        }
+                    #if os(iOS)
+                        if f.isInLibrary {
+                            if let links = f.plexMovieLinks {
+                                Button {
+                                    openURL(links.app) { if !$0 { openURL(links.web) } }
+                                } label: { Label("Open movie in Plex", systemImage: "play.rectangle") }
+                            } else {
+                                Button {
+                                    openURL(URL(string: "plex://")!) { if !$0 { plexUnavailable = true } }
+                                } label: { Label("Open Plex", systemImage: "play.rectangle") }
+                            }
+                        }
+                    #endif
+                    }
+                    .buttonStyle(.borderedProminent).controlSize(.large)
                     let rank = j.order.firstIndex(of: ref)
                     if let rank { Text("Your ranking: #\(rank + 1) of \(j.order.count)").font(.headline).accessibilityIdentifier("rank-position") }
-                    Button(rank == nil ? "Rank" : "Rerank") { placing = true }
-                        .buttonStyle(.borderedProminent).disabled(j.needsReview).accessibilityIdentifier("rank-action")
+                    if f.isViewed {
+                        Button(rank == nil ? "Rank" : "Rerank") { placing = true }
+                            .buttonStyle(.borderedProminent).disabled(j.needsReview).accessibilityIdentifier("rank-action")
+                    }
                     if j.needsReview { Text("Open Home Sync to review the ranking.").font(.caption) }
                     if let store = studio.reactionStore(library: j.base.library, film: ref) {
                         Divider()
@@ -243,10 +276,35 @@ struct FilmDetail: View {
                         }
                     }
                 }.frame(maxWidth: 700, alignment: .leading).padding(22).frame(maxWidth: .infinity)
-            } else { Text("This film is no longer in the watched catalog.") }
+            } else { Text("This film is no longer in the catalog.") }
         }.background(h.paper).foregroundStyle(h.ink)
         .sheet(isPresented: $placing) {
             if let j = studio.journal { PlacementEditor(film: ref, catalog: j.base, order: j.order, review: false) }
+        }
+        #if os(iOS)
+        .fullScreenCover(isPresented: $posterOpen) { posterPage }
+        #else
+        .sheet(isPresented: $posterOpen) { posterPage.frame(minWidth: 480, minHeight: 560) }
+        #endif
+        .alert("Plex could not be opened", isPresented: $plexUnavailable) {
+            Button("OK") {}
+        } message: { Text("Check that the Plex app is installed on this iPhone.") }
+    }
+    private var posterPage: some View {
+        GeometryReader { bounds in
+            ZStack(alignment: .topTrailing) {
+                Color.black.ignoresSafeArea()
+                if let f = studio.journal?.base.films.first(where: { $0.ref == ref }) {
+                    Poster(film: f, width: min(bounds.size.width, bounds.size.height / 1.5), fit: true)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .accessibilityHidden(false).accessibilityLabel("\(f.title) poster")
+                }
+                Button { posterOpen = false } label: {
+                    Label("Close poster", systemImage: "xmark.circle.fill").labelStyle(.iconOnly)
+                        .font(.title).padding(8)
+                }.buttonStyle(.plain).foregroundStyle(.white).background(.black.opacity(0.7), in: Circle()).padding()
+                    .keyboardShortcut(.cancelAction)
+            }
         }
     }
 }

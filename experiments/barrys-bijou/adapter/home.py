@@ -117,8 +117,8 @@ class Home:
     def cache_covers(self, allowed):
         cache_covers(self.root, self.state, allowed)
 
-    def catalog(self):
-        return bijou.catalog(self.root)
+    def catalog(self, *, all_movies=False):
+        return bijou.catalog(self.root, all_movies=all_movies)
 
     def place(self, payload):
         return bijou.place(self.root, payload, "process:bijou-fixture")
@@ -144,9 +144,20 @@ class PersonalHome(Home):
                 raise Refused("Personal adoption changed.")
             yield root, successor
 
-    def catalog(self):
+    def catalog(self, *, all_movies=False):
         with self.target() as (root, successor):
-            return bijou.catalog(root, successor)
+            catalog = bijou.catalog(root, successor, all_movies=all_movies)
+        file = self.state / "plex-movies.json"
+        if all_movies and file.exists():
+            links = json.loads(writer.read_file(file))
+            for film in catalog["films"]:
+                if film["inLibrary"] and film["tmdb"]:
+                    pair = links.get(film["tmdb"].rsplit("/", 1)[1])
+                    if (isinstance(pair, list) and len(pair) == 2
+                            and all(isinstance(v, str) for v in pair)
+                            and re.fullmatch("[A-Za-z0-9-]{8,128}", pair[0]) and re.fullmatch("[1-9][0-9]*", pair[1])):
+                        film["plex"] = f"plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F{pair[1]}&metadataType=1&server={pair[0]}"
+        return catalog
 
     def place(self, payload):
         with self.target() as (root, successor):
@@ -179,7 +190,7 @@ def cache_covers(root, directory, allowed):
             continue
         data, _, _ = document(writer.read_file(file).decode())
         url = data.get("poster")
-        if not bijou.watched(data) or not isinstance(url, str):
+        if not bijou.movie(data) or not isinstance(url, str):
             continue
         dest = directory / (hashed(url) + ".jpg")
         if dest.exists():
@@ -242,8 +253,8 @@ def handler(home):
                 auth = self.headers.get("Authorization", "")
                 if not auth.startswith("Bearer ") or not home.authenticated(auth[7:]):
                     return self.reply(401, {"error": "Pair this device."})
-                if self.command == "GET" and self.path == "/catalog":
-                    return self.reply(200, home.catalog())
+                if self.command == "GET" and self.path in {"/catalog", "/catalog/all"}:
+                    return self.reply(200, home.catalog(all_movies=self.path == "/catalog/all"))
                 if self.command == "POST" and self.path == "/place":
                     return self.reply(200, home.place(payload))
                 if self.command == "GET" and (m := re.fullmatch(r"/covers/([0-9a-f]{64})", self.path)):

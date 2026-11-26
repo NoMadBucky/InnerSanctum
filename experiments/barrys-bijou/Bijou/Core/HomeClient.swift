@@ -129,7 +129,12 @@ final class HomeClient {
         }
         return Credentials(url: url, fingerprint: fingerprint, device: r.device, token: r.token, library: r.library)
     }
-    func catalog() async throws -> Catalog { try await JSONDecoder().decode(Catalog.self, from: send("catalog")) }
+    func catalog() async throws -> Catalog {
+        do { return try await JSONDecoder().decode(Catalog.self, from: send("catalog/all")) }
+        catch let error as HomeResponse where error.status == 404 {
+            return try await JSONDecoder().decode(Catalog.self, from: send("catalog"))
+        }
+    }
     func place(_ p: Placement) async throws -> Receipt {
         try await JSONDecoder().decode(Receipt.self, from: send("place", data: JSONEncoder().encode(p)))
     }

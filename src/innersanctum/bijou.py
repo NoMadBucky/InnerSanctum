@@ -60,8 +60,12 @@ def parse_order(text, identity):
     return entries, prefix, nl
 
 
+def movie(data):
+    return data.get("type") == "Video" and data.get("video_type") == "Movie"
+
+
 def watched(data):
-    return (data.get("type") == "Video" and data.get("video_type") == "Movie"
+    return (movie(data)
             and (date_value(data.get("date_watched")) or data.get("video_status") == "watched"))
 
 
@@ -69,14 +73,23 @@ def movie_ref(path, identity):
     return {"path": path, **({"personalID": identity} if identity is not None else {})}
 
 
-def catalog_rows(root, library, revision, entries):
+def tmdb_entry(data, links, body):
+    pattern = r"https?://(?:www\.)?(?:themoviedb\.org|tmdb\.org)/(?:[a-z]{2}(?:-[a-z]{2})?/)?movie/([1-9][0-9]*)(?=[-/?#)\s>]|$)"
+    for address in [data.get("url"), *(s["address"] for s in links)]:
+        if isinstance(address, str) and (m := re.match(pattern, address, re.I)):
+            return "https://www.themoviedb.org/movie/" + m[1]
+    ids = set(re.findall(pattern, body, re.I))
+    return "https://www.themoviedb.org/movie/" + ids.pop() if len(ids) == 1 else None
+
+
+def catalog_rows(root, library, revision, entries, *, all_movies=False):
     movies, issues, refs = [], [], {}
     for path, file in w.visible_files(root):
         match = MOVIE_PATH.fullmatch(path)
         if not match:
             continue
         data, body, _ = document(read_text(w.read_file(file)))
-        if not watched(data):
+        if not movie(data) or not all_movies and not watched(data):
             continue
         identity = data.get("id")
         ref = movie_ref(path, identity)
@@ -85,6 +98,8 @@ def catalog_rows(root, library, revision, entries):
         if type(data.get("ranked", False)) is not bool or data.get("ranked", False) != (path in entries):
             issues.append(f"Membership disagrees with the list: {path}")
         refs[path] = ref
+        if path in entries and not watched(data):
+            issues.append(f"Ranked movie is no longer watched: {path}")
         release = data.get("release_date")
         day = data.get("date_watched")
         src = data.get("sources") or []
@@ -94,6 +109,8 @@ def catalog_rows(root, library, revision, entries):
             links = [{"title": "Film reference", "address": data["url"]}]
         poster = data.get("poster")
         movies.append({"ref": ref, "title": data["title"], "watched": str(day)[:10] if date_value(day) else None,
+                       "viewed": watched(data), "watchlist": data.get("video_status") == "watchlist",
+                       "inLibrary": data.get("in_library") is True, "tmdb": tmdb_entry(data, links, body),
                        "year": str(release)[:4] if date_value(release) or datetime_value(release) else None,
                        "body": body.strip(), "sources": links, "description": data.get("description"),
                        "metadata": {k: str(data[k]) for k in ("id", "video_type", "video_status", "date_watched",
@@ -107,17 +124,17 @@ def catalog_rows(root, library, revision, entries):
             "issues": sorted(issues)}
 
 
-def inspect_catalog(root, cfg):
+def inspect_catalog(root, cfg, *, all_movies=False):
     text = source(root, cfg["path"])
     entries, _, _ = parse_order(text, cfg["id"])
-    return catalog_rows(root, cfg["library"], w.digest(text.encode()), entries)
+    return catalog_rows(root, cfg["library"], w.digest(text.encode()), entries, all_movies=all_movies)
 
 
-def catalog(root, successor=None):
+def catalog(root, successor=None, *, all_movies=False):
     cfg = personal_config(root, successor) if successor else binding(root)
     with w.locked(root, successor):
         w.require_idle(root)
-        snapshot = inspect_catalog(root, cfg)
+        snapshot = inspect_catalog(root, cfg, all_movies=all_movies)
         if successor:
             snapshot["origin"] = "personal"
         return snapshot
@@ -281,7 +298,8 @@ def personal_config(root, successor):
 
 def ordered_rows(export):
     lines = export.splitlines()
-    if lines[:4] != ["# Barry’s Bijou", "", "## Ranking", ""] or not 1 <= len(lines[4:]) <= 1000:
+    if (lines[:1] not in (["# Bijou"], ["# Barry’s Bijou"]) or lines[1:4] != ["", "## Ranking", ""]
+            or not 1 <= len(lines[4:]) <= 1000):
         raise Refused("Expected a nonempty Bijou Markdown ranking export.")
     rows = {}
     for i, line in enumerate(lines[4:], 1):
