@@ -5,6 +5,7 @@ final class TimelineTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-interiorMissFixture"]
         app.launch()
+        app.buttons["Skip Intro"].tap()
         app.buttons["New Game"].tap()
         app.buttons["Place Here"].tap() // Before both, instead of between them.
         XCTAssertTrue(app.staticTexts["ghost"].waitForExistence(timeout: 5))
@@ -24,6 +25,8 @@ final class TimelineTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-firstGuessFixture"]
         app.launch()
+        app.buttons["Read Rules"].tap()
+        app.buttons["Continue"].tap()
         app.buttons["New Game"].tap()
         let openingID = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tableCard.'"))
             .firstMatch.identifier
@@ -52,6 +55,7 @@ final class TimelineTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-lastGuessFixture"]
         app.launch()
+        app.buttons["Skip Intro"].tap()
         app.buttons["New Game"].tap()
         XCTAssertTrue(app.staticTexts["Guess 10 of 10  ·  9 correct"].waitForExistence(timeout: 5))
         let timeline = app.scrollViews["timeline"]
@@ -78,6 +82,7 @@ final class TimelineTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["9/10"].firstMatch.exists)
         app.terminate()
         app.launch()
+        app.buttons["Skip Intro"].tap()
         app.buttons["High Scores"].tap()
         XCTAssertTrue(app.staticTexts["9/10"].firstMatch.exists)
     }

@@ -3,10 +3,15 @@ import SwiftUI
 @main
 struct ChronologyApp: App {
     @State private var session = UUID()
+    @State private var showNewsreel = true
 
     var body: some Scene {
         WindowGroup {
-            GameLoader { session = UUID() }.id(session)
+            if showNewsreel {
+                StartupNewsreel { showNewsreel = false }
+            } else {
+                GameLoader { session = UUID() }.id(session)
+            }
         }
     }
 }

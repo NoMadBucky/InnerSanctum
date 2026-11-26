@@ -23,6 +23,21 @@ shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
+Before the welcome screen, a separate 19-second newsreel plays once per app
+launch. Skip Intro opens the menu immediately. Read Rules, VoiceOver and
+Reduce Motion provide a text version. The film includes original narration,
+burned-in instructions and excerpts from these public-domain archival films:
+
+- [Arrival of a Train at La Ciotat](https://commons.wikimedia.org/wiki/File:Arrival_of_a_Train_at_La_Ciotat_(The_Lumi%C3%A8re_Brothers,_1895).webm),
+  Lumière brothers (`train.webm`).
+- [San Francisco earthquake aftermath](https://commons.wikimedia.org/wiki/File:San_Francisco_Earthquake_aftermath,_1906.ogv),
+  Market Street after the 1906 earthquake, Prelinger Archives (`quake.ogv`).
+- [Apollo 11: first steps on the Moon](https://commons.wikimedia.org/wiki/File:Apollo_11_Landing_-_first_steps_on_the_moon.ogv),
+  NASA, 1969 (`moon.ogv`).
+
+To rebuild it on macOS, download those three files under the local names above
+and run `python3 Tools/build_newsreel.py /path/to/originals`.
+
 The 14.5-second, 60 fps loop dissolves between five images:
 
 - [Diamond Sutra frontispiece](https://commons.wikimedia.org/wiki/File:Diamond_sutra.jpg),
