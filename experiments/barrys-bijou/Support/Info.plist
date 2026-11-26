@@ -14,4 +14,6 @@
     <key>NSBonjourServices</key><array><string>_bijou-home._tcp</string></array>
     <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
     <key>UILaunchScreen</key><dict/>
+    <key>UIFileSharingEnabled</key><true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key><true/>
 </dict></plist>
