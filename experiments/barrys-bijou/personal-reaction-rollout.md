@@ -27,6 +27,31 @@ check. No `audio/` directory, reaction source keys, or `OKF/Documents/reactions/
 directory existed. This establishes a starting point, not a stopped checkpoint
 or evidence of a completed backup. Repeat verification before activation.
 
+### Implementation and rehearsal status
+
+The Personal importer and schema installer are implemented but not activated.
+Tests on a disposable adopted checkout with an existing version-1 catalog
+recovered an interrupted schema install, retried a filing after source
+publication, preserved the existing catalog entry and refused a stale catalog
+and a replaced source directory. The native upload rehearsal uses the practice
+adapter; physical-device Personal filing and live restore are not yet verified.
+
+`adapter/prepare_reactions.py` is a stopped, separately authorized operator
+step. It checks the exact checkout, expected OKF adoption and approved catalog
+SHA-256, creates the private `SourceFiles/.innersanctum-sources/` state and
+`audio/`, and installs `Documents/reactions/index.md` via a recoverable OKF
+writer operation. It returns a source binding pin. An existing unbound audio
+directory or partially prepared unknown state requires inspection, not removal.
+The Personal adapter advertises filing only when started with the separate
+`--source-writer-pin`. Omitting this option disables uploads. Neither serving
+requests nor ordinary sync prepares or adopts a store.
+
+During import, an interrupted catalog replacement retains the take UUID and
+both revisions in private state. Retry the same take; never manually advance
+the cursor. For an interrupted OKF publication, recover the pending operation
+through the adopted checkout before retrying. Keep the phone copy until the
+receipt is saved.
+
 ## Scope of one filing
 
 * Target: the exact adopted `InnerSanctum/OKF` and its physical sibling

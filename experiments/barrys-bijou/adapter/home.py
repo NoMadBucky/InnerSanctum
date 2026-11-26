@@ -170,13 +170,16 @@ class Home:
 
 class PersonalHome(Home):
     """Separate enrollment database, TLS identity and cache; never reuse practice tokens."""
-    def __init__(self, checkout, expected):
+    def __init__(self, checkout, expected, source_pin=None):
         if checkout != Path(__file__).resolve().parents[3]:
             raise Refused("Select this adapter's exact InnerSanctum checkout.")
         self.checkout, self.expected = checkout, expected
+        self.source_pin = source_pin
         with self.target() as (root, successor):
             self.cfg = bijou.personal_config(root, successor)
             self.root = root
+            if source_pin:
+                reaction_filing.personal_binding(root, successor, source_pin)
         parent = Path.home() / "Library/Application Support"
         self.state = parent / ("BijouPersonal-" + self.cfg["library"])
         self.prepare_state(parent)
@@ -191,6 +194,9 @@ class PersonalHome(Home):
     def catalog(self, *, all_movies=False):
         with self.target() as (root, successor):
             catalog = bijou.catalog(root, successor, all_movies=all_movies)
+            if self.source_pin and all_movies:
+                reaction_filing.personal_binding(root, successor, self.source_pin)
+                catalog["personalReactionFiling"] = True
         file = self.state / "plex-movies.json"
         if all_movies and file.exists():
             links = json.loads(writer.read_file(file))
@@ -298,9 +304,11 @@ def handler(home):
         def route(self):
             payload = {}
             try:
-                if self.command == "POST" and self.path == "/fixture/reactions":
-                    if type(home) is not Home:
-                        return self.reply(404, {"error": "Fixture filing only."})
+                if self.command == "POST" and self.path in {"/fixture/reactions", "/personal/reactions"}:
+                    personal = self.path == "/personal/reactions"
+                    if (personal and not (isinstance(home, PersonalHome) and home.source_pin)
+                            or not personal and type(home) is not Home):
+                        return self.reply(404, {"error": "Reaction filing is not enabled for this library."})
                     auth = self.headers.get("Authorization", "")
                     if not auth.startswith("Bearer ") or not home.authenticated(auth[7:]):
                         return self.reply(401, {"error": "Pair this device."})
@@ -313,6 +321,9 @@ def handler(home):
                     audio = self.rfile.read(length)
                     if len(audio) != length:
                         raise ValueError
+                    if personal:
+                        with home.target() as (root, successor):
+                            return self.reply(200, reaction_filing.file_personal(root, successor, home.source_pin, meta, audio))
                     return self.reply(200, reaction_filing.file_take(home.root, meta, audio))
                 if self.command == "POST":
                     length = int(self.headers.get("Content-Length", "0"))
@@ -391,13 +402,16 @@ def main():
     target.add_argument("--bundle", type=Path)
     target.add_argument("--live-checkout", type=Path)
     p.add_argument("--expect-adoption")
+    p.add_argument("--source-writer-pin", help="Enable a separately prepared Personal reaction writer.")
     p.add_argument("--host", default="127.0.0.1", help="Serve on loopback or the Mac's home LAN address")
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--device", help="Device ID to revoke")
     p.add_argument("--art-host", action="append", default=[], help="Allow this HTTPS artwork hostname")
     args = p.parse_args()
     os.umask(0o077)
-    home = (PersonalHome(args.live_checkout.absolute(), args.expect_adoption)
+    if args.source_writer_pin and (not args.live_checkout or args.action != "serve"):
+        p.error("The source writer pin is only for Personal serve.")
+    home = (PersonalHome(args.live_checkout.absolute(), args.expect_adoption, args.source_writer_pin)
             if args.live_checkout else Home(args.bundle.absolute()))
     if args.action in {"devices", "revoke"}:
         with closing(sqlite3.connect(home.db)) as con, con:

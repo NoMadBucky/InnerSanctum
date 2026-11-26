@@ -541,7 +541,7 @@ def read_changes(root, state, *, successor=None):
             operation, directory, identity = "bijou-place", None, None
         elif version == 11:
             if (set(data) != {"version", "bundle", "changes", "operation", "bijou_review"}
-                    or data["operation"] not in {"bijou-personal-import", "bijou-personal-place"}
+                    or data["operation"] not in {"bijou-personal-import", "bijou-personal-place", "bijou-reaction-schema"}
                     or request is None or clerk_session is not None or successor is None):
                 raise ValueError
             operation, directory, identity = data["operation"], None, None
@@ -571,7 +571,11 @@ def read_changes(root, state, *, successor=None):
             return changes, operation, None, None, request, None, None
         if version == 11:
             from . import bijou
-            if operation == bijou.IMPORT:
+            if operation == "bijou-reaction-schema":
+                from . import reaction_filing
+                reaction_filing.verify_schema(root, changes, request, data["bijou_review"], successor)
+                directory = reaction_filing.DIR
+            elif operation == bijou.IMPORT:
                 bijou.verify_import(root, changes, request, data["bijou_review"], successor)
                 directory = bijou.RANKINGS
             else:
@@ -687,7 +691,7 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
             request=None, clerk_session=None, successor=None, archive_pin=None, maintenance=False):
     if operation == "bijou-place" and successor is not None:
         raise Refused("Bijou placements are standalone-fixture operations only.")
-    if operation in {"bijou-personal-import", "bijou-personal-place"} and successor is None:
+    if operation in {"bijou-personal-import", "bijou-personal-place", "bijou-reaction-schema"} and successor is None:
         raise Refused("Personal ranking writes require the adopted checkout.")
     if operation == VIDEO_STATUS_OPERATION and successor is not None and not maintenance:
         raise Refused("Use stopped-checkpoint Video migration recovery on the adopted checkout.")
@@ -767,6 +771,8 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
 
 
 def describe(changes, status, *, operation="create", directory=None, identity=None, clerk_session=None):
+    if operation == "bijou-reaction-schema":
+        return {"status": "installed", "operation": operation, "path": changes[0].path, "revision": changes[0].revision}
     if operation == "bijou-personal-import":
         path = changes[0].path
         return {"status": "imported", "operation": operation, "path": path, "id": "bho:" + PurePosixPath(path).stem,
@@ -816,7 +822,7 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
         if request is None or version_review is None:
             raise Refused("Version declaration requires a durable request and reviewed preimages.")
         data.update(version=9, operation=operation, version_review=version_review)
-    elif operation in {"bijou-place", "bijou-personal-import", "bijou-personal-place"}:
+    elif operation in {"bijou-place", "bijou-personal-import", "bijou-personal-place", "bijou-reaction-schema"}:
         if request is None or bijou_review is None:
             raise Refused("Bijou placement requires a durable request and its preimages.")
         data.update(version=10 if operation == "bijou-place" else 11, operation=operation, bijou_review=bijou_review)

@@ -1,4 +1,4 @@
-"""Narrow, fixture-only source catalog writer for Bijou's PCM recordings."""
+"""Narrow, separately bound source catalog writer for Bijou's PCM recordings."""
 
 from datetime import datetime, timezone
 import fcntl
@@ -11,8 +11,8 @@ import tempfile
 import uuid
 import wave
 
-from . import bijou, writer as w
-from .schema import Refused, date_value, document
+from . import bijou, handover, writer as w
+from .schema import Refused, date_value, declarations, document
 
 CHECKOUT = Path(__file__).resolve().parents[2]
 LIMIT = 48 * 1024 * 1024
@@ -77,20 +77,141 @@ def atomic(path, raw):
 
 def file_take(root, meta, audio):
     root, library, store = target(root)
-    for directory in (store, store / "audio", store / ".requests"):
+    return _file(root, library, store, store / ".fixture-writer", w.json_bytes(binding(root, library, store)),
+                 store / ".requests", meta, audio)
+
+
+PERSONAL_STATE = ".innersanctum-sources"
+DIR = "Documents/reactions"
+INDEX = DIR + "/index.md"
+SCHEMA_OP = "bijou-reaction-schema"
+
+
+def schema_plan(review):
+    actor = "process:bijou-reactions"
+    return [w.Change(INDEX, None, SCHEMA),
+            w.Change(bijou.PARENT, w.digest(review["parent"].encode()),
+                     w.edit_index(review["parent"], "reactions/index.md", "Film Reactions")),
+            w.Change("log.md", w.digest(review["audit"].encode()), w.edit_log(
+                review["audit"], INDEX, "Film Reactions", actor, datetime.fromisoformat(review["at"]), action="Install schema"))]
+
+
+def schema_request(root, successor):
+    return w.write_request("bijou-reaction-schema-v1", SCHEMA_OP, bijou.library_key(root, successor), w.digest(SCHEMA.encode()))
+
+
+def verify_schema(root, changes, request, review, successor):
+    if (set(review) != {"parent", "audit", "at"} or request != schema_request(root, successor)
+            or changes != schema_plan(review)):
+        raise Refused("Invalid frozen reaction schema installation.")
+
+
+def install_schema(root, successor):
+    request = schema_request(root, successor)
+    with w.locked(root, successor) as state:
+        w.require_idle(root)
+        if w.replay(root, state, request):
+            if not bijou.source(root, INDEX).startswith(SCHEMA):
+                raise Refused("Installed Film Reaction schema changed.")
+            return
+        indexes, _ = w.inventory(root, collect_ids=False)
+        if (w.present(w.safe_target(root, DIR, missing=True))
+                or any(kind == "Film Reaction" for index in indexes.values() for kind, _ in declarations(index))):
+            raise Refused("A reaction directory or declaration already exists.")
+        review = dict(parent=bijou.source(root, bijou.PARENT), audit=bijou.source(root, "log.md"),
+                      at=datetime.now().astimezone().isoformat(timespec="seconds"))
+        changes = schema_plan(review)
+        w.freeze(root, state, changes, operation=SCHEMA_OP, request=request, bijou_review=review)
+        w.publish(root, state, changes, operation=SCHEMA_OP, directory=DIR, request=request, successor=successor)
+
+
+def source_target(root, successor):
+    library = bijou.personal_config(root, successor)["library"]
+    store = root.parent / "SourceFiles"
+    if root.name != "OKF" or not handover.physical(store):
+        raise Refused("Expected the physical sibling Personal source store.")
+    handover.owned(store, directory=True)
+    return library, store
+
+
+def prepare_personal(root, successor, catalog_revision):
+    """Stopped operator step, called inside live_checkout. Never run by uploads."""
+    library, store = source_target(root, successor)
+    w.require_idle(root)
+    catalog = store / "catalog.json"
+    handover.owned(catalog, directory=False)
+    raw = w.read_file(catalog)
+    if w.digest(raw) != catalog_revision:
+        raise Refused("The approved source catalog baseline changed.")
+    data = json.loads(raw)
+    if (set(data) != {"version", "sources"} or data["version"] != 1 or not isinstance(data["sources"], dict)
+            or any(k.casefold().startswith("documents/reactions/") for k in data["sources"])):
+        raise Refused("Unexpected catalog format or existing reaction keys.")
+    state = store / PERSONAL_STATE
+    marker = state / "binding"
+    expected = w.json_bytes({**binding(root, library, store), "baseline": catalog_revision, "version": 1})
+    if w.present(state):
+        handover.owned(state, directory=True)
+        if w.read_file(marker) != expected:
+            raise Refused("Source writer state already exists with another binding.")
+    else:
+        if w.present(store / "audio"):
+            raise Refused("Refusing to adopt an existing audio directory.")
+        state.mkdir(mode=0o700)
+        atomic(marker, expected)
+        w.sync_directory(store)
+    for sub in (state / "requests", store / "audio"):
+        sub.mkdir(mode=0o700, exist_ok=True)
+        w.validate_state(store, sub)
+    cursor = state / "catalog-revision"
+    if not w.present(cursor):
+        atomic(cursor, w.json_bytes({"current": catalog_revision}))
+    elif json.loads(w.read_file(cursor)) != {"current": catalog_revision}:
+        raise Refused("Source writer has already advanced.")
+    w.sync_directory(store)
+    w.sync_directory(state)
+    install_schema(root, successor)
+    return w.digest(expected)
+
+
+def personal_binding(root, successor, pin):
+    library, store = source_target(root, successor)
+    state = store / PERSONAL_STATE
+    handover.owned(state, directory=True)
+    marker = state / "binding"
+    handover.owned(marker, directory=False)
+    raw = w.read_file(marker, limit=2048)
+    if not pin or w.digest(raw) != pin:
+        raise Refused("Personal source writer pin changed.")
+    expected = json.loads(raw)
+    if (not isinstance(expected, dict)
+            or expected != {**binding(root, library, store), "version": 1, "baseline": expected.get("baseline")}
+            or not isinstance(expected["baseline"], str) or not w.REVISION.fullmatch(expected["baseline"])
+            or not w.replay(root, root / w.STATE, schema_request(root, successor))
+            or not bijou.source(root, INDEX).startswith(SCHEMA)):
+        raise Refused("Personal source store or reaction schema binding changed.")
+    return library, store, state, marker, raw
+
+
+def file_personal(root, successor, pin, meta, audio):
+    library, store, state, marker, expected = personal_binding(root, successor, pin)
+    return _file(root, library, store, marker, expected, state / "requests", meta, audio,
+                 successor=successor, cursor=state / "catalog-revision")
+
+
+def _file(root, library, store, marker, expected, requests, meta, audio, *, successor=None, cursor=None):
+    for directory in (store, store / "audio", requests):
         w.validate_state(store, directory)
-    marker = store / ".fixture-writer"
-    expected = w.json_bytes(binding(root, library, store))
     if w.read_file(marker) != expected:
-        raise Refused("The fixture source-store binding changed.")
+        raise Refused("The source-store binding changed.")
     if (not isinstance(meta, dict) or set(meta) - {"library", "film", "take", "recordedAt", "viewingDate", "sha256"}
             or meta.get("library") != library or not 0 < len(audio) <= LIMIT or meta.get("sha256") != w.digest(audio)):
-        raise Refused("Wrong fixture library or audio checksum.")
+        raise Refused("Wrong library or audio checksum.")
     ref = meta.get("film")
     if not isinstance(ref, dict) or not isinstance(ref.get("path"), str) or not (m := bijou.MOVIE_PATH.fullmatch(ref["path"])):
         raise Refused("Invalid movie reference.")
     if ref != bijou.movie_ref(ref["path"], "bho:" + m[1]):
-        raise Refused("Expected the identified fixture movie.")
+        raise Refused("Expected an identified movie.")
     try:
         take = str(uuid.UUID(meta["take"]))
         recorded = datetime.fromisoformat(meta["recordedAt"])
@@ -116,15 +237,24 @@ def file_take(root, meta, audio):
     # One order for both locks: source store, then the OKF writer. The marker is never replaced.
     with os.fdopen(os.open(marker, os.O_RDONLY | os.O_NOFOLLOW), "rb") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        if lock.read(len(expected) + 1) != expected or not os.path.samestat(os.fstat(lock.fileno()), marker.lstat()):
+            raise Refused("Source binding changed while acquiring the lock.")
         w.require_idle(root)
         film = document(bijou.source(root, ref["path"]))[0]
         if film.get("id") != ref["personalID"] or not bijou.movie(film):
             raise Refused("The movie changed.")
         catalog_path = store / "catalog.json"
-        catalog = json.loads(w.read_file(catalog_path))
+        original = w.read_file(catalog_path)
+        revision = w.digest(original)
+        wanted = revision
+        catalog = json.loads(original)
         if catalog.get("version") != 1 or not isinstance(catalog.get("sources"), dict):
             raise Refused("Unknown source catalog.")
-        request = store / ".requests" / take
+        stamp = json.loads(w.read_file(cursor)) if cursor else {}
+        if cursor and not (stamp == {"current": revision} or stamp.get("take") == take
+                           and revision in (stamp.get("before"), stamp.get("after"))):
+            raise Refused("Stale source catalog or another filing awaits recovery.")
+        request = requests / take
         fingerprint = w.json_bytes({"concept": w.digest(raw), "path": ref["path"]})
         if w.present(request):
             if w.read_file(request) != fingerprint:
@@ -140,12 +270,26 @@ def file_take(root, meta, audio):
             if any(catalog["sources"][key].get(k) != v for k, v in row.items()):
                 raise Refused("Existing source entry disagrees with this take.")
         else:
-            catalog["sources"][key] = {**row, "preserved_at": datetime.now(timezone.utc).isoformat()}
-            atomic(catalog_path, w.json_bytes(catalog))
+            catalog["sources"][key] = {**row, "preserved_at": stamp.get("at") or datetime.now(timezone.utc).isoformat()}
+            updated = w.json_bytes(catalog)
+            wanted = w.digest(updated)
+            if cursor:
+                pending = dict(take=take, before=revision, after=wanted, at=catalog["sources"][key]["preserved_at"])
+                if "take" in stamp and pending != stamp:
+                    raise Refused("The pending source update changed.")
+                atomic(cursor, w.json_bytes(pending))
+            if w.read_file(catalog_path) != original:
+                raise Refused("Catalog changed during filing.")
+            atomic(catalog_path, updated)
         if json.loads(w.read_file(catalog_path))["sources"][key] != catalog["sources"][key]:
             raise Refused("Source catalog read-back failed.")
-        result = w.create(root, ROUTES, raw, "process:bijou-fixture", request_id="reaction-" + take)
+        result = w.create(root, ROUTES, raw, "human:barry" if successor else "process:bijou-fixture",
+                          request_id="reaction-" + take, successor=successor)
         saved = document(bijou.source(root, result["path"]))[0]
         if saved.get("id") != result["id"] or any(saved.get(k) != v for k, v in fields.items()):
             raise Refused("Filed reaction failed read-back.")
+        if cursor:
+            if w.digest(w.read_file(catalog_path)) != wanted:
+                raise Refused("Catalog changed before filing receipt.")
+            atomic(cursor, w.json_bytes({"current": wanted}))
         return {"id": result["id"], "path": result["path"], "take": take, "sha256": digest}

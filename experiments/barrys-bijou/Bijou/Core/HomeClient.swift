@@ -184,8 +184,8 @@ final class HomeClient {
         }
     }
     func cover(_ key: String) async throws -> Data { try await send("covers/\(key)") }
-    func fileReaction(_ take: AudioReaction, url: URL, film: FilmRef, library: String) async throws -> FilingReceipt {
-        guard url.pathExtension == "wav" else { throw BijouError("Fixture filing supports WAV recordings.") }
+    func fileReaction(_ take: AudioReaction, url: URL, film: FilmRef, library: String, personal: Bool = false) async throws -> FilingReceipt {
+        guard url.pathExtension == "wav" else { throw BijouError("Filing supports WAV recordings.") }
         let audio = try Data(contentsOf: url)
         let digest = SHA256.hash(data: audio).map { String(format: "%02x", $0) }.joined()
         struct Header: Encodable {
@@ -196,7 +196,8 @@ final class HomeClient {
                             recordedAt: ISO8601DateFormatter().string(from: take.recordedAt),
                             viewingDate: take.viewingDate, sha256: digest)
         let encoded = try JSONEncoder().encode(header).base64EncodedString()
-        let result = try await JSONDecoder().decode(FilingReceipt.self, from: send("fixture/reactions", data: audio, timeout: 40, reaction: encoded))
+        let route = personal ? "personal/reactions" : "fixture/reactions"
+        let result = try await JSONDecoder().decode(FilingReceipt.self, from: send(route, data: audio, timeout: 40, reaction: encoded))
         guard result.sha256 == digest, result.take == take.id, result.id.hasPrefix("bho:"),
               result.path == "Documents/reactions/\(result.id.dropFirst(4)).md" else { throw BijouError("Unrecognized filing receipt.") }
         return result

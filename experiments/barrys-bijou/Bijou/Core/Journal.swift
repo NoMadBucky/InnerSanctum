@@ -109,6 +109,7 @@ struct Catalog: Codable {
     var issues: [String]
     var origin: String? = nil
     var fixtureReactionFiling: Bool? = nil
+    var personalReactionFiling: Bool? = nil
 
     func title(_ ref: FilmRef) -> String {
         films.first { $0.ref == ref }?.title ?? labels[ref.path] ?? ref.path

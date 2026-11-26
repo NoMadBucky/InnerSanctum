@@ -269,16 +269,17 @@ struct AudioReactions: View {
                     Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { Task { await room.play(take) } }
                         .disabled(room.recording || room.requesting)
                     if room.store.filed(take.id) {
-                        Label("Filed in practice library", systemImage: "checkmark.circle")
-                    } else if studio.journal?.base.fixtureReactionFiling == true,
+                        Label(studio.journal?.base.origin == "personal" ? "Filed in Personal" : "Filed in practice library", systemImage: "checkmark.circle")
+                    } else if studio.journal?.base.fixtureReactionFiling == true || studio.journal?.base.personalReactionFiling == true,
                               let creds = studio.credentials, creds.library == studio.journal?.base.library {
-                        Button(filing == take.id ? "Filing…" : "File in practice library") {
+                        let personal = studio.journal?.base.personalReactionFiling == true
+                        Button(filing == take.id ? "Filing…" : personal ? "File in Personal" : "File in practice library") {
                             filing = take.id
                             Task {
                                 defer { filing = nil }
                                 do {
                                     let receipt = try await HomeClient(creds).fileReaction(take, url: room.store.audio(take.id),
-                                                                                          film: film, library: creds.library)
+                                                                                          film: film, library: creds.library, personal: personal)
                                     try room.store.saveReceipt(receipt); room.notice = nil; room.reload()
                                 } catch { room.notice = error.localizedDescription }
                             }
