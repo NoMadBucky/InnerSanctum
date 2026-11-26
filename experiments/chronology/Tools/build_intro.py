@@ -13,14 +13,16 @@ root = Path(__file__).resolve().parents[1]
 media = root / "Chronology"
 assets = media / "Assets.xcassets/IntroStill.imageset"
 shots = [
+    ("Diamond_sutra.jpg", 0.50, 0.50),
     ("The_Great_Wave_off_Kanagawa.jpg", 0.35, 0.43),
     ("Wrightflyer.jpg", 0.52, 0.50),
     ("NASA-Apollo8-Dec24-Earthrise.jpg", 0.60, 0.54),
+    ("Mandela_voting_in_1994.jpg", 0.50, 0.42),
 ]
 size = (640, 800)
 fps = 60
-fade = 54  # 0.9-second overlap
-frames = 210 + fade  # 3.5 seconds between the starts of successive shots
+fade = 45  # 0.75-second overlap
+frames = 174 + fade  # 2.9 seconds per shot, including its outgoing dissolve
 images = []
 for filename, x, y in shots:
     with Image.open(Path(sys.argv[1]) / filename) as image:

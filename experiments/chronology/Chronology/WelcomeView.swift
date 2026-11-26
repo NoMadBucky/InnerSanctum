@@ -4,6 +4,7 @@ struct WelcomeView: View {
     @Binding var mode: GameMode
     let start, scores: () -> Void
     var showingScores = false
+    @State private var credits = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -23,7 +24,24 @@ struct WelcomeView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background { IntroBackdrop(visible: !showingScores) }
+        .background { IntroBackdrop(visible: !showingScores && !credits) }
+        .overlay(alignment: .topTrailing) {
+            Button { credits = true } label: {
+                Image(systemName: "info.circle").frame(width: 44, height: 44)
+                    .background(.black.opacity(0.5), in: Circle())
+            }.foregroundStyle(.white).accessibilityLabel("Montage credits").padding(.horizontal)
+        }
+        .sheet(isPresented: $credits) {
+            NavigationStack {
+                List {
+                    Text("Diamond Sutra frontispiece · International Dunhuang Project\nThe Great Wave · Katsushika Hokusai\nFirst flight · John T. Daniels\nEarthrise · William Anders / NASA")
+                    Link("Mandela voting in 1994 · Paul Weinberg", destination: URL(string: "https://commons.wikimedia.org/wiki/File:Mandela_voting_in_1994.jpg")!)
+                    Text("Images cropped, panned and crossfaded for Periodical.")
+                    Link("Montage license: CC BY-SA 3.0", destination: URL(string: "https://creativecommons.org/licenses/by-sa/3.0/")!)
+                }.navigationTitle("Montage credits")
+                    .toolbar { Button("Done") { credits = false } }
+            }
+        }
         .environment(\.colorScheme, .dark)
     }
 }

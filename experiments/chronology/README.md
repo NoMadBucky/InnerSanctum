@@ -21,14 +21,19 @@ shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
-The 10.5-second, 60 fps loop dissolves between three public-domain images:
+The 14.5-second, 60 fps loop dissolves between five images:
 
+- [Diamond Sutra frontispiece](https://commons.wikimedia.org/wiki/File:Diamond_sutra.jpg),
+  868; International Dunhuang Project, public domain.
 - [Under the Wave off Kanagawa](https://commons.wikimedia.org/wiki/File:The_Great_Wave_off_Kanagawa.jpg),
   Katsushika Hokusai, early 1830s.
 - [First flight of the Wright Flyer](https://commons.wikimedia.org/wiki/File:Wrightflyer.jpg),
   John T. Daniels, 1903.
 - [Earthrise](https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg),
   William Anders / NASA, Apollo 8, 1968.
+- [Mandela voting in 1994](https://commons.wikimedia.org/wiki/File:Mandela_voting_in_1994.jpg),
+  Paul Weinberg. The photograph is cropped, panned and dissolved in the film.
+  The montage is released under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
 
 To rebuild the H.264 video and matching still, download the originals under
 their linked filenames and run `python3 Tools/build_intro.py /path/to/originals`
