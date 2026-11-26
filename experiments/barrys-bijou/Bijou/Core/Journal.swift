@@ -27,6 +27,7 @@ struct Film: Codable, Identifiable {
     var watchlist: Bool? = nil
     var inLibrary: Bool? = nil
     var tmdb: String? = nil
+    var archivedReactions: [ArchivedReaction]? = nil
     var plex: String? = nil
     var plexMovieLinks: (app: URL, web: URL)? {
         // Existing synced catalogs store the older preplay link; reuse its exact match.

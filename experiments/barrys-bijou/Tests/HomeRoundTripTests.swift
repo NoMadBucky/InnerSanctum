@@ -171,5 +171,15 @@ final class HomeRoundTripTests: XCTestCase {
         XCTAssertTrue(ReactionStore(root: directory, library: library, film: film).filed(take.id))
         try store.delete(take.id)
         XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertEqual(try store.list().map(\.id), [take.id])
+        let refreshed = try await client.catalog()
+        let remote = try XCTUnwrap(refreshed.films.first(where: { $0.ref == film })?.archivedReactions?.first)
+        XCTAssertEqual(remote.id, take.id)
+        let clean = ReactionStore(root: directory.appendingPathComponent("fresh-device"), library: library, film: film)
+        let bytes = try await client.archivedAudio(remote.id)
+        XCTAssertThrowsError(try clean.cache(Data(), take: remote.take, receipt: remote.receipt))
+        try clean.cache(bytes, take: remote.take, receipt: remote.receipt)
+        XCTAssertNil(try ReactionSignal.quietMessage(at: clean.audio(remote.id)))
+        XCTAssertEqual(try AVAudioPlayer(contentsOf: clean.audio(remote.id)).duration, take.seconds, accuracy: 0.01)
     }
 }

@@ -159,7 +159,20 @@ class Home:
         catalog = bijou.catalog(self.root, all_movies=all_movies)
         if (self.root / "Documents/reactions/index.md").exists():
             catalog["fixtureReactionFiling"] = True
+            if all_movies:
+                _, _, store = reaction_filing.target(self.root)
+                self.attach_reactions(catalog, self.root, store)
         return catalog
+
+    @staticmethod
+    def attach_reactions(catalog, root, store):
+        rows = reaction_filing.archived(root, store)
+        for film in catalog["films"]:
+            film["archivedReactions"] = rows.get(film["ref"].get("personalID"), [])
+
+    def reaction_audio(self, take):
+        root, _, store = reaction_filing.target(self.root)
+        return reaction_filing.archived(root, store, take=take)
 
     def place(self, payload):
         return bijou.place(self.root, payload, "process:bijou-fixture")
@@ -195,8 +208,9 @@ class PersonalHome(Home):
         with self.target() as (root, successor):
             catalog = bijou.catalog(root, successor, all_movies=all_movies)
             if self.source_pin and all_movies:
-                reaction_filing.personal_binding(root, successor, self.source_pin)
+                _, store, *_ = reaction_filing.personal_binding(root, successor, self.source_pin)
                 catalog["personalReactionFiling"] = True
+                self.attach_reactions(catalog, root, store)
         file = self.state / "plex-movies.json"
         if all_movies and file.exists():
             links = json.loads(writer.read_file(file))
@@ -208,6 +222,13 @@ class PersonalHome(Home):
                             and re.fullmatch("[A-Za-z0-9-]{8,128}", pair[0]) and re.fullmatch("[1-9][0-9]*", pair[1])):
                         film["plex"] = f"plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F{pair[1]}&metadataType=1&server={pair[0]}"
         return catalog
+
+    def reaction_audio(self, take):
+        if not self.source_pin:
+            return None
+        with self.target() as (root, successor):
+            _, store, *_ = reaction_filing.personal_binding(root, successor, self.source_pin)
+            return reaction_filing.archived(root, store, take=take)
 
     def place(self, payload):
         with self.target() as (root, successor):
@@ -345,6 +366,11 @@ def handler(home):
                     return self.reply(401, {"error": "Pair this device."})
                 if self.command == "GET" and self.path in {"/catalog", "/catalog/all"}:
                     return self.reply(200, home.catalog(all_movies=self.path == "/catalog/all"))
+                if self.command == "GET" and (m := re.fullmatch(r"/reactions/([0-9a-f-]{36})/audio", self.path)):
+                    audio = home.reaction_audio(m[1])
+                    if audio is not None:
+                        return self.reply(200, audio, "audio/wav")
+                    return self.reply(404, {"error": "Recording not available in this library."})
                 if self.command == "POST" and self.path == "/place":
                     return self.reply(200, home.place(payload))
                 if self.command == "POST" and self.path == "/watched":

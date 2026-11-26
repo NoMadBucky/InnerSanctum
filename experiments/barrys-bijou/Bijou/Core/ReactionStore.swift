@@ -14,6 +14,15 @@ struct FilingReceipt: Codable {
     let take: UUID
 }
 
+struct ArchivedReaction: Codable, Identifiable {
+    let id: UUID
+    let recordedAt: Date
+    let viewingDate: String?
+    let seconds: Double
+    let receipt: FilingReceipt
+    var take: AudioReaction { AudioReaction(id: id, recordedAt: recordedAt, viewingDate: viewingDate, seconds: seconds) }
+}
+
 /// A kept take is one directory: the recording and its metadata become visible together.
 struct ReactionStore {
     static let limit: TimeInterval = 120
@@ -58,7 +67,19 @@ struct ReactionStore {
         if FileManager.default.fileExists(atPath: draft.path) { try FileManager.default.removeItem(at: draft) }
     }
     func delete(_ id: UUID) throws {
-        try FileManager.default.removeItem(at: folder(id, draft: false))
+        try FileManager.default.removeItem(at: filed(id) ? audio(id) : folder(id, draft: false))
+    }
+    func receipt(_ id: UUID) throws -> FilingReceipt {
+        try JSONDecoder().decode(FilingReceipt.self, from: Data(contentsOf: folder(id, draft: false).appendingPathComponent("filed.json")))
+    }
+    func cache(_ data: Data, take: AudioReaction, receipt: FilingReceipt) throws {
+        guard receipt.take == take.id, SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == receipt.sha256
+        else { throw BijouError("The downloaded recording did not match its filing receipt.") }
+        let dir = folder(take.id, draft: false)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try JSONEncoder().encode(take).write(to: dir.appendingPathComponent("take.json"), options: .atomic)
+        try saveReceipt(receipt)
+        try data.write(to: audio(take.id), options: .atomic)
     }
     func saveReceipt(_ receipt: FilingReceipt) throws {
         try JSONEncoder().encode(receipt).write(to: folder(receipt.take, draft: false).appendingPathComponent("filed.json"), options: .atomic)

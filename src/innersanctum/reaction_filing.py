@@ -199,6 +199,42 @@ def file_personal(root, successor, pin, meta, audio):
                  successor=successor, cursor=state / "catalog-revision")
 
 
+def archived(root, store, *, take=None):
+    """Resolve only filed Film Reactions; no client-selected filesystem paths."""
+    w.require_idle(root)
+    rows = json.loads(w.read_file(store / "catalog.json"))["sources"]
+    results = {}
+    for concept in sorted((root / DIR).glob("[0-9]*.md")):
+        path = concept.relative_to(root).as_posix()
+        if not re.fullmatch(r"Documents/reactions/[0-9]{7}\.md", path):
+            continue
+        fields = document(bijou.source(root, path))[0]
+        if fields.get("type") != "Film Reaction":
+            continue
+        tid = str(uuid.UUID(fields["take_id"]))
+        if take is not None and tid != take:
+            continue
+        digest = fields["source_sha256"]
+        key = f"Documents/reactions/{tid}.wav"
+        row = rows.get(key, {})
+        if (not w.REVISION.fullmatch(digest) or fields["source_key"] != key
+                or row.get("storage") != "local" or row.get("sha256") != digest
+                or row.get("path") != f"audio/{digest}.wav"):
+            raise Refused("The reaction source and catalog disagree.")
+        if take is not None:
+            raw = w.read_file(w.safe_target(store, row["path"]), limit=LIMIT)
+            if len(raw) != row.get("size") or w.digest(raw) != digest:
+                raise Refused("The archived recording failed verification.")
+            return raw
+        stamp = datetime.fromisoformat(str(fields["recorded_at"]))
+        results.setdefault(fields["film_id"], []).append(dict(
+            id=tid, recordedAt=stamp.timestamp() - 978307200,  # Foundation's reference date
+            viewingDate=str(fields["viewing_date"]) if fields.get("viewing_date") else None,
+            seconds=fields["duration_ms"] / 1000,
+            receipt=dict(id=fields["id"], path=path, sha256=digest, take=tid)))
+    return results if take is None else None
+
+
 def _file(root, library, store, marker, expected, requests, meta, audio, *, successor=None, cursor=None):
     for directory in (store, store / "audio", requests):
         w.validate_state(store, directory)

@@ -234,14 +234,44 @@ struct AudioReactions: View {
     @State private var deleting: AudioReaction?
     @EnvironmentObject private var studio: Studio
     @State private var filing: UUID?
+    @State private var download: Task<Void, Never>?
+    @State private var downloading: UUID?
+    let archived: [ArchivedReaction]
     let film: FilmRef
     let viewed: String?
-    init(store: ReactionStore, viewed: String?, film: FilmRef) {
+    init(store: ReactionStore, viewed: String?, film: FilmRef, archived: [ArchivedReaction]) {
+        self.archived = archived
         _room = StateObject(wrappedValue: ReactionRoom(store: store)); self.viewed = viewed; self.film = film
     }
     private func clock(_ t: Double) -> String {
         if t > 0 && t < 1 { return "<1s" }
         return String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)
+    }
+    private var takes: [AudioReaction] {
+        var merged = Dictionary(room.takes.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for record in archived { merged[record.id] = record.take }
+        return merged.values.sorted { $0.recordedAt > $1.recordedAt }
+    }
+    private func downloadAndPlay(_ take: AudioReaction, remote: ArchivedReaction?) {
+        guard downloading == nil else { return }
+        guard let creds = studio.credentials, creds.library == studio.journal?.base.library else {
+            room.notice = "Connect to the paired Mac to download this recording."; return
+        }
+        downloading = take.id
+        download = Task {
+            defer { downloading = nil }
+            do {
+                let receipt = try remote?.receipt ?? room.store.receipt(take.id)
+                let data = try await HomeClient(creds).archivedAudio(take.id)
+                try Task.checkCancellation()
+                let store = room.store
+                try await Task.detached { try store.cache(data, take: take, receipt: receipt) }.value
+                room.reload()
+                if !Task.isCancelled { await room.play(take) }
+            } catch {
+                if !Task.isCancelled { room.notice = "Could not download from the paired Mac: \(error.localizedDescription)" }
+            }
+        }
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -262,13 +292,22 @@ struct AudioReactions: View {
                     Label(room.requesting ? "Waiting for microphone…" : "Record reaction", systemImage: "mic")
                 }.disabled(room.requesting)
             }
-            ForEach(room.takes) { take in
+            ForEach(takes) { take in
+                let remote = archived.first { $0.id == take.id }
+                let filed = remote != nil || room.store.filed(take.id)
+                let local = FileManager.default.fileExists(atPath: room.store.audio(take.id).path)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(take.recordedAt.formatted(date: .abbreviated, time: .shortened)).font(.subheadline.bold())
                     if let day = take.viewingDate { Text("Viewing: \(day)").font(.caption) }
-                    Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { Task { await room.play(take) } }
-                        .disabled(room.recording || room.requesting)
-                    if room.store.filed(take.id) {
+                    if local {
+                        Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { Task { await room.play(take) } }
+                            .disabled(room.recording || room.requesting)
+                    } else if filed {
+                        Button(downloading == take.id ? "Downloading…" : "Download and play · \(clock(take.seconds))") {
+                            downloadAndPlay(take, remote: remote)
+                        }.disabled(downloading != nil || room.recording || room.requesting)
+                    }
+                    if filed {
                         Label(studio.journal?.base.origin == "personal" ? "Filed in Personal" : "Filed in practice library", systemImage: "checkmark.circle")
                     } else if studio.journal?.base.fixtureReactionFiling == true || studio.journal?.base.personalReactionFiling == true,
                               let creds = studio.credentials, creds.library == studio.journal?.base.library {
@@ -285,9 +324,11 @@ struct AudioReactions: View {
                             }
                         }.disabled(filing != nil)
                     }
-                    Button(role: .destructive) { deleting = take } label: {
-                        Label(room.store.filed(take.id) ? "Remove from this device" : "Delete recording", systemImage: "trash")
-                    }.disabled(filing == take.id)
+                    if local {
+                        Button(role: .destructive) { deleting = take } label: {
+                            Label(filed ? "Remove from this device" : "Delete recording", systemImage: "trash")
+                        }.disabled(filing == take.id)
+                    }
                 }
             }
             if room.playing != nil { Label("Playing through \(room.output)", systemImage: "speaker.wave.2").font(.caption) }
@@ -302,7 +343,7 @@ struct AudioReactions: View {
         } message: { take in
             Text("Remove the take recorded \(take.recordedAt.formatted()) from this device?")
         }
-        .onDisappear { room.discard() }
+        .onDisappear { download?.cancel(); room.discard() }
         .onChange(of: phase) { _, p in if p == .background && room.recording { room.stop() } }
         .task(id: room.recording) {
             while room.recording && !Task.isCancelled {

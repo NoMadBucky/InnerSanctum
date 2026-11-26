@@ -184,6 +184,9 @@ final class HomeClient {
         }
     }
     func cover(_ key: String) async throws -> Data { try await send("covers/\(key)") }
+    func archivedAudio(_ id: UUID) async throws -> Data {
+        try await send("reactions/\(id.uuidString.lowercased())/audio", timeout: 40)
+    }
     func fileReaction(_ take: AudioReaction, url: URL, film: FilmRef, library: String, personal: Bool = false) async throws -> FilingReceipt {
         guard url.pathExtension == "wav" else { throw BijouError("Filing supports WAV recordings.") }
         let audio = try Data(contentsOf: url)
