@@ -21,7 +21,7 @@ shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
-The 12-second loop dissolves between three public-domain images:
+The 10.5-second, 60 fps loop dissolves between three public-domain images:
 
 - [Under the Wave off Kanagawa](https://commons.wikimedia.org/wiki/File:The_Great_Wave_off_Kanagawa.jpg),
   Katsushika Hokusai, early 1830s.

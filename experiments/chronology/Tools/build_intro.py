@@ -18,7 +18,9 @@ shots = [
     ("NASA-Apollo8-Dec24-Earthrise.jpg", 0.60, 0.54),
 ]
 size = (640, 800)
-frames, fade, fps = 120, 24, 24
+fps = 60
+fade = 54  # 0.9-second overlap
+frames = 210 + fade  # 3.5 seconds between the starts of successive shots
 images = []
 for filename, x, y in shots:
     with Image.open(Path(sys.argv[1]) / filename) as image:
@@ -27,8 +29,9 @@ for filename, x, y in shots:
 
 def frame(index, t):
     # Slow drift across a slightly oversized crop; no zoom jumps at the cuts.
-    x = round(32 + (t - 0.5) * (40 if index % 2 else -40))
-    return images[index].crop((x, 40, x + size[0], 40 + size[1]))
+    x = 32 + (t - 0.5) * (40 if index % 2 else -40)
+    return images[index].transform(size, Image.Transform.AFFINE, (1, 0, x, 0, 1, 40),
+                                   resample=Image.Resampling.BICUBIC)
 
 
 frame(0, fade / frames).save(assets / "IntroStill.jpg", quality=86)
@@ -44,8 +47,9 @@ with subprocess.Popen(command, stdin=subprocess.PIPE) as encoder:
             picture = frame(i, f / frames)
             if f >= frames - fade:
                 offset = f - (frames - fade)
+                u = offset / fade
                 picture = Image.blend(picture, frame((i + 1) % len(images), offset / frames),
-                                      offset / fade)
+                                      u * u * (3 - 2 * u))
             encoder.stdin.write(picture.tobytes())
     encoder.stdin.close()
     if encoder.wait():
