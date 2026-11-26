@@ -1,0 +1,231 @@
+"""Barry's Bijou: catalog and recoverable placements on an external fixture only."""
+
+from datetime import datetime
+import json
+from pathlib import Path
+import re
+
+from . import writer as w
+from .schema import ID, Refused, date_value, datetime_value, document, read_text, resolve_schema, same
+
+
+BINDING = ".bijou-fixture.json"
+MOVIES = "Resources/videos"
+RANKINGS = "Documents/rankings"
+MOVIE_PATH = re.compile(r"Resources/videos/([0-9]{7})\.md")
+RANK_PATH = re.compile(r"Documents/rankings/([0-9]{7})\.md")
+ENTRY = re.compile(r"([1-9][0-9]*)\. \[(.*)\]\(/(Resources/videos/[0-9]{7}\.md)\)")
+OP = "bijou-place"
+
+
+class Conflict(Refused):
+    """The request definitely did not publish; review the current catalog."""
+
+
+def binding(root):
+    w.open_bundle(root, Path(__file__).resolve().parents[2])
+    try:
+        cfg = json.loads(w.read_file(root / BINDING, limit=2048))
+        rank = RANK_PATH.fullmatch(cfg["path"])
+        if (set(cfg) != {"library", "path", "id", "bundle"} or not rank
+                or cfg["id"] != "bho:" + rank[1] or cfg["bundle"] != w.bundle_identity(root)
+                or not re.fullmatch("[0-9a-f]{32}", cfg["library"])):
+            raise ValueError
+        return cfg
+    except (KeyError, ValueError, TypeError, FileNotFoundError):
+        raise Refused("Select the original disposable Bijou fixture.") from None
+
+
+def source(root, path):
+    return read_text(w.read_file(w.safe_target(root, path)))
+
+
+def parse_order(text, identity):
+    data, _, _ = document(text)
+    if data.get("type") != "Film Ranking" or data.get("id") != identity:
+        raise Refused("The bound Film Ranking identity changed.")
+    lines, nl = w.lines_for(text)
+    marks = [i for tag, title, i, _ in w.headings(text) if tag == "h2" and title == "Ranking"]
+    if len(marks) != 1 or lines[marks[0]] != "## Ranking":
+        raise Refused("Expected one managed Ranking section.")
+    prefix = nl.join(lines[:marks[0] + 1]) + nl + nl
+    entries = {}
+    for line in lines[marks[0] + 1:]:
+        if not line:
+            continue
+        m = ENTRY.fullmatch(line)
+        if not m or int(m[1]) != len(entries) + 1 or m[3] in entries:
+            raise Refused("The ranking contains an unexpected entry or duplicate.")
+        entries[m[3]] = m[2]
+    return entries, prefix, nl
+
+
+def watched(data):
+    return (data.get("type") == "Video" and data.get("video_type") == "Movie"
+            and (date_value(data.get("date_watched")) or data.get("video_status") == "watched"))
+
+
+def movie_ref(path, identity):
+    return {"path": path, **({"personalID": identity} if identity is not None else {})}
+
+
+def catalog_rows(root, library, revision, entries):
+    movies, issues, refs = [], [], {}
+    for path, file in w.visible_files(root):
+        match = MOVIE_PATH.fullmatch(path)
+        if not match:
+            continue
+        data, body, _ = document(read_text(w.read_file(file)))
+        if not watched(data):
+            continue
+        identity = data.get("id")
+        ref = movie_ref(path, identity)
+        if (identity is not None or path in entries) and identity != "bho:" + match[1]:
+            issues.append(f"Film identity changed: {path}")
+        if type(data.get("ranked", False)) is not bool or data.get("ranked", False) != (path in entries):
+            issues.append(f"Membership disagrees with the list: {path}")
+        refs[path] = ref
+        release = data.get("release_date")
+        day = data.get("date_watched")
+        src = data.get("sources") or []
+        links = [{"title": s.get("title") or s["resource"], "address": s["resource"]}
+                 for s in ([src] if isinstance(src, dict) else src) if isinstance(s, dict) and isinstance(s.get("resource"), str)]
+        if not links and data.get("url"):
+            links = [{"title": "Film reference", "address": data["url"]}]
+        poster = data.get("poster")
+        movies.append({"ref": ref, "title": data["title"], "watched": str(day)[:10] if date_value(day) else None,
+                       "year": str(release)[:4] if date_value(release) or datetime_value(release) else None,
+                       "body": body.strip(), "sources": links, "description": data.get("description"),
+                       "metadata": {k: str(data[k]) for k in ("id", "video_type", "video_status", "date_watched",
+                                                              "release_date", "in_library", "tags") if k in data},
+                       "posterKey": w.digest(poster.encode()) if isinstance(poster, str) and poster else None})
+    for path in entries.keys() - refs.keys():
+        issues.append(f"Ranked film is unavailable: {path}")
+    order = [refs.get(p, movie_ref(p, "bho:" + MOVIE_PATH.fullmatch(p)[1])) for p in entries]
+    return {"library": library, "revision": revision, "films": movies,
+            "order": order, "labels": {p: re.sub(r"\\(.)", r"\1", s) for p, s in entries.items()},
+            "issues": sorted(issues)}
+
+
+def inspect_catalog(root, cfg):
+    text = source(root, cfg["path"])
+    entries, _, _ = parse_order(text, cfg["id"])
+    return catalog_rows(root, cfg["library"], w.digest(text.encode()), entries)
+
+
+def catalog(root):
+    cfg = binding(root)
+    with w.locked(root):
+        w.require_idle(root)
+        return inspect_catalog(root, cfg)
+
+
+def validate(command):
+    if (type(command) is not dict or set(command) != {"library", "revision", "film", "gap", "requestID"}
+            or not isinstance(command["library"], str) or not re.fullmatch("[0-9a-f]{32}", command["library"])
+            or not isinstance(command["revision"], str) or not w.REVISION.fullmatch(command["revision"])
+            or type(command["gap"]) is not dict or command["gap"].keys() - {"above", "below"}
+            or not isinstance(command["requestID"], str) or not w.REQUEST_ID.fullmatch(command["requestID"])):
+        raise Refused("Invalid placement request.")
+    for ref in [command["film"], *(r for r in command["gap"].values() if r is not None)]:
+        if (type(ref) is not dict or ref.keys() - {"path", "personalID"} or type(ref.get("path")) is not str
+                or not MOVIE_PATH.fullmatch(ref["path"]) or ref.get("personalID") is not None
+                and (type(ref["personalID"]) is not str or not ID.fullmatch(ref["personalID"]))):
+            raise Refused("Invalid film reference.")
+
+
+def with_flag(text):
+    data, body, offset = document(text)
+    lines, nl = w.lines_for(text)
+    if "ranked" not in data:
+        lines.insert(1, "ranked: true")
+    elif data["ranked"] is False:
+        candidates = [i for i in range(1, offset - 1) if re.fullmatch(r"ranked: *false(?: *#.*)? *", lines[i])]
+        if len(candidates) != 1:
+            raise Refused("Cannot preserve the existing ranked field formatting.")
+        i = candidates[0]
+        lines[i] = lines[i].replace("false", "true", 1)
+    else:
+        raise Refused("First placement needs an absent or false ranked flag.")
+    after = nl.join(lines)
+    fields, after_body, _ = document(after)
+    if not same(fields, {**data, "ranked": True}) or after_body != body:
+        raise Refused("Membership edit would change unrelated content.")
+    return after
+
+
+def plan(cfg, command, originals, actor, when):
+    """Derive the only permitted after-bytes, also when verifying a frozen journal."""
+    validate(command)
+    w.validate_actor(actor)
+    rank, film, audit = originals
+    path = command["film"]["path"]
+    entries, prefix, nl = parse_order(rank, cfg["id"])
+    fields, _, _ = document(film)
+    if (command["library"] != cfg["library"] or command["revision"] != w.digest(rank.encode())
+            or not watched(fields) or command["film"].get("personalID") != fields.get("id")):
+        raise Conflict("Library, film or ranking revision changed.")
+    old = list(entries)
+    others = [p for p in old if p != path]
+    above, below = (command["gap"].get(k) for k in ("above", "below"))
+    neighbors = (above and above["path"], below and below["path"])
+    gaps = list(zip([None, *others], [*others, None]))
+    if neighbors not in gaps:
+        raise Conflict("These films no longer bound the selected gap.")
+    others.insert(gaps.index(neighbors), path)
+    if others == old:
+        raise Conflict("The film is already in this position.")
+    entries[path] = w.escape_label(fields["title"])
+    updated = prefix + "".join(f"{i}. [{entries[p]}](/{p}){nl}" for i, p in enumerate(others, 1))
+    changes = [w.Change(cfg["path"], w.digest(rank.encode()), updated)]
+    if path not in old:
+        changes.append(w.Change(path, w.digest(film.encode()), with_flag(film)))
+    changes.append(w.Change("log.md", w.digest(audit.encode()), w.edit_log(
+        audit, cfg["path"], "Reranked film" if path in old else "Ranked film", actor, when, action="Placement")))
+    return changes
+
+
+def verify(root, changes, request, review):
+    if set(review) != {"command", "originals", "actor", "at"}:
+        raise Refused("Invalid frozen placement.")
+    command, originals, actor = (review[k] for k in ("command", "originals", "actor"))
+    validate(command)
+    if type(originals) is not list or len(originals) != 3 or any(type(s) is not str for s in originals):
+        raise Refused("Invalid placement preimages.")
+    when = datetime.fromisoformat(review["at"])
+    if (when.utcoffset() is None or request != w.write_request(command["requestID"], OP, command, actor)
+            or changes != plan(binding(root), command, originals, actor, when)):
+        raise Refused("Frozen placement does not match the original request.")
+
+
+def place(root, command, actor):
+    cfg = binding(root)
+    validate(command)
+    if cfg["library"] != command["library"]:
+        raise Refused("Wrong disposable library.")
+    w.validate_actor(actor)
+    request = w.write_request(command["requestID"], OP, command, actor)
+    with w.locked(root) as state:
+        w.require_idle(root)
+        if (prior := w.replay(root, state, request)) is not None:
+            return prior
+        snap = inspect_catalog(root, cfg)
+        films = {f["ref"]["path"]: f["ref"] for f in snap["films"]}
+        if (snap["issues"] or command["revision"] != snap["revision"]
+                or any(films.get(ref["path"]) != ref for ref in [command["film"], *command["gap"].values()] if ref)):
+            raise Conflict("The catalog or rankings changed; review placement.")
+        originals = [source(root, p) for p in (cfg["path"], command["film"]["path"], "log.md")]
+        when = datetime.now().astimezone().replace(microsecond=0)
+        changes = plan(cfg, command, originals, actor, when)
+        indexes, _ = w.inventory(root, collect_ids=False)
+        route = resolve_schema("Video", MOVIES, indexes, declaring=MOVIES + "/index.md")
+        if route.fields.get("ranked") not in ("bool", {"type": "bool"}) or "ranked" in route.required:
+            raise Refused("Expected an optional boolean ranked declaration.")
+        route.validate(document(changes[1].after if len(changes) == 3 else originals[1])[0])
+        resolve_schema("Film Ranking", RANKINGS, indexes, declaring=RANKINGS + "/index.md").validate(
+            document(changes[0].after)[0])
+        for c in changes:
+            read_text(c.after.encode())
+        review = dict(command=command, originals=originals, actor=actor, at=when.isoformat())
+        w.freeze(root, state, changes, operation=OP, request=request, bijou_review=review)
+        return w.publish(root, state, changes, operation=OP, request=request)

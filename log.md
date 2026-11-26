@@ -2,6 +2,10 @@
 
 ## 2026-11-25
 
+* **Barry’s Bijou prototype**: Built the iPhone and Mac movie journal,
+  including offline rankings and a fixture-only OKF placement writer.
+  The [build and pairing guide](experiments/barrys-bijou/run.md) records
+  the two-client sync rehearsal and remaining device checks.
 * **Clerk validation and trust**: Added a roadmap for format and schema
   feedback, source attribution, and revision-bound verification. Identified
   the writer changes needed before the editable Viewer shows trust badges.

@@ -1,0 +1,265 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		B20000000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B10000000000000000000005;
+			remoteInfo = Bijou;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B10000000000000000000007 /* Bijou.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bijou.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000014 /* Support/Bijou.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Support/Bijou.xcconfig; sourceTree = SOURCE_ROOT; };
+		B20000000000000000000003 /* BijouUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BijouUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2000000000000000000000A /* Support/UITests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Support/UITests.xcconfig; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B10000000000000000000006 /* Bijou */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Bijou;
+			sourceTree = "<group>";
+		};
+		B20000000000000000000002 /* UITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = UITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B1000000000000000000000A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5FEFEF7330B7C46E00520B84 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000014 /* Support/Bijou.xcconfig */,
+				B2000000000000000000000A /* Support/UITests.xcconfig */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		B10000000000000000000003 = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000006 /* Bijou */,
+				B20000000000000000000002 /* UITests */,
+				B10000000000000000000004 /* Products */,
+				5FEFEF7330B7C46E00520B84 /* Recovered References */,
+			);
+			sourceTree = "<group>";
+		};
+		B10000000000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000007 /* Bijou.app */,
+				B20000000000000000000003 /* BijouUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B10000000000000000000005 /* Bijou */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000000000000000000008 /* Build configuration list for PBXNativeTarget "Bijou" */;
+			buildPhases = (
+				B10000000000000000000009 /* Sources */,
+				B1000000000000000000000A /* Frameworks */,
+				B1000000000000000000000B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B10000000000000000000006 /* Bijou */,
+			);
+			name = Bijou;
+			productName = Bijou;
+			productReference = B10000000000000000000007 /* Bijou.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B20000000000000000000001 /* BijouUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B20000000000000000000004 /* Build configuration list for PBXNativeTarget "BijouUITests" */;
+			buildPhases = (
+				B20000000000000000000005 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B20000000000000000000006 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B20000000000000000000002 /* UITests */,
+			);
+			name = BijouUITests;
+			productName = BijouUITests;
+			productReference = B20000000000000000000003 /* BijouUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2700;
+			};
+			buildConfigurationList = B10000000000000000000002 /* Build configuration list for PBXProject "Bijou" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = B10000000000000000000003;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B10000000000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B10000000000000000000005 /* Bijou */,
+				B20000000000000000000001 /* BijouUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B1000000000000000000000B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B10000000000000000000009 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B20000000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B20000000000000000000006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B10000000000000000000005 /* Bijou */;
+			targetProxy = B20000000000000000000007 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		B10000000000000000000010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B10000000000000000000011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		B10000000000000000000012 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B10000000000000000000014 /* Support/Bijou.xcconfig */;
+			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				DEVELOPMENT_TEAM = 8UZ38XK35F;
+			};
+			name = Debug;
+		};
+		B10000000000000000000013 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B10000000000000000000014 /* Support/Bijou.xcconfig */;
+			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				DEVELOPMENT_TEAM = 8UZ38XK35F;
+			};
+			name = Release;
+		};
+		B20000000000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B2000000000000000000000A /* Support/UITests.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		B20000000000000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B2000000000000000000000A /* Support/UITests.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B10000000000000000000002 /* Build configuration list for PBXProject "Bijou" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000010 /* Debug */,
+				B10000000000000000000011 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000000000000000000008 /* Build configuration list for PBXNativeTarget "Bijou" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000012 /* Debug */,
+				B10000000000000000000013 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B20000000000000000000004 /* Build configuration list for PBXNativeTarget "BijouUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B20000000000000000000008 /* Debug */,
+				B20000000000000000000009 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B10000000000000000000001 /* Project object */;
+}

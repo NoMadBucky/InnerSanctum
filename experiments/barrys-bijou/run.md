@@ -1,0 +1,142 @@
+# Build and try Barry’s Bijou
+
+## First screening
+
+Open [Bijou.xcodeproj](Bijou.xcodeproj/) in Xcode 27.2. Choose scheme
+**Bijou**, select **My Mac**, and press **Run**. The app opens to **Watched**
+with six fictional movies. Choose one, tap **Rank**, then **Confirm
+placement**. Rank a second film and **Rerank** the first. Quit and reopen:
+the positions persist, and the watched dates stay the same.
+
+For iPhone, select your paired phone in the same scheme. In the **Bijou**
+target’s **Signing & Capabilities**, select your **Personal Team**; press
+**Run**. The app needs iOS 27.0 or newer. The built-in sample works without
+pairing with a home adapter. Sample rankings are private to each device and
+remain accessible after connecting to a separate fixture.
+
+To build from Terminal, start at the InnerSanctum repository root:
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+BIJOU=experiments/barrys-bijou
+xcodebuild -project "$BIJOU/Bijou.xcodeproj" -scheme Bijou -configuration Debug \
+  -destination 'platform=macOS' -derivedDataPath "$BIJOU/Build/Mac" build
+open "$BIJOU/Build/Mac/Build/Products/Debug/Bijou.app"
+```
+
+## Try home sync
+
+1. **Make a practice library.** From the repository root, choose a **new**
+   directory outside repositories, SynologyDrive and existing OKF bundles:
+
+   ```sh
+   BIJOU=experiments/barrys-bijou
+   ROOM="$HOME/BijouPractice"
+   uv run --locked python "$BIJOU/adapter/fixture.py" "$ROOM"
+   ```
+
+   This creates a Personal-shaped v0.3 bundle with six watched movies, a
+   watchlist movie, a non-movie, and five generated test posters. Normal
+   InnerSanctum Create supplies the ID of the empty `Film Ranking`. The
+   adapter binds to this particular bundle and ranking; restarting it uses
+   the existing folder. Create a new directory for a fresh test.
+2. **Start the adapter on the Mac.** Set `HOME_IP` to the Mac’s actual
+   Wi-Fi address (System Settings → Wi-Fi → Details → TCP/IP). Leave this
+   process running while testing. For a Mac-only trial use `127.0.0.1`.
+
+   ```sh
+   HOME_IP=192.168.1.20  # replace with the Mac's home-network address
+   uv run --locked python "$BIJOU/adapter/home.py" serve --bundle "$ROOM" --host "$HOME_IP"
+   ```
+
+3. **Pair one app.** Paste the displayed code into **Home Sync → Pair this
+   device**. Allow Local Network access if prompted. The code identifies the
+   exact HTTPS certificate and carries a one-use, ten-minute invitation. The
+   paired credential is stored in that device’s Keychain.
+4. **Pair the other app.** In a second Terminal at the repository root,
+   request another code using the same library and address:
+
+   ```sh
+   uv run --locked python experiments/barrys-bijou/adapter/home.py invite \
+     --bundle "$HOME/BijouPractice" --host 192.168.1.20
+   ```
+
+   Replace the example address as in step 2. Enter the new code on the
+   other device. Each should now say **Paired home library**. Text arrives
+   first; the Mac prepares thumbnails and the clients keep them for offline
+   use. If a poster was still being prepared, **Sync now** retries it.
+5. **Try a conflict.** Sync both devices. Disconnect the phone, move a film
+   and relaunch. Add a different film on the Mac. Reconnect the phone and
+   tap **Sync now**. **Home Sync** shows both orders and lets you place the
+   affected film in the Mac’s latest list. An unresolved decision stays
+   saved on the phone. **Export ranking as Markdown** works offline.
+
+The adapter defaults to loopback. It runs only while the command is active;
+Ctrl-C stops it. `devices` lists enrolled device IDs; `revoke --device ID`
+invalidates one credential. Both take `--bundle "$ROOM"`. The synthetic
+posters need no external service; an HTTPS artwork source requires an
+explicit `--art-host HOSTNAME` at server startup.
+
+## Open a read-only screening copy
+
+For a later trial with an approved **offline** snapshot, `adapter/pack_snapshot.py`
+accepts `--snapshot /physical/external/OKF` and `--output /private/folder/movies.bijou.json`.
+The output folder must have mode `0700`, be outside repositories and bundles,
+and the file must not already exist. Only watched movie details, sources,
+ranking information and thumbnails are packaged. HTTPS artwork is fetched
+only from explicitly specified `--art-host` names. The packer never opens
+the input as a writer and checks the scoped files again before exporting.
+
+Transfer that private file to the test device and choose **Home Sync →
+Open screening copy…**. This library has its own local ranking. Its changes
+cannot be sent to the fixture or back to Personal. For an immediate trial,
+use the synthetic practice bundle as the snapshot instead.
+
+## Verify the prototype
+
+From the repository root:
+
+```sh
+uv run --locked pytest
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  uv run --locked python experiments/barrys-bijou/adapter/rehearse.py
+```
+
+The rehearsal creates a temporary external bundle and pairs two native
+clients to an ephemeral loopback TLS server. It checks offline SQLite
+relaunch, a cached-image payload, a lost acknowledgment, a cross-device
+conflict, the exact final order, four audit entries and unchanged movie
+bodies and dates. The writer tests also interrupt a first placement between
+file writes, verify incomplete snapshots are refused, and recover the
+original request. To reconcile an interrupted *fixture* publication:
+
+```sh
+uv run --locked innersanctum concept recover --bundle "$ROOM"
+```
+
+The clients keep the original request until they obtain its receipt. For a
+read-back of the disposable library, use `innersanctum bijou catalog
+--bundle "$ROOM"` through `uv run --locked`. These commands and the adapter
+do not provide a live ranking integration.
+
+The **BijouUITests** target exercises the native window: Watched → film →
+cancel → confirm → quit → reopen. It uses an isolated temporary sample
+database. Run it in Xcode with **Product → Test**, or on a Mac with Xcode
+UI automation enabled:
+
+```sh
+cd experiments/barrys-bijou
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  xcodebuild -project Bijou.xcodeproj -scheme Bijou -destination 'platform=macOS' \
+  -parallel-testing-enabled NO test
+```
+
+### Build record · 2026-11-25
+
+Xcode 27.2 built the Mac app, an unsigned iPhone app and an iOS Simulator
+app. The Mac app opened a window. Four native storage, screening-copy and
+sync tests passed, including two clients talking to the Mac adapter over
+HTTPS. The Python suite passed all 166 tests. The separate Xcode UI test
+runner timed out enabling automation before it executed the click-through.
+Physical-phone installation, on-device UI and home Wi-Fi acceptance remain
+to be checked; no iOS simulator runtime was installed on this Mac.

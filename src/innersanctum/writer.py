@@ -529,6 +529,11 @@ def read_changes(root, state):
                     or data["operation"] != VERSION_OPERATION or request is None):
                 raise ValueError
             operation, directory, identity = VERSION_OPERATION, None, None
+        elif version == 10:
+            if (set(data) != {"version", "bundle", "changes", "operation", "bijou_review"}
+                    or data["operation"] != "bijou-place" or request is None or clerk_session is not None):
+                raise ValueError
+            operation, directory, identity = "bijou-place", None, None
         else:
             raise ValueError
         changes = [Change(**item) for item in data["changes"]]
@@ -548,6 +553,11 @@ def read_changes(root, state):
             raise ValueError
         if any(c.after is None for c in changes):
             raise ValueError
+        if operation == "bijou-place":
+            from .bijou import verify
+
+            verify(root, changes, request, data["bijou_review"])
+            return changes, operation, None, None, request, None, None
         if operation == VIDEO_STATUS_OPERATION:
             from .migration import verify_changes
 
@@ -656,6 +666,8 @@ def verify_clerk_log(changes, operation, session):
 
 def publish(root, state, changes, *, recovering=False, operation="create", directory=None, identity=None,
             request=None, clerk_session=None, successor=None, archive_pin=None, maintenance=False):
+    if operation == "bijou-place" and successor is not None:
+        raise Refused("Bijou placements are standalone-fixture operations only.")
     if operation == VIDEO_STATUS_OPERATION and successor is not None and not maintenance:
         raise Refused("Use stopped-checkpoint Video migration recovery on the adopted checkout.")
     if operation == TIMESTAMP_OPERATION and successor is not None and not maintenance:
@@ -734,6 +746,8 @@ def publish(root, state, changes, *, recovering=False, operation="create", direc
 
 
 def describe(changes, status, *, operation="create", directory=None, identity=None, clerk_session=None):
+    if operation == "bijou-place":
+        return {"status": "placed", "revision": changes[0].revision, "files": [c.path for c in changes]}
     if operation == VIDEO_STATUS_OPERATION:
         return {"status": "migrated", "operation": operation, "renames": len(changes) - 2,
                 "index_revision": changes[-2].revision, "audit_revision": changes[-1].revision}
@@ -759,7 +773,7 @@ def describe(changes, status, *, operation="create", directory=None, identity=No
 
 
 def freeze(root, state, changes, *, operation="create", directory=None, identity=None, request=None,
-           clerk_session=None, archive_pin=None, timestamp_review=None, version_review=None):
+           clerk_session=None, archive_pin=None, timestamp_review=None, version_review=None, bijou_review=None):
     data = {"version": 1, "bundle": bundle_identity(root), "changes": [vars(change) for change in changes]}
     if operation == "journal-add":
         data.update(version=2, operation=operation, directory=directory)
@@ -777,6 +791,10 @@ def freeze(root, state, changes, *, operation="create", directory=None, identity
         if request is None or version_review is None:
             raise Refused("Version declaration requires a durable request and reviewed preimages.")
         data.update(version=9, operation=operation, version_review=version_review)
+    elif operation == "bijou-place":
+        if request is None or bijou_review is None:
+            raise Refused("Bijou placement requires a durable request and its preimages.")
+        data.update(version=10, operation=operation, bijou_review=bijou_review)
     if request is not None:
         data = {"version": 4, "plan": data, "request": request}
     if clerk_session is not None:

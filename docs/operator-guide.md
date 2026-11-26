@@ -87,6 +87,12 @@ For Clerk edits, the [Clerk archive workflow](../clerk-archive.md) shows how
 to keep conversation exports outside OKF and link their exact snapshots
 from the edit audit. It is available for standalone rehearsals only.
 
+The [Barry’s Bijou rehearsal](../experiments/barrys-bijou/run.md) adds
+`bijou catalog` and `bijou place` for an explicitly bound external fixture.
+First placement coordinates a ranking, a movie membership flag and one audit
+entry; reranking leaves the movie file alone. Both commands accept
+`--bundle` only.
+
 ## Personal journal
 
 For a real entry, provide a Markdown file or pipe the text on stdin. Use the

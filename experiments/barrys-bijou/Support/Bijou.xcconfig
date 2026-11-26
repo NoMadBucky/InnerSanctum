@@ -1,0 +1,17 @@
+PRODUCT_NAME = Bijou
+PRODUCT_BUNDLE_IDENTIFIER = org.innersanctum.bijou
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator macosx
+SDKROOT = auto
+MACOSX_DEPLOYMENT_TARGET = 27.0
+IPHONEOS_DEPLOYMENT_TARGET = 27.0
+TARGETED_DEVICE_FAMILY = 1
+SUPPORTS_MACCATALYST = NO
+SWIFT_VERSION = 5.0
+SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug] = $(inherited) DEBUG
+ALWAYS_SEARCH_USER_PATHS = NO
+CODE_SIGN_STYLE = Automatic
+INFOPLIST_FILE = Support/Info.plist
+GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks
+LD_RUNPATH_SEARCH_PATHS[sdk=macosx*] = $(inherited) @executable_path/../Frameworks

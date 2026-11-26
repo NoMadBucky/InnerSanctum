@@ -15,6 +15,15 @@ from . import clerk_archive, concept, journal, migration, readiness, timestamp_c
 def parser():
     command = argparse.ArgumentParser(prog="innersanctum", description=__doc__)
     groups = command.add_subparsers(required=True)
+    bijou = groups.add_parser("bijou", help="Rehearse movie rankings on an external Bijou fixture")
+    bijou_actions = bijou.add_subparsers(required=True)
+    for name in ("catalog", "place"):
+        cmd = bijou_actions.add_parser(name)
+        cmd.set_defaults(action=f"bijou-{name}")
+        cmd.add_argument("--bundle", required=True)
+        if name == "place":
+            cmd.add_argument("--from", dest="source", default="-", help="Placement JSON; defaults to stdin")
+            cmd.add_argument("--actor", required=True)
     concepts = groups.add_parser("concept")
     actions = concepts.add_subparsers(dest="action", required=True)
     template = actions.add_parser("template", help="Print a draft from a declared type schema")
@@ -220,7 +229,17 @@ def main(argv=None):
                     raise Refused("The adopted checkout does not match the expected checkpoint receipt.")
                 if successor is not None and (args.action.startswith("clerk-") or archive_pin is not None) and expected is None:
                     raise Refused("Pin the exact adoption checkpoint for an adopted Clerk operation.")
-                if args.action == "clerk-bind":
+                if args.action.startswith("bijou-"):
+                    from . import bijou
+                    if args.action == "bijou-catalog":
+                        result = bijou.catalog(root)
+                    else:
+                        try:
+                            ordering = json.loads(input_bytes(args.source, limit=8192))
+                        except (ValueError, RecursionError):
+                            raise Refused("Expected a UTF-8 placement JSON object.") from None
+                        result = bijou.place(root, ordering, args.actor)
+                elif args.action == "clerk-bind":
                     result = clerk_archive.bind(root, successor, args.owner, args.namespace)
                 elif args.action == "clerk-binding":
                     result = clerk_archive.inspect(root, successor, archive_pin)

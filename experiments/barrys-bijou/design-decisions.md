@@ -33,14 +33,15 @@ images.
   Display its recorded year or omit the year. All 210 have a Markdown body
   and a unique Personal ID matching their seven-digit filename. Of those,
   198 have `sources` entries; the other 12 have a `url` to show as a link.
-* **Ranking:** No Video record uses `ranked`; the `Video` declaration neither
-  declares nor forbids it. `Documents/index.md` exists, but
-  `Documents/rankings/` and a `Film Ranking` declaration do not. In memory,
-  all 210 watched records passed schema validation with a proposed optional
-  `ranked: {type: bool}`, both absent and set to `true`; the string `"true"`
-  was rejected. The proposed ranking type and ID-based route also resolved
-  against a synthetic index in memory. These are schema checks, not a test
-  of publishing a ranking.
+* **Membership flag:** At catalog review, no Video record used `ranked`. A
+  subsequent read-only check confirmed that Personal’s `Resources/videos/index.md`
+  now lists it in both the field table and `okf_schema.fields`. The declared
+  rule accepts omission, `true`, and `false`; it rejects `"true"`, `1`, and
+  `null`. Existing films need no backfill.
+* **Ranking list:** The catalog review found `Documents/index.md` but no
+  `Documents/rankings/` or `Film Ranking` declaration. The proposed type
+  and ID-based route resolved against a synthetic index in memory. The first
+  publication test belongs on a disposable bundle.
 
 ## What a placement means
 
@@ -74,8 +75,8 @@ images.
 * **In OKF:** use one `Film Ranking` concept in `Documents/rankings/`. Set
   up that directory and its `index.md` on the disposable v0.3 fixture, link
   it from `Documents/index.md`, and give the fixture an explicit creation
-  route. Declare the new type there and the optional boolean in the existing
-  `Resources/videos/index.md` Video schema.
+  route. Declare the new type there and mirror Personal’s optional `ranked`
+  boolean in the fixture’s Video schema.
   Use the [writer’s normal Create convention](../../docs/operator-guide.md#concepts):
   it assigns the Personal ID and seven-digit filename. Set up one empty
   ranking and bind the adapter to that ID and expected path. A missing bound
@@ -144,5 +145,7 @@ the intended move. Barry never has to discard one device’s entire ranking.
   Target iOS 27.0 and macOS 27.0 for the first builds. Full Xcode 27.2 was
   verified at `/Applications/Xcode.app`; the default developer directory
   points to Command Line Tools. Set `DEVELOPER_DIR` to
-  `/Applications/Xcode.app/Contents/Developer` for builds. Device signing
-  and installation still need a first build.
+  `/Applications/Xcode.app/Contents/Developer` for builds. On 2026-11-25
+  Xcode compiled the Mac, iPhone and simulator targets with the 27.2 SDKs.
+  No iOS simulator runtime was installed. See the [run guide](run.md) for
+  the first signed iPhone run and fixture pairing.

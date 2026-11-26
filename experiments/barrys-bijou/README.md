@@ -1,9 +1,10 @@
 # Barry’s Bijou
 
-**Status: proposed experiment, 2026-11-25.** The first prototype ranks watched
-films and proves a local-first round trip into a disposable OKF bundle.
-The [read-only Personal catalog review](design-decisions.md#personal-catalog-review)
-is complete. The app has not been built; live writes are not approved.
+**Status: buildable prototype, 2026-11-25.** Open the
+[Xcode project](Bijou.xcodeproj/) to try six fictional films on iPhone or
+Mac. Browse Watched, rank offline, quit, and revisit the same order.
+The [build and pairing guide](run.md) walks through a two-device trial
+against a disposable OKF bundle.
 
 Barry’s Bijou is a SwiftUI **movie journal for iPhone and Mac**, using the
 Personal OKF bundle as its film library. It opens to **Watched**, most recently
@@ -97,9 +98,9 @@ fallback, not a required step for routine use.
 
 * **Bundle representation:** one new `Film Ranking` concept holds a numbered list
   of links to the ranked movies. It is the source of truth for the order and
-  membership recorded in the bundle. On the disposable fixture, extend the
-  `Video` declaration with an optional `ranked` boolean. Set it to `true`
-  on first placement as a convenience for other readers.
+  membership recorded in the bundle. The disposable fixture should match
+  Personal’s `Video` schema: `ranked` is an optional boolean. Set it to
+  `true` on first placement as a convenience for other readers.
   Interpret an absent flag as false for unranked films; don’t backfill the
   whole library. A rerank doesn’t change the flag or the watched date. On the
   device, derive the badge from the local list so it responds immediately.
@@ -111,14 +112,11 @@ fallback, not a required step for routine use.
   with changes pending, and via **Sync now**. Background attempts on iPhone
   are best-effort. Show **Saved on this device**, **Synced to OKF**, or
   **Needs review**.
-* **Writer boundary:** sync ranking requests, not folders. A narrow,
-  authenticated Mac-side adapter is proposed; only InnerSanctum would
-  publish to the live bundle. Validate the movie references and the expected
-  ranking revision. The guarded write needs to coordinate the ranking
-  concept, changed membership flags, and audit entry as one recoverable
-  operation. Don’t assume that a multi-file write is atomically visible to
-  readers. Acknowledge only after read-back and retain a receipt for retries
-  of the same request.
+* **Writer boundary:** the Mac adapter accepts authenticated placement
+  requests for its disposable fixture. InnerSanctum validates the film,
+  neighbors and revision, then journals the ranking, first-placement flag
+  and one audit entry together. Snapshots use the writer lock; a pending
+  publication blocks new snapshots. The receipt follows canonical read-back.
 * **Conflicts:** if the bundle ranking changed since the last acknowledged
   revision, keep the local order and pending work. Show the two versions for
   review; don’t overwrite one with the other or silently reorder the films.
