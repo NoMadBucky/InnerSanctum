@@ -34,7 +34,17 @@ private enum LocalSpeech {
     }
 }
 
-struct ReactionTranscript: View {
+extension View {
+    func reactionTranscriptSheet(selection: Binding<AudioReaction?>, store: ReactionStore,
+                                 archived: [ArchivedReaction]) -> some View {
+        sheet(item: selection) { (take: AudioReaction) in
+            let remote: ArchivedReaction? = archived.first { $0.id == take.id }
+            ReactionTranscript(take: take, store: store, remote: remote)
+        }
+    }
+}
+
+private struct ReactionTranscript: View {
     let take: AudioReaction
     let store: ReactionStore
     let remote: ArchivedReaction?

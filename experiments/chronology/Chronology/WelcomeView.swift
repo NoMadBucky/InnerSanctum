@@ -18,8 +18,11 @@ struct WelcomeView: View {
                         .offset(x: spread ? CGFloat(index - 1) * 42 : 0)
                 }
             }.accessibilityHidden(true).padding(.bottom)
-            Text("Chronology").font(.system(.largeTitle, design: .serif).bold())
-            Text("Where in history does your card belong?").multilineTextAlignment(.center)
+            VStack(spacing: 4) {
+                Text("Periodical").font(.system(.largeTitle, design: .serif).bold())
+                Text("A Snap History Game").font(.subheadline).foregroundStyle(.secondary)
+            }.accessibilityElement(children: .combine)
+            Text("Can you find your place in history?").bold().multilineTextAlignment(.center)
             Spacer()
             Button("New Game", action: start).buttonStyle(.borderedProminent).controlSize(.large)
             Button("High Scores", action: scores)

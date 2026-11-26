@@ -1,4 +1,6 @@
-# Chronology
+# Periodical: A Snap History Game
+
+**Can you find your place in history?**
 
 Open `Chronology.xcodeproj`, select the Chronology scheme and run on a portrait
 iPhone (iOS 18 or later). Choose New Game to inspect the dated opening card,

@@ -363,7 +363,7 @@ struct AudioReactions: View {
         }
     }
 
-    var body: some View {
+    private var reactionList: some View {
         VStack(alignment: .leading, spacing: 10) {
             if focusedTake == nil { recordingControls }
             if focusedTake != nil && takes.isEmpty { Text("This recording is no longer on this device.") }
@@ -372,6 +372,24 @@ struct AudioReactions: View {
             if let message = room.notice { Text(message).font(.callout) }
             if room.needsUnmute { Button("Unmute microphone") { room.unmute() } }
         }
+    }
+
+    private var presentedList: some View {
+        reactionList.reactionTranscriptSheet(selection: $transcribing, store: room.store, archived: archived)
+            .alert("Delete recording?", isPresented: deletePrompt, presenting: deleting) { take in
+                Button("Delete", role: .destructive) { room.delete(take) }
+                Button("Cancel", role: .cancel) {}
+            } message: { take in
+                Text("Remove the take recorded \(take.recordedAt.formatted()) from this device?")
+            }
+    }
+
+    private var deletePrompt: Binding<Bool> {
+        Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })
+    }
+
+    var body: some View {
+        presentedList
         .onAppear { room.reload() }
         .onChange(of: recordRequest, initial: true) { _, request in
             guard request != nil else { return }
@@ -381,16 +399,6 @@ struct AudioReactions: View {
             } else {
                 Task { await room.record(viewed: viewed) }
             }
-        }
-        .sheet(item: $transcribing) { take in
-            ReactionTranscript(take: take, store: room.store, remote: archived.first { $0.id == take.id })
-        }
-        .alert("Delete recording?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
-               presenting: deleting) { take in
-            Button("Delete", role: .destructive) { room.delete(take) }
-            Button("Cancel", role: .cancel) {}
-        } message: { take in
-            Text("Remove the take recorded \(take.recordedAt.formatted()) from this device?")
         }
         .onDisappear { download?.cancel(); room.discard() }
         .onChange(of: phase) { _, p in if p == .background && room.recording { room.stop() } }
