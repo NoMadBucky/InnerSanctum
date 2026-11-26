@@ -23,7 +23,7 @@ shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
-Before the welcome screen, a separate 23.6-second newsreel plays once per app
+Before the welcome screen, a separate 30.1-second newsreel plays once per app
 launch. Replay Intro on the welcome screen plays it again from the beginning.
 Skip Intro opens the menu immediately. Read Rules, VoiceOver and
 Reduce Motion provide a text introduction to the rules. The Blonien Productions
@@ -43,7 +43,9 @@ The stereo score uses recorded French horn, bowed and plucked cellos, and
 timpani from [Versilian Studios Community Edition](https://github.com/sgossner/VSCO-2-CE)
 (CC0). The first rebuild downloads the selected WAVs into `vsco/` beside the
 source footage; subsequent builds use the cached samples.
-The answer card compares the Wright flight (1903) with the earthquake (1906).
+The opening and closing titles fade in on their spoken cues. A question mark
+holds for three seconds before the answer compares the Wright flight (1903)
+with the earthquake (1906). The closing card stays up for the horn's decay.
 Speech is rendered when building the film; the app only plays the audio track.
 To rebuild on macOS, place the two source files named above together with
 `kokoro-v1.0.int8.onnx` and `voices-v1.0.bin` from the

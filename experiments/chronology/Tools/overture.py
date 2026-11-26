@@ -21,15 +21,16 @@ def render(seconds, reveal, cache, rate=48000):
         audio, hz = sf.read(file, always_2d=True)
         return audio / max(.001, np.max(np.abs(audio))), hz
 
-    def play(path, at, length, gain, semitones=0, pan=0):
+    def play(path, at, length, gain, semitones=0, pan=0, release=.17, destination=None):
+        destination = mix if destination is None else destination
         audio, hz = sample(path)
         start = round(at * rate)
         step = hz / rate * 2 ** (semitones / 12)
         n = min(round(length * rate), len(mix)-start, int((len(audio)-1)/step))
         idx = np.arange(n)*step
-        envelope = gain * np.minimum(1, np.arange(n)[::-1] / (.17 * rate))
+        envelope = gain * np.minimum(1, np.arange(n)[::-1] / (release * rate))
         for channel, balance in enumerate([1-pan, 1+pan]):
-            mix[start:start+n, channel] += envelope * balance * np.interp(
+            destination[start:start+n, channel] += envelope * balance * np.interp(
                 idx, np.arange(len(audio)), audio[:, channel % audio.shape[1]])
 
     # Short tongued pickups, then sustained horn notes with their recorded attack.
@@ -37,7 +38,6 @@ def render(seconds, reveal, cache, rate=48000):
         (0, "D2", "stac", .34, .22), (.29, "A2", "stac", .37, .22),
         (.61, "C3", "sus", 1.45, .26), (reveal, "A2", "sus", .57, .20),
         (reveal+.50, "C3", "sus", .75, .24), (reveal+1.16, "F4", "sus", 1.8, .21),
-        (seconds-1.65, "C3", "sus", 1.6, .21),
     ]:
         suffix = "v1_1" if articulation == "sus" else "v2_rr1"
         play(f"Brass/F Horn/{articulation}/MOHorn_{articulation}_{pitch}_{suffix}.wav",
@@ -46,7 +46,7 @@ def render(seconds, reveal, cache, rate=48000):
     for begin, end, bass, upper, shift in [
         (0, reveal*.5, "D2", "F2", 0),
         (reveal*.5, reveal, "A2", "E3", 0),
-        (reveal, seconds, "D2", "F2", 1),
+        (reveal, seconds-2.8, "D2", "F2", 1),
     ]:
         # Rebow sustained parts and alternate pizzicato takes under the question.
         for beat, at in enumerate(np.arange(begin, end-.18, 1.04)):
@@ -57,5 +57,15 @@ def render(seconds, reveal, cache, rate=48000):
                  at, min(2.92, end-at), .12, shift, .12)
         play("Percussion/Timpani/Timpani1_Hit_v1_rr1_Sum.wav", begin, 1.65, .24)
 
-    mix *= np.minimum(1, np.arange(len(mix))[::-1] / (.42 * rate))[:, None]
+    # Leave the final register to the horn. Give its release a stereo room tail
+    # instead of playing a sustained sample right up to the last video frame.
+    horn = np.zeros_like(mix)
+    play("Brass/F Horn/sus/MOHorn_sus_C3_v1_1.wav", seconds-3.65, 2.6, .23,
+         semitones=2, pan=-.18, release=1.25, destination=horn)
+    mix += horn
+    for channel, spacing in enumerate((.073, .089)):
+        for bounce in range(1, 15):
+            lag = round(rate*spacing*bounce)
+            mix[lag:, channel] += horn[:-lag, channel] * .20 * .72**(bounce-1)
+    mix *= np.minimum(1, np.arange(len(mix))[::-1] / (.12 * rate))[:, None]
     return mix

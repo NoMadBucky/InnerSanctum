@@ -49,18 +49,37 @@ def speak(text, speed, credit=False, contrast=False):
     return samples, rate
 
 
-credit, rate = speak("Blonien Productions presents: Milestones — A Snap History Game.", 1.14, credit=True)
+credit, rate = speak("Blonien Productions presents: Milestones.", 1.14, credit=True)
+subtitle, _ = speak("A Snap History Game.", 1.14)
 timing, _ = speak("It’s all about timing.", 1.04)
 first, _ = speak("Which moment came first — San Francisco’s great earthquake…", 1.09)
 alternative, _ = speak("Or the first powered flight by the Wright brothers?", 1.06, contrast=True)
-closing, _ = speak("The fate of our timeline is in your hands. Find your place in history. Play Milestones now!", 1.16)
+fate, _ = speak("The fate of our timeline is in your hands.", 1.16)
+place, _ = speak("Find your place in history.", 1.16)
+play_now, _ = speak("Play Milestones now!", 1.16)
 
 silence = lambda seconds: np.zeros(round(seconds * rate), dtype=np.float32)
+def cue_track(*phrases):
+    """One clock for spoken phrases and their on-screen cues."""
+    blocks, cues, length = [], {}, 0
+    for name, audio in phrases:
+        cues[name] = length / rate
+        blocks.append(audio)
+        length += len(audio)
+    return np.concatenate(blocks), cues
+
+
+opening, intro = cue_track(("lead", silence(1.65)), ("credit", credit),
+                          ("subtitle", subtitle), ("pause", silence(.35)),
+                          ("timing", timing), ("hold", silence(.8)))
+ending, outro = cue_track(("guess", silence(3)), ("answer", silence(.85)),
+                         ("fate", fate), ("beat", silence(.18)), ("place", place),
+                         ("breath", silence(.18)), ("cta", play_now), ("ring", silence(3.4)))
 takes = [
-    np.concatenate((silence(0.55), credit, silence(0.35), timing, silence(0.80))),
+    opening,
     np.concatenate((silence(0.65), first, silence(0.18))),
     np.concatenate((silence(0.72), alternative, silence(0.50))),
-    np.concatenate((silence(0.80), closing, silence(1.50))),
+    ending,
 ]
 
 
@@ -70,10 +89,17 @@ with TemporaryDirectory() as tmp:
     for i, (file, slug, title, lines) in enumerate(chapters):
         art = Image.new("RGBA", (640, 880), "#171813")
         draw = ImageDraw.Draw(art)
+        layers = []
 
-        def label(y, text, size, face="Georgia Bold", color="#f5efda"):
+        def label(y, text, size, face="Georgia Bold", color="#f5efda", cue=None, until=None):
             font = ImageFont.truetype(f"/System/Library/Fonts/Supplemental/{face}.ttf", size)
-            draw.text((320, y), text, font=font, fill=color, anchor="mm")
+            if cue is None:
+                draw.text((320, y), text, font=font, fill=color, anchor="mm")
+            else:
+                sprite = Image.new("RGBA", art.size)
+                ImageDraw.Draw(sprite).text((320, y), text, font=font, fill=color, anchor="mm")
+                box = sprite.getbbox()
+                layers.append((sprite.crop(box), box[:2], cue, until))
 
         draw.rectangle((15, 15, 624, 864), outline="#c8ba91", width=2)
         label(56, "BLONIEN PRODUCTIONS", 26)
@@ -83,17 +109,20 @@ with TemporaryDirectory() as tmp:
         elif i == 0:
             label(213, "P R E S E N T S" if i == 0 else "F I N", 21, "Georgia")
             label(306, "MILESTONES", 66)
-            label(363, "A Snap History Game", 34, "Georgia Italic")
+            label(363, "A Snap History Game", 34, "Georgia Italic", cue=intro["subtitle"])
         else:
-            label(205, "T H E   A N S W E R", 22, "Georgia")
-            label(295, "1903", 92)
-            label(385, "The Wright brothers flew first.", 31)
-            label(455, "San Francisco’s earthquake followed in 1906.", 24, "Georgia")
+            label(302, "?", 125, cue=0, until=outro["answer"])
+            label(205, "T H E   A N S W E R", 22, "Georgia", cue=outro["answer"])
+            label(295, "1903", 92, cue=outro["answer"])
+            label(385, "The Wright brothers flew first.", 31, cue=outro["answer"])
+            label(455, "San Francisco’s earthquake followed in 1906.", 24, "Georgia", cue=outro["answer"])
         label(568, slug, 19, "Courier New Bold", "#d8c99b")
         draw.line((44, 608, 596, 608), fill="#c8ba91", width=2)
-        label(664, title, 31 if i == 1 else 38)
+        label(664, title, 31 if i == 1 else 38,
+              cue=intro["timing"] if i == 0 else outro["place"] if i == 3 else None)
         for j, line in enumerate(lines):
-            label(738 + 44*j, line, 28, "Georgia")
+            label(738 + 44*j, line, 28, "Georgia",
+                  cue=outro[("fate", "cta")[j]] if i == 3 else None)
         overlay = tmp / "overlay.png"
         art.save(overlay)
         voice = tmp / "voice.wav"
@@ -105,7 +134,9 @@ with TemporaryDirectory() as tmp:
         footage = (["-loop", "1", "-framerate", "24", "-i", str(sources / file)] if file == "Wrightflyer.jpg" else
                    ["-ss", "27", "-i", str(sources / file)] if file else
                    ["-f", "lavfi", "-i", "color=black:s=640x880:r=24"])
-        run("ffmpeg", "-y", "-loglevel", "error", *footage, "-i", str(overlay), "-i", str(voice),
+        overlay_input = (["-f", "rawvideo", "-pix_fmt", "rgba", "-s", "640x880", "-r", "24", "-i", "pipe:0"]
+                         if layers else ["-i", str(overlay)])
+        cmd = ["ffmpeg", "-y", "-loglevel", "error", *footage, *overlay_input, "-i", str(voice),
             "-filter_complex",
             "[0:v]fps=24,scale=576:376:force_original_aspect_ratio=increase,crop=576:376,"
             "setsar=1,hue=s=0,pad=640:880:32:147[film];[film][1:v]overlay[v];"
@@ -113,10 +144,25 @@ with TemporaryDirectory() as tmp:
             "equalizer=f=2350:t=q:w=1:g=1.5,lowpass=f=6300,alimiter=limit=0.92:level=0,"
             "apad[a]", "-map", "[v]", "-map", "[a]", "-t", str(duration),
             "-c:v", "libx264", "-crf", "22", "-pix_fmt", "yuv420p", "-c:a", "pcm_s16le",
-            "-ar", "44100", str(tmp / f"{i}.mov"))
+            "-ar", "44100", str(tmp / f"{i}.mov")]
+        if layers:
+            with subprocess.Popen(cmd, stdin=subprocess.PIPE) as encoder:
+                for frame in range(round(duration * 24)):
+                    canvas = art.copy()
+                    for sprite, xy, begin, end in layers:
+                        t = frame / 24
+                        opacity = min(1, (t-begin)/.42, (end-t)/.30 if end is not None else 1)
+                        if opacity > 0:
+                            canvas.paste(sprite, xy, sprite.getchannel("A").point(lambda a: a*opacity))
+                    encoder.stdin.write(canvas.tobytes())
+                encoder.stdin.close()
+                if encoder.wait():
+                    raise RuntimeError("Could not render timed title card")
+        else:
+            run(*cmd)
     manifest = tmp / "shots.txt"
     manifest.write_text("".join(f"file '{i}.mov'\n" for i in range(len(chapters))))
-    sf.write(tmp / "overture.wav", render(sum(durations), sum(durations[:3]), sources / "vsco"), 48000)
+    sf.write(tmp / "overture.wav", render(sum(durations), sum(durations[:3]) + outro["answer"], sources / "vsco"), 48000)
     run("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(manifest),
         "-i", str(tmp / "overture.wav"), "-filter_complex",
         "[0:a]asplit[narration][key];[1:a][key]sidechaincompress=threshold=0.025:ratio=6:"
