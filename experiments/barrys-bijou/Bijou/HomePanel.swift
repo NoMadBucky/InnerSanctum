@@ -48,6 +48,9 @@ struct HomePanel: View {
                         ForEach(["Automatic", "Working Hours", "After Hours"], id: \.self) { Text($0) }
                     }
                 }
+                settingsSection("Movie discovery", icon: "magnifyingglass") {
+                    DiscoverySettings()
+                }
                 settingsSection("Library & sync", icon: "arrow.triangle.2.circlepath") {
                     if let j = studio.journal {
                         Text(studio.isSample ? "Sample screening room" : studio.isSnapshot ? "Private screening copy" :
@@ -209,5 +212,40 @@ struct HomePanel: View {
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+}
+
+private struct DiscoverySettings: View {
+    @State private var draft = ""
+    @State private var configured = false
+    @State private var issue: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(configured ? "Direct TMDb search is set up on this device." : "Search TMDb over cellular or Wi-Fi without your Mac.")
+            Link("Get an API Read Access Token from TMDb", destination: URL(string: "https://www.themoviedb.org/settings/api")!)
+            SecureField(configured ? "Replacement read token" : "API Read Access Token", text: $draft)
+                .textFieldStyle(.roundedBorder).autocorrectionDisabled()
+                #if os(iOS)
+                .textInputAutocapitalization(.never)
+                #endif
+            HStack {
+                Button("Save token") { save(draft.trimmingCharacters(in: .whitespacesAndNewlines)) }
+                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if configured { Button("Remove token") { save(nil) } }
+            }
+            Text("The token stays in this device’s Keychain. Adding films to your Personal Watchlist still requires your home Mac.")
+                .font(.caption)
+            if let issue { Text(issue).font(.callout) }
+        }.onAppear {
+            do { configured = try TMDbKeyring.read() != nil } catch { issue = error.localizedDescription }
+        }
+    }
+
+    private func save(_ token: String?) {
+        do {
+            try TMDbKeyring.store(token)
+            configured = token != nil; draft = ""; issue = nil
+        } catch { issue = error.localizedDescription }
     }
 }

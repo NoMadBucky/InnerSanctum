@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MovieDiscovery: View {
-    let credentials: Credentials
+    let credentials: Credentials?
     let known: [Int: FilmRef]
     let open: (FilmRef) -> Void
     @EnvironmentObject private var studio: Studio
@@ -15,7 +15,7 @@ struct MovieDiscovery: View {
     @State private var adding: Int?
     @State private var reviewID: Int?
     @State private var candidates: [HomeClient.WatchlistReply.Candidate] = []
-    init(credentials: Credentials, catalog: Catalog, initial: String, open: @escaping (FilmRef) -> Void) {
+    init(credentials: Credentials?, catalog: Catalog, initial: String, open: @escaping (FilmRef) -> Void) {
         self.credentials = credentials
         self.open = open
         known = Dictionary(catalog.films.compactMap { film in
@@ -25,7 +25,7 @@ struct MovieDiscovery: View {
     }
     private var query: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
     private func add(_ id: Int, distinctFrom: [String] = []) {
-        guard adding == nil else { return }
+        guard adding == nil, let credentials else { return }
         issue = nil; adding = id
         Task {
             defer { adding = nil }
@@ -45,7 +45,16 @@ struct MovieDiscovery: View {
         Task {
             defer { loading = false }
             do {
-                results = try await HomeClient(credentials).searchTMDb(title, page: n)
+                if let token = try TMDbKeyring.read() {
+                    results = try await TMDbDiscovery.search(title, page: n, token: token)
+                } else if let credentials {
+                    do { results = try await HomeClient(credentials).searchTMDb(title, page: n) }
+                    catch let error as URLError {
+                        throw BijouError("\(error.localizedDescription) To search without your Mac, add a TMDb read token in Settings → Movie discovery.")
+                    }
+                } else {
+                    throw BijouError("To search over the internet, add a TMDb read token in Settings → Movie discovery.")
+                }
                 submitted = title; page = n
             } catch { issue = error.localizedDescription }
         }
@@ -78,7 +87,7 @@ struct MovieDiscovery: View {
                                 AsyncImage(url: poster) { image in image.resizable().scaledToFit() }
                                     placeholder: { Color.clear }.frame(width: 64, height: 96).accessibilityHidden(true)
                             }
-                            Text([hit.year, known[hit.id] != nil ? "In Personal OKF" : "No TMDb ID match in Personal"]
+                            Text([hit.year, known[hit.id] != nil ? "In this library" : "No TMDb ID match in this library"]
                                 .filter { !$0.isEmpty }.joined(separator: " · ")).font(.caption)
                             if !hit.overview.isEmpty { Text(hit.overview).font(.subheadline).lineLimit(3) }
                             if let ref = known[hit.id] {
@@ -91,8 +100,8 @@ struct MovieDiscovery: View {
                                 Button("Different movie — add to Watchlist") {
                                     add(hit.id, distinctFrom: candidates.map(\.ref.path))
                                 }.buttonStyle(JournalActionStyle())
-                            } else {
-                                Button(adding == hit.id ? "Adding…" : "Add to Watchlist") { add(hit.id) }
+                            } else if credentials != nil {
+                                Button(adding == hit.id ? "Adding…" : "Add to Watchlist via Mac") { add(hit.id) }
                                     .buttonStyle(JournalActionStyle()).disabled(studio.syncing || loading)
                             }
                         }

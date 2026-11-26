@@ -134,7 +134,7 @@ struct Theater: View {
                         if shelf != .reactions {
                             TextField("Find a film or transcript", text: $query).textFieldStyle(.roundedBorder)
                         }
-                        if shelf != .reactions, j.base.origin == "personal", studio.credentials?.library == j.base.library {
+                        if shelf != .reactions {
                             Button { searchingTMDb = true } label: { Label("Search TMDb", systemImage: "magnifyingglass") }
                                 .buttonStyle(.bordered)
                         }
@@ -201,7 +201,8 @@ struct Theater: View {
             } catch { if !Task.isCancelled { studio.notice = error.localizedDescription } }
         }
         .sheet(isPresented: $searchingTMDb) {
-            if let creds = studio.credentials, let catalog = studio.journal?.base {
+            if let catalog = studio.journal?.base {
+                let creds = catalog.origin == "personal" && studio.credentials?.library == catalog.library ? studio.credentials : nil
                 MovieDiscovery(credentials: creds, catalog: catalog, initial: query) { ref in
                     searchingTMDb = false
                     path.append(ref)

@@ -42,6 +42,13 @@ writer ownership, verification, and rollback.
 
 ## First screening
 
+For movie discovery away from home, open **Settings → Movie discovery** on
+the device. Follow the TMDb link and save your **API Read Access Token**
+(not the API key). **Film Journal → Search TMDb** then works directly over
+cellular or Wi-Fi, without pairing or a running Mac. Without a device token,
+a paired Personal library can still search through its Mac at home.
+**Add to Watchlist via Mac** requires the Personal adapter on the home network.
+
 ### The opening print
 
 The [12-second opening reel](Bijou/BijouOpening.mp4) is a local 4:3 movie
