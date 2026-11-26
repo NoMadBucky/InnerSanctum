@@ -59,6 +59,7 @@ print("Validated Long Play beyond ten guesses, third miss, and full-deck exhaust
 
 let legacy = ScoreEntry(id: UUID(), score: 8, date: Date(timeIntervalSince1970: 0))
 var board = try JSONEncoder().encode(Array(repeating: legacy, count: 10))
+precondition(ScoreHistory.entries(board).count == 5)
 let below = ScoreEntry(id: UUID(), score: 7, date: Date())
 precondition(ScoreHistory.record(below, in: board) == nil)
 let tied = ScoreEntry(id: UUID(), score: 8, date: Date())
@@ -66,8 +67,8 @@ board = ScoreHistory.record(tied, in: board)!
 precondition(ScoreHistory.sign(tied.id, with: "a1", in: board) == board)
 board = ScoreHistory.sign(tied.id, with: "a-c3e!", in: board)
 let ranked = ScoreHistory.entries(board)
-precondition(ranked.count == 10 && ranked.first?.initials == "ACE" && ranked.last?.initials == nil)
-print("Validated initials, unsigned scores and the top-ten cutoff with ties.")
+precondition(ranked.count == 5 && ranked.first?.initials == "ACE" && ranked.last?.initials == nil)
+print("Validated legacy boards, initials and the top-five cutoff with ties.")
 
 func verdict(_ years: [Int], guess: Int) throws -> Round.Reveal {
     let cards = years.map { Event(id: "\($0)", year: $0, date: "\($0)", title: "", note: "", source: nil, attribution: nil) }

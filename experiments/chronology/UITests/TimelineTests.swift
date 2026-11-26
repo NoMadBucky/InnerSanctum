@@ -1,6 +1,17 @@
 import XCTest
 
 final class TimelineTests: XCTestCase {
+    func testReplayingIntroReturnsToSelectedMode() {
+        let app = XCUIApplication()
+        app.launch()
+        app.buttons["Skip Intro"].tap()
+        app.buttons["Long Play"].tap()
+        app.buttons["Replay Intro"].tap()
+        app.buttons["Skip Intro"].tap()
+        XCTAssertTrue(app.buttons["New Game"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Long Play"].isSelected)
+    }
+
     func testInteriorMissCentersBetweenVisibleCardEdges() {
         let app = XCUIApplication()
         app.launchArguments = ["-interiorMissFixture"]

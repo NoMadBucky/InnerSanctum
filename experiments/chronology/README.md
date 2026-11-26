@@ -15,16 +15,17 @@ also move the timeline.
 Only Place Here commits. A correct guess grows the table; a miss shows the
 correct gap. You can keep browsing after either result. Tap any dated card
 to read about it, even on the final table. A perfect round has eleven cards.
-High Scores keeps the best ten finished rounds per mode on this iPhone, newest first
-for ties. If you make the board, See Results invites you to sign your score
-with three initials. Skipping keeps the score unsigned.
+High Scores keeps the best five finished rounds per mode on this iPhone.
+Ties favor the newest score. If you make the board, See Results invites you
+to sign with three initials. Skipping keeps the score unsigned.
 The welcome screen plays a silent, bundled montage. Reduce Motion
 shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
 
-Before the welcome screen, a separate 19.96-second newsreel plays once per app
-launch. Skip Intro opens the menu immediately. Read Rules, VoiceOver and
+Before the welcome screen, a separate 23.6-second newsreel plays once per app
+launch. Replay Intro on the welcome screen plays it again from the beginning.
+Skip Intro opens the menu immediately. Read Rules, VoiceOver and
 Reduce Motion provide a text introduction to the rules. The Blonien Productions
 newsreel pairs its narrated question with these public-domain sources:
 
@@ -38,6 +39,10 @@ phonemes for “Blah-nee-in,” second-syllable stress on *presents*, and a
 midrange lift for the vintage newsreel sound.
 Shots follow the recorded phrases without stretching or accelerating the voice.
 An original fanfare leads in before the announcer and ducks beneath speech.
+The stereo score uses recorded French horn, bowed and plucked cellos, and
+timpani from [Versilian Studios Community Edition](https://github.com/sgossner/VSCO-2-CE)
+(CC0). The first rebuild downloads the selected WAVs into `vsco/` beside the
+source footage; subsequent builds use the cached samples.
 The answer card compares the Wright flight (1903) with the earthquake (1906).
 Speech is rendered when building the film; the app only plays the audio track.
 To rebuild on macOS, place the two source files named above together with

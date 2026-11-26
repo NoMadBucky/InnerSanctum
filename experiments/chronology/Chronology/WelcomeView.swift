@@ -5,6 +5,7 @@ struct WelcomeView: View {
     let start, scores: () -> Void
     var showingScores = false
     @State private var credits = false
+    @State private var replaying = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -20,11 +21,17 @@ struct WelcomeView: View {
                     "Draw without repeats until three misses or the deck runs out.")
                 .font(.subheadline).multilineTextAlignment(.center)
             Button("New Game", action: start).buttonStyle(.borderedProminent).controlSize(.large)
-            Button("High Scores", action: scores)
+            HStack(spacing: 24) {
+                Button("High Scores", action: scores)
+                Button("Replay Intro") { replaying = true }
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background { IntroBackdrop(visible: !showingScores && !credits) }
+        .background { IntroBackdrop(visible: !showingScores && !credits && !replaying) }
+        .fullScreenCover(isPresented: $replaying) {
+            StartupNewsreel(explicitReplay: true) { replaying = false }
+        }
         .overlay(alignment: .topTrailing) {
             Button { credits = true } label: {
                 Image(systemName: "info.circle").frame(width: 44, height: 44)
@@ -69,7 +76,7 @@ struct ScoreBoard: View {
                     ContentUnavailableView("No scores yet", systemImage: "rosette",
                                            description: Text("Finish a round to record your first score."))
                 } else {
-                    Section("Your best ten rounds on this device") {
+                    Section("Your top \(ScoreHistory.limit) rounds on this device") {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                             HStack {
                                 Text("#\(index + 1)").foregroundStyle(.secondary)

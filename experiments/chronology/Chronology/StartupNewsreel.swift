@@ -2,13 +2,14 @@ import AVKit
 import SwiftUI
 
 struct StartupNewsreel: View {
+    var explicitReplay = false
     let finish: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.scenePhase) private var scenePhase
     @State private var player: AVPlayer?
     @State private var showRules = false
-    private var reading: Bool { reduceMotion || voiceOver || showRules }
+    private var reading: Bool { showRules || (!explicitReplay && (reduceMotion || voiceOver)) }
 
     var body: some View {
         VStack(spacing: 16) {

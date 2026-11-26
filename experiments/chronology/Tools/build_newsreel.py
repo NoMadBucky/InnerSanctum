@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 from PIL import Image, ImageDraw, ImageFont
 from kokoro_onnx import Kokoro
 import soundfile as sf
+from overture import render
 import numpy as np
 
 root = Path(__file__).resolve().parents[1]
@@ -57,49 +58,10 @@ closing, _ = speak("The fate of our timeline is in your hands. Find your place i
 silence = lambda seconds: np.zeros(round(seconds * rate), dtype=np.float32)
 takes = [
     np.concatenate((silence(0.55), credit, silence(0.35), timing, silence(0.80))),
-    np.concatenate((first, silence(0.18))),
-    np.concatenate((alternative, silence(0.50))), closing,
+    np.concatenate((silence(0.65), first, silence(0.18))),
+    np.concatenate((silence(0.72), alternative, silence(0.50))),
+    np.concatenate((silence(0.80), closing, silence(1.50))),
 ]
-
-
-def overture(seconds, reveal):
-    """Original miniature fanfare: horn call, pulsing low strings and timpani."""
-    music = np.zeros(round(seconds * rate))
-
-    def note(at, duration, midi, gain, instrument):
-        pos = round(at * rate)
-        n = min(round(duration * rate), len(music) - pos)
-        if n <= 0:
-            return
-        t = np.arange(n) / rate
-        freq = 440 * 2 ** ((midi - 69) / 12)
-        phase = 2 * np.pi * freq * t
-        attack = np.minimum(t / 0.065, 1)
-        release = np.clip((duration - t) / 0.15, 0, 1)
-        if instrument == "drum":
-            tone = np.sin(phase + 7 * (1 - np.exp(-18*t))) * np.exp(-5*t)
-        elif instrument == "horn":
-            tone = sum(np.sin(h*phase) / h**1.15 for h in range(1, 8))
-        else:
-            tone = sum(np.sin(h*phase*detune) / h**1.6
-                       for h in range(1, 5) for detune in (0.998, 1.002)) / 2
-        music[pos:pos+n] += gain * tone * attack * release
-
-    # A rising open fifth, an unsettled question, then a major resolution.
-    for at, pitch, length in [(0, 50, .25), (.24, 57, .32), (.54, 62, 1.05),
-                              (reveal, 57, .36), (reveal+.36, 62, .55),
-                              (reveal+.91, 66, 1.3), (seconds-1.4, 62, 1.3)]:
-        note(at, length, pitch, .115, "horn")
-    for start, end, chord in [(0, reveal*.5, (38, 53, 57)),
-                              (reveal*.5, reveal, (33, 52, 55)),
-                              (reveal, seconds, (38, 54, 57))]:
-        for pitch in chord:
-            note(start, end-start, pitch, .040, "strings")
-        for tick in np.arange(start, end-.2, .50):
-            note(tick, .35, chord[0]+12, .050, "strings")
-        note(start, .85, chord[0], .16, "drum")
-    music *= np.clip((seconds - np.arange(len(music))/rate)/.40, 0, 1)
-    return music
 
 
 with TemporaryDirectory() as tmp:
@@ -154,10 +116,10 @@ with TemporaryDirectory() as tmp:
             "-ar", "44100", str(tmp / f"{i}.mov"))
     manifest = tmp / "shots.txt"
     manifest.write_text("".join(f"file '{i}.mov'\n" for i in range(len(chapters))))
-    sf.write(tmp / "overture.wav", overture(sum(durations), sum(durations[:3])), rate)
+    sf.write(tmp / "overture.wav", render(sum(durations), sum(durations[:3]), sources / "vsco"), 48000)
     run("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(manifest),
         "-i", str(tmp / "overture.wav"), "-filter_complex",
         "[0:a]asplit[narration][key];[1:a][key]sidechaincompress=threshold=0.025:ratio=6:"
-        "attack=12:release=250[bed];[narration][bed]amix=inputs=2:duration=first:"
+        "attack=12:release=250[bed];[narration]pan=stereo|c0=c0|c1=c0[center];[center][bed]amix=inputs=2:duration=first:"
         "normalize=0,alimiter=limit=0.94:level=0:latency=1[a]", "-map", "0:v", "-map", "[a]",
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "112k", "-movflags", "+faststart", str(output))
+        "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(output))

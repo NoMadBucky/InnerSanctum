@@ -24,6 +24,11 @@ a midnight-and-brass **After Hours** palette. Let the ranking carousel feel
 like a row of theater lobby posters. Keep small labels readable and use text,
 not just color, to identify the selected slot and its neighbors.
 
+The [iPhone icon](Design/BijouMetal-preview.png) treats the marquee as a
+physical sign. Open [BijouMetal.icon](Bijou/BijouMetal.icon/) in Icon Composer
+to adjust the lighting on the brushed-brass marquee and raised, inlaid **B**
+separately. The lobby and classic Mac icon use the [vector marquee](Bijou/Assets.xcassets/LobbyMarquee.imageset/Marquee.svg).
+
 ## Watched list and film detail
 
 * Read Personal `Video` concepts from `Resources/videos/`. Show the title

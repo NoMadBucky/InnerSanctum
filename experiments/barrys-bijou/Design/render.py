@@ -1,4 +1,4 @@
-"""Render Marquee.svg into the app icon set on macOS (Python with Pillow)."""
+"""Render the classic AppIcon set from Marquee.svg (macOS + Pillow). The iPhone uses BijouMetal.icon."""
 
 from pathlib import Path
 import subprocess

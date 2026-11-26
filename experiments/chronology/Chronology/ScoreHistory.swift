@@ -8,13 +8,15 @@ struct ScoreEntry: Codable, Identifiable {
 }
 
 enum ScoreHistory {
+    static let limit = 5
     static func entries(_ data: Data) -> [ScoreEntry] {
-        (try? JSONDecoder().decode([ScoreEntry].self, from: data)) ?? []
+        let saved = (try? JSONDecoder().decode([ScoreEntry].self, from: data)) ?? []
+        return Array(saved.prefix(limit))
     }
 
     static func record(_ entry: ScoreEntry, in data: Data) -> Data? {
         let ranked = ([entry] + entries(data))
-            .sorted { ($0.score, $0.date) > ($1.score, $1.date) }.prefix(10)
+            .sorted { ($0.score, $0.date) > ($1.score, $1.date) }.prefix(limit)
         guard ranked.contains(where: { $0.id == entry.id }) else { return nil }
         return try? JSONEncoder().encode(Array(ranked))
     }
