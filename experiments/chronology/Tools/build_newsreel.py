@@ -1,6 +1,6 @@
 """On macOS: python3 Tools/build_newsreel.py DIRECTORY_WITH_ORIGINALS
 
-Requires FFmpeg, Pillow, and the Daniel voice for `say`. See README for sources.
+See README for footage, Kokoro model files and build dependencies.
 """
 from pathlib import Path
 import subprocess
@@ -8,24 +8,27 @@ import sys
 from tempfile import TemporaryDirectory
 
 from PIL import Image, ImageDraw, ImageFont
+from kokoro_onnx import Kokoro
+import soundfile as sf
 
 root = Path(__file__).resolve().parents[1]
 sources = Path(sys.argv[1]).resolve()
+narrator = Kokoro(str(sources / "kokoro-v1.0.int8.onnx"), str(sources / "voices-v1.0.bin"))
 output = root / "Chronology/PeriodicalNewsreel.mp4"
 duration = 4.75  # Four exactly frame-aligned chapters at 24 fps.
 chapters = [
     ("train.webm", 6, "LA CIOTAT  /  THE LUMIÈRE TRAIN FILM", "The opening card",
      ["Begin with one dated event.", "Draw a card with its date hidden."],
-     "Periodical presents! Start with a dated event. Draw a mystery card."),
+     "Periodical presents a question of time. Which moment came first?"),
     ("quake.ogv", 27, "SAN FRANCISCO  /  AFTER THE 1906 QUAKE", "Find its place",
      ["Slide the timeline to a gap.", "Tap Place Here to make your guess."],
-     "Slide the timeline to the proper gap. Tap Place Here."),
+     "Here is San Francisco, picking itself up after the great earthquake."),
     ("moon.ogv", 40, "APOLLO 11  /  THE MOON WALK, 1969", "The verdict",
      ["Correct? Keep the card and score.", "Miss? See its place, then discard it."],
-     "Right? Keep the card and score. Wrong? See where it belonged."),
+     "Within a lifetime, the scene shifts from Market Street to the Moon."),
     (None, 0, "END OF REEL  /  NOW IT’S YOUR TURN", "Choose your edition",
      ["Standard: ten guesses.", "Long Play: three misses or deck’s end."],
-     "Ten guesses in Standard. Long Play lasts until three misses or deck’s end."),
+     "Now history is in your hands. Where does each moment belong?"),
 ]
 
 
@@ -58,18 +61,18 @@ with TemporaryDirectory() as tmp:
             label(738 + 44*j, line, 28, "Georgia")
         overlay = tmp / "overlay.png"
         art.save(overlay)
-        voice = tmp / "voice.aiff"
-        run("say", "-v", "Daniel", "-r", "182", "-o", str(voice), speech)
-        length = float(subprocess.check_output([
-            "ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(voice)
-        ]))
+        voice = tmp / "voice.wav"
+        samples, rate = narrator.create(speech, voice="bm_george", lang="en-gb", speed=1.02)
+        sf.write(voice, samples, rate)
+        length = len(samples) / rate
+        print(f"Chapter {i+1}: {length:.2f}s of narration", flush=True)
         footage = (["-ss", str(start), "-i", str(sources / file)] if file else
                    ["-f", "lavfi", "-i", "color=black:s=640x880:r=24"])
         run("ffmpeg", "-y", "-loglevel", "error", *footage, "-i", str(overlay), "-i", str(voice),
             "-filter_complex",
             "[0:v]fps=24,scale=576:376:force_original_aspect_ratio=increase,crop=576:376,"
             "setsar=1,hue=s=0,pad=640:880:32:147[film];[film][1:v]overlay[v];"
-            f"[2:a]highpass=f=180,lowpass=f=4100,atempo={max(1,length/4.48):.4f},"
+            f"[2:a]highpass=f=95,lowpass=f=7200,atempo={max(1,length/4.55):.4f},"
             "adelay=100,apad[a]", "-map", "[v]", "-map", "[a]", "-t", str(duration),
             "-c:v", "libx264", "-crf", "22", "-pix_fmt", "yuv420p", "-c:a", "pcm_s16le",
             "-ar", "44100", str(tmp / f"{i}.mov"))

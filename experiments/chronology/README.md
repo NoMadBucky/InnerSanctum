@@ -35,8 +35,13 @@ burned-in instructions and excerpts from these public-domain archival films:
 - [Apollo 11: first steps on the Moon](https://commons.wikimedia.org/wiki/File:Apollo_11_Landing_-_first_steps_on_the_moon.ogv),
   NASA, 1969 (`moon.ogv`).
 
-To rebuild it on macOS, download those three files under the local names above
-and run `python3 Tools/build_newsreel.py /path/to/originals`.
+The announcer is Kokoro's British-English George (`bm_george`, `en-gb`).
+Speech is rendered when building the film; the app only plays the audio track.
+To rebuild on macOS, place the three footage files named above together with
+`kokoro-v1.0.int8.onnx` and `voices-v1.0.bin` from the
+[Kokoro ONNX model release](https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0).
+Install FFmpeg and Python packages `kokoro-onnx==0.4.9`, `soundfile`, and
+`Pillow`, then run `python3 Tools/build_newsreel.py /path/to/originals`.
 
 The 14.5-second, 60 fps loop dissolves between five images:
 
