@@ -79,14 +79,16 @@ struct Theater: View {
     @State private var shelf = MovieShelf.watched
     @State private var path: [FilmRef] = []
     @State private var entered = false
+    @State private var quiz = false
     var body: some View {
         Group {
             if entered {
                 watched
             } else {
-                TheaterLobby { entered = true }
+                TheaterLobby(enter: { entered = true }, play: { quiz = true })
             }
         }
+        .sheet(isPresented: $quiz) { NameThatFilm().id(studio.journal?.base.library) }
         .task(id: phase) {
             guard phase == .active else { return }
             await studio.sync()
@@ -177,7 +179,10 @@ struct Theater: View {
                     }
                 }.frame(maxWidth: 720).padding(22).frame(maxWidth: .infinity)
             }.background(h.paper).foregroundStyle(h.ink)
-            .toolbar { Button { home = true } label: { Label("Home Sync", systemImage: "house") } }
+            .toolbar {
+                Button { quiz = true } label: { Label("Name That Film", systemImage: "questionmark.diamond") }
+                Button { home = true } label: { Label("Home Sync", systemImage: "house") }
+            }
             .navigationDestination(for: FilmRef.self) { ref in FilmDetail(ref: ref) }
         }
         .sheet(isPresented: $home) { HomePanel() }
@@ -196,6 +201,7 @@ struct Theater: View {
 private struct TheaterLobby: View {
     @Environment(\.colorScheme) private var scheme
     let enter: () -> Void
+    let play: () -> Void
 
     var body: some View {
         let h = House(scheme)
@@ -217,6 +223,8 @@ private struct TheaterLobby: View {
                     .accessibilityHint("Opens your watched films")
                     .accessibilityIdentifier("enter-theater")
                     .padding(.top, 10)
+                    Button(action: play) { Label("Name That Film", systemImage: "questionmark.diamond") }
+                        .buttonStyle(.plain).foregroundStyle(MarqueeFinish.gold)
                 }
                 .multilineTextAlignment(.center).padding(.vertical, 18)
                 .modifier(MarqueePanel()).frame(maxWidth: 520).padding(18)

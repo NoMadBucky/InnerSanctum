@@ -129,6 +129,26 @@ def test_tmdb_search_encodes_titles_and_returns_only_movie_fields(monkeypatch):
         "results": [{"id": 22, "title": "A & B", "year": "", "overview": ""}], "pages": 500}
 
 
+def test_quiz_cache_uses_only_labeled_prose_or_exact_tmdb_overviews(tmp_path, monkeypatch):
+    quiz = adapter("quiz_clues")
+    clue = "A former orchestra conductor returns to the town where she grew up."
+    film = dict(title="Final Concert", body="My private note.\n\n## Synopsis\n\n" + clue + "\n\nMy other note.",
+                viewed=True, tmdb="https://www.themoviedb.org/movie/91")
+    other = {**film, "body": "My private note."}
+    unseen = {**other, "viewed": False, "tmdb": "https://www.themoviedb.org/movie/92"}
+    assert quiz.local_clue(film) == clue and quiz.local_clue(other) is None
+    assert quiz.usable(film["title"], "Final—Concert: " + clue) is None
+    calls = []
+    def fetch(path, credential):
+        calls.append(path)
+        return {"id": 91, "overview": clue}
+    cache = quiz.QuizCache(tmp_path, fetch, lambda: "mock")
+    monkeypatch.setattr(quiz.threading.Thread, "start", lambda t: t.run())
+    cache.attach([film, other, unseen])
+    cache.attach([film, other, unseen])
+    assert calls == ["movie/91"] and film["quizClue"] == other["quizClue"] == clue and "quizClue" not in unseen
+
+
 def test_artwork_redirects_check_every_hop():
     from urllib.request import Request
 

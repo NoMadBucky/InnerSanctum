@@ -42,22 +42,26 @@ def tmdb_search(payload):
             "pages": min(data["total_pages"], 500)}
 
 
-def tmdb_get(path):
-    class NoRedirect(urllib.request.HTTPRedirectHandler):
-        def redirect_request(self, *args):
-            return None
+def tmdb_token():
     try:
-        cred = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", "org.innersanctum.bijou.tmdb",
+        return subprocess.run(["/usr/bin/security", "find-generic-password", "-s", "org.innersanctum.bijou.tmdb",
                                "-a", "read-token", "-w", str(Path.home() / "Library/Keychains/login.keychain-db")],
                               capture_output=True, timeout=30, check=True).stdout.decode("ascii").strip()
     except (subprocess.SubprocessError, UnicodeError, OSError):
         raise Refused("Allow the Personal Sync adapter to read the TMDb token in the Mac’s login keychain.") from None
+def tmdb_get(path, cred=None):
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args):
+            return None
+    cred = cred or tmdb_token()
     url = "https://api.themoviedb.org/3/" + path
     request = urllib.request.Request(url, headers={"Authorization": "Bearer " + cred, "Accept": "application/json"})
     try:
         with urllib.request.build_opener(NoRedirect()).open(request, timeout=5) as response:
             return json.load(response)
     except urllib.error.HTTPError as err:
+        if err.code == 404 and re.fullmatch(r"movie/[1-9][0-9]*", path):
+            return {"id": int(path.split("/")[1]), "overview": "", "unavailable": True}
         if err.code in (401, 403):
             raise Refused("TMDb rejected the Mac’s read token.") from None
         if err.code == 429:
@@ -196,6 +200,8 @@ class PersonalHome(Home):
         parent = Path.home() / "Library/Application Support"
         self.state = parent / ("BijouPersonal-" + self.cfg["library"])
         self.prepare_state(parent)
+        from quiz_clues import QuizCache
+        self.quiz_cache = QuizCache(self.state, tmdb_get, tmdb_token)
 
     @contextmanager
     def target(self):
@@ -212,6 +218,8 @@ class PersonalHome(Home):
                 catalog["personalReactionFiling"] = True
                 self.attach_reactions(catalog, root, store)
         file = self.state / "plex-movies.json"
+        if all_movies:
+            self.quiz_cache.attach(catalog["films"])
         if all_movies and file.exists():
             links = json.loads(writer.read_file(file))
             for film in catalog["films"]:
@@ -240,7 +248,7 @@ class PersonalHome(Home):
                 or not isinstance(reviewed, list) or not all(isinstance(p, str) for p in reviewed)):
             raise ValueError("Invalid movie selection.")
         details = tmdb_get(f"movie/{mid}")
-        if details.get("id") != mid:
+        if details.get("unavailable") or details.get("id") != mid:
             raise Refused("TMDb returned a different movie.")
         with self.target() as (root, successor):
             reply = bijou.add_watchlist(root, library, details, reviewed, "human:barry", successor)
