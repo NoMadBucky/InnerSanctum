@@ -26,6 +26,19 @@ def canonical(root):
     return {path: f.read_bytes() for path, f in writer.visible_files(root)}
 
 
+def test_artwork_redirects_check_every_hop():
+    from urllib.request import Request
+
+    redirects = adapter("home").ArtworkRedirects(["media.themoviedb.org", "image.tmdb.org"])
+    original = Request("https://media.themoviedb.org/poster.jpg")
+    final = "https://image.tmdb.org/poster.jpg"
+    next_request = redirects.redirect_request(original, None, 301, "Moved", {}, final)
+    assert next_request.full_url == final
+    for disallowed in ("http://image.tmdb.org/poster.jpg", "https://other.example/poster.jpg",
+                       "https://user@image.tmdb.org/poster.jpg", "https://image.tmdb.org:8000/poster.jpg"):
+        assert redirects.redirect_request(next_request, None, 302, "Found", {}, disallowed) is None
+
+
 def move(snap, film, **gap):
     return dict(library=snap["library"], revision=snap["revision"], requestID=uuid.uuid4().hex, film=film, gap=gap)
 

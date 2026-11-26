@@ -98,7 +98,9 @@ accepts `--snapshot /physical/external/OKF` and `--output /private/folder/movies
 The output folder must have mode `0700`, be outside repositories and bundles,
 and the file must not already exist. Only watched movie details, sources,
 ranking information and thumbnails are packaged. HTTPS artwork is fetched
-only from explicitly specified `--art-host` names. The packer never opens
+only from explicitly specified `--art-host` names, including redirect
+destinations. For TMDb, pass `--art-host media.themoviedb.org --art-host image.tmdb.org`.
+The packer never opens
 the input as a writer and checks the scoped files again before exporting.
 
 Transfer that private file to the test device and choose **Home Sync →

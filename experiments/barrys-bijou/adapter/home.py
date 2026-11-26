@@ -115,13 +115,27 @@ class Home:
         cache_covers(self.root, self.state, allowed)
 
 
-def cache_covers(root, directory, allowed):
-    """Only the Mac reads source URLs. Never follow redirects or arbitrary local paths."""
-    class NoRedirect(urllib.request.HTTPRedirectHandler):
-        def redirect_request(self, *args):
-            return None
+class ArtworkRedirects(urllib.request.HTTPRedirectHandler):
+    max_redirections = 4
 
-    opener = urllib.request.build_opener(NoRedirect())
+    def __init__(self, allowed):
+        self.hosts = frozenset(host.lower() for host in allowed)
+
+    def permits(self, url):
+        parts = urlsplit(url)
+        return (parts.scheme == "https" and parts.hostname in self.hosts and parts.port in (None, 443)
+                and parts.username is None and parts.password is None)
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not self.permits(newurl):
+            return None
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def cache_covers(root, directory, allowed):
+    """Fetch only approved HTTPS artwork, including every redirect hop."""
+    policy = ArtworkRedirects(allowed)
+    opener = urllib.request.build_opener(policy)
     for name, file in writer.visible_files(root):
         if not bijou.MOVIE_PATH.fullmatch(name):
             continue
@@ -138,8 +152,7 @@ def cache_covers(root, directory, allowed):
             if re.fullmatch(r"/Art/[0-9]+\.png", url):
                 raw = writer.read_file(writer.safe_target(root, url[1:]))
             else:
-                parts = urlsplit(url)
-                if parts.scheme != "https" or parts.hostname not in allowed or parts.username or parts.password:
+                if not policy.permits(url):
                     continue
                 with opener.open(url, timeout=5) as response:
                     raw = response.read(8 * 1024 * 1024 + 1)
