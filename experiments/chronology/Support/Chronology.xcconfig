@@ -1,4 +1,5 @@
 PRODUCT_NAME = Chronology
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 PRODUCT_BUNDLE_IDENTIFIER = org.innersanctum.chronology
 SUPPORTED_PLATFORMS = iphoneos iphonesimulator
 SDKROOT = iphoneos

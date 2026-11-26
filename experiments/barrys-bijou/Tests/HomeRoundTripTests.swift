@@ -192,5 +192,16 @@ final class HomeRoundTripTests: XCTestCase {
         } catch let error as HomeResponse { XCTAssertEqual(error.status, 409) }
         let synced = try await client.catalog()
         XCTAssertEqual(synced.films.first(where: { $0.ref == film })?.archivedReactions?.first?.transcript, reviewed)
+        let second = AudioReaction(id: UUID(), recordedAt: take.recordedAt.addingTimeInterval(60), viewingDate: nil, seconds: 1)
+        try store.begin(second.id)
+        try bytes.write(to: store.audio(second.id, draft: true))
+        try store.keep(second)
+        try store.saveTranscript("An entirely different observation", for: second.id)
+        let shelf = try ShelfTake.load(root: directory, catalog: synced)
+        XCTAssertEqual(shelf.map(\.take.id), [second.id, take.id])
+        XCTAssertEqual(shelf.map(\.filed), [false, true])
+        XCTAssertEqual(shelf.map(\.downloaded), [true, false])
+        XCTAssertEqual(shelf.filter { $0.matches("LIGHTING") }.map(\.take.id), [take.id])
+        XCTAssertEqual(shelf.filter { $0.matches("different observation") }.map(\.take.id), [second.id])
     }
 }
