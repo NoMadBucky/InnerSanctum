@@ -276,83 +276,95 @@ struct AudioReactions: View {
             }
         }
     }
+    @ViewBuilder private var recordingControls: some View {
+        Text("Audio reactions").font(.headline)
+        Text("Up to two minutes per take · Saved on this device").font(.caption).foregroundStyle(.secondary)
+        if room.recording {
+            Text("Recording \(clock(room.elapsed)) / 2:00").monospacedDigit()
+            ProgressView(value: room.inputLevel) { Text("Microphone · \(room.inputName)") }
+            Button(room.finishing ? "Finishing recording…" : "Stop recording") { room.stop() }.disabled(room.finishing)
+        } else if let take = room.preview {
+            Text("New take · \(clock(take.seconds))").font(.subheadline)
+            ViewThatFits(in: .horizontal) {
+                HStack { previewActions(take) }
+                VStack(alignment: .leading) { previewActions(take) }
+            }
+        } else {
+            Button { Task { await room.record(viewed: viewed) } } label: {
+                Label(room.requesting ? "Waiting for microphone…" : "Record reaction", systemImage: "mic")
+            }.disabled(room.requesting)
+        }
+    }
+
+    private func takeRow(_ take: AudioReaction) -> some View {
+        let remote = archived.first { $0.id == take.id }
+        let filed = remote != nil || room.store.filed(take.id)
+        let local = FileManager.default.fileExists(atPath: room.store.audio(take.id).path)
+        return VStack(alignment: .leading, spacing: 3) {
+            Text(take.recordedAt.formatted(date: .abbreviated, time: .shortened)).font(.subheadline.bold())
+            if let day = take.viewingDate { Text("Viewing: \(day)").font(.caption) }
+            if focusedTake != nil {
+                transcriptSummary(take, reviewed: remote?.transcript)
+                if !filed { Label("Only on this device", systemImage: "internaldrive") }
+            }
+            if local {
+                Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { Task { await room.play(take) } }
+                    .disabled(room.recording || room.requesting)
+            } else if filed {
+                Button(downloading == take.id ? "Downloading…" : "Download and play · \(clock(take.seconds))") {
+                    downloadAndPlay(take, remote: remote)
+                }.disabled(downloading != nil || room.recording || room.requesting)
+            }
+            filingControls(take, filed: filed)
+            if local || remote?.transcript != nil {
+                Button(remote?.transcript != nil ? "Read transcript" : "Transcribe / review") {
+                    room.stopPlayback(); transcribing = take
+                }.disabled(room.recording || room.requesting)
+            }
+            if local {
+                Button(role: .destructive) { deleting = take } label: {
+                    Label(filed ? "Remove from this device" : "Delete recording", systemImage: "trash")
+                }.disabled(filing == take.id)
+            }
+        }
+    }
+
+    @ViewBuilder private func transcriptSummary(_ take: AudioReaction, reviewed: String?) -> some View {
+        if let reviewed {
+            Text("Reviewed transcript").font(.headline)
+            Text(reviewed).textSelection(.enabled)
+        }
+        if let draft = try? room.store.draftTranscript(take.id), !draft.isEmpty, draft != reviewed {
+            Text("Local draft").font(.headline)
+            Text(draft).textSelection(.enabled)
+        } else if reviewed == nil { Text("No transcript yet.").foregroundStyle(.secondary) }
+    }
+
+    @ViewBuilder private func filingControls(_ take: AudioReaction, filed: Bool) -> some View {
+        if filed {
+            Label(studio.journal?.base.origin == "personal" ? "Filed in Personal" : "Filed in practice library", systemImage: "checkmark.circle")
+        } else if studio.journal?.base.fixtureReactionFiling == true || studio.journal?.base.personalReactionFiling == true,
+                  let creds = studio.credentials, creds.library == studio.journal?.base.library {
+            let personal = studio.journal?.base.personalReactionFiling == true
+            Button(filing == take.id ? "Filing…" : personal ? "File in Personal" : "File in practice library") {
+                filing = take.id
+                Task {
+                    defer { filing = nil }
+                    do {
+                        let receipt = try await HomeClient(creds).fileReaction(take, url: room.store.audio(take.id),
+                                                                              film: film, library: creds.library, personal: personal)
+                        try room.store.saveReceipt(receipt); room.notice = nil; room.reload()
+                    } catch { room.notice = error.localizedDescription }
+                }
+            }.disabled(filing != nil)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if focusedTake == nil {
-            Text("Audio reactions").font(.headline)
-            Text("Up to two minutes per take · Saved on this device").font(.caption).foregroundStyle(.secondary)
-            if room.recording {
-                Text("Recording \(clock(room.elapsed)) / 2:00").monospacedDigit()
-                ProgressView(value: room.inputLevel) { Text("Microphone · \(room.inputName)") }
-                Button(room.finishing ? "Finishing recording…" : "Stop recording") { room.stop() }.disabled(room.finishing)
-            } else if let take = room.preview {
-                Text("New take · \(clock(take.seconds))").font(.subheadline)
-                ViewThatFits(in: .horizontal) {
-                    HStack { previewActions(take) }
-                    VStack(alignment: .leading) { previewActions(take) }
-                }
-            } else {
-                Button { Task { await room.record(viewed: viewed) } } label: {
-                    Label(room.requesting ? "Waiting for microphone…" : "Record reaction", systemImage: "mic")
-                }.disabled(room.requesting)
-            }
-            }
+            if focusedTake == nil { recordingControls }
             if focusedTake != nil && takes.isEmpty { Text("This recording is no longer on this device.") }
-            ForEach(takes) { take in
-                let remote = archived.first { $0.id == take.id }
-                let filed = remote != nil || room.store.filed(take.id)
-                let local = FileManager.default.fileExists(atPath: room.store.audio(take.id).path)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(take.recordedAt.formatted(date: .abbreviated, time: .shortened)).font(.subheadline.bold())
-                    if let day = take.viewingDate { Text("Viewing: \(day)").font(.caption) }
-                    if focusedTake != nil {
-                        if let text = remote?.transcript {
-                            Text("Reviewed transcript").font(.headline)
-                            Text(text).textSelection(.enabled)
-                        }
-                        if let draft = try? room.store.draftTranscript(take.id), !draft.isEmpty, draft != remote?.transcript {
-                            Text("Local draft").font(.headline)
-                            Text(draft).textSelection(.enabled)
-                        } else if remote?.transcript == nil { Text("No transcript yet.").foregroundStyle(.secondary) }
-                        if !filed { Label("Only on this device", systemImage: "internaldrive") }
-                    }
-                    if local {
-                        Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { Task { await room.play(take) } }
-                            .disabled(room.recording || room.requesting)
-                    } else if filed {
-                        Button(downloading == take.id ? "Downloading…" : "Download and play · \(clock(take.seconds))") {
-                            downloadAndPlay(take, remote: remote)
-                        }.disabled(downloading != nil || room.recording || room.requesting)
-                    }
-                    if filed {
-                        Label(studio.journal?.base.origin == "personal" ? "Filed in Personal" : "Filed in practice library", systemImage: "checkmark.circle")
-                    } else if studio.journal?.base.fixtureReactionFiling == true || studio.journal?.base.personalReactionFiling == true,
-                              let creds = studio.credentials, creds.library == studio.journal?.base.library {
-                        let personal = studio.journal?.base.personalReactionFiling == true
-                        Button(filing == take.id ? "Filing…" : personal ? "File in Personal" : "File in practice library") {
-                            filing = take.id
-                            Task {
-                                defer { filing = nil }
-                                do {
-                                    let receipt = try await HomeClient(creds).fileReaction(take, url: room.store.audio(take.id),
-                                                                                          film: film, library: creds.library, personal: personal)
-                                    try room.store.saveReceipt(receipt); room.notice = nil; room.reload()
-                                } catch { room.notice = error.localizedDescription }
-                            }
-                        }.disabled(filing != nil)
-                    }
-                    if local || remote?.transcript != nil {
-                        Button(remote?.transcript != nil ? "Read transcript" : "Transcribe / review") {
-                            room.stopPlayback(); transcribing = take
-                        }.disabled(room.recording || room.requesting)
-                    }
-                    if local {
-                        Button(role: .destructive) { deleting = take } label: {
-                            Label(filed ? "Remove from this device" : "Delete recording", systemImage: "trash")
-                        }.disabled(filing == take.id)
-                    }
-                }
-            }
+            ForEach(takes) { take in takeRow(take) }
             if room.playing != nil { Label("Playing through \(room.output)", systemImage: "speaker.wave.2").font(.caption) }
             if let message = room.notice { Text(message).font(.callout) }
             if room.needsUnmute { Button("Unmute microphone") { room.unmute() } }
