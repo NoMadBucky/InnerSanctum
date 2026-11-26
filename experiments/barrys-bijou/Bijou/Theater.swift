@@ -101,25 +101,30 @@ struct Theater: View {
         return NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("B I J O U").font(.caption.weight(.bold)).foregroundStyle(h.brass).frame(maxWidth: .infinity)
-                        Text(shelf.rawValue).font(.system(size: 44, weight: .medium, design: .serif)).frame(maxWidth: .infinity)
-                        Rectangle().fill(h.brass).frame(height: 2)
+                    VStack(spacing: 10) {
+                        BillingLine(title: "BIJOU").foregroundStyle(MarqueeFinish.gold)
+                        Text(shelf.rawValue).font(.system(.largeTitle, design: .serif).weight(.medium))
+                            .multilineTextAlignment(.center).accessibilityAddTraits(.isHeader)
+                        Rectangle().fill(MarqueeFinish.gold.opacity(0.48)).frame(height: 1)
                         HStack {
                             Text(studio.isSample ? "SAMPLE PROGRAM" : studio.isSnapshot ? "SCREENING COPY" :
                                     studio.journal?.base.origin == "personal" ? "PERSONAL OKF" : "HOME PROGRAM")
                             Spacer()
                             Text("\(shelfFilms.count) FILMS")
-                        }.font(.caption.monospaced()).foregroundStyle(h.brass)
-                    }
+                        }.font(.caption.monospaced()).foregroundStyle(MarqueeFinish.gold)
+                    }.modifier(MarqueePanel())
                     if let j = studio.journal {
                         Button { home = true } label: {
                             Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "ticket")
                         }.buttonStyle(.plain).accessibilityHint("Opens home sync")
                         TextField("Find a film", text: $query).textFieldStyle(.roundedBorder)
-                        Picker("Show movies", selection: $shelf) {
-                            ForEach(MovieShelf.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                        }.pickerStyle(.menu)
+                        HStack {
+                            Text("Collection").font(.subheadline.bold())
+                            Spacer()
+                            Picker("Show movies", selection: $shelf) {
+                                ForEach(MovieShelf.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                            }.pickerStyle(.menu).labelsHidden()
+                        }
                         Picker("Sort movies", selection: $sort) {
                             Text("Recently viewed").tag(WatchedSort.viewed)
                             Text("Ranked").tag(WatchedSort.ranked)
@@ -134,15 +139,20 @@ struct Theater: View {
                                 Button { path.append(film.ref) } label: {
                                     HStack(spacing: 15) {
                                         Poster(film: film, width: 112 * 2 / 3)
+                                            .overlay { Rectangle().strokeBorder(h.brass.opacity(0.4)) }
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(film.title).font(.system(.headline, design: .serif))
                                             Text([film.year, film.viewingLabel].compactMap { $0 }.joined(separator: "  ·  "))
                                                 .font(.subheadline).foregroundStyle(.secondary)
-                                            if let rank = ranks[film.ref] { Text("Ranked · #\(rank)").font(.caption.bold()).foregroundStyle(h.brass) }
+                                            if let rank = ranks[film.ref] {
+                                                Text("Ranked · #\(rank)").font(.caption.monospacedDigit().weight(.semibold))
+                                                    .foregroundStyle(h.brass).padding(.horizontal, 7).padding(.vertical, 3)
+                                                    .background(h.brass.opacity(0.09))
+                                            }
                                         }
                                         Spacer()
                                         Image(systemName: "chevron.right").font(.caption)
-                                    }.contentShape(Rectangle()).padding(.vertical, 9)
+                                    }.contentShape(Rectangle()).padding(.vertical, 12)
                                 }.buttonStyle(.plain).accessibilityIdentifier("film-\(film.id)")
                                 Divider()
                             }
@@ -175,21 +185,18 @@ private struct TheaterLobby: View {
                         .accessibilityHidden(true)
                     Text("Bijou").font(.system(.largeTitle, design: .serif).weight(.medium))
                         .accessibilityAddTraits(.isHeader)
-                    HStack {
-                        Rectangle().frame(width: 32, height: 1)
-                        Text("MOVIE JOURNAL").font(.caption.weight(.semibold)).tracking(2)
-                        Rectangle().frame(width: 32, height: 1)
-                    }.foregroundStyle(h.brass)
+                    BillingLine(title: "MOVIE JOURNAL").foregroundStyle(MarqueeFinish.gold)
                     Button(action: enter) {
                         Label("Enter theater", systemImage: "ticket")
                             .font(.headline).padding(.horizontal, 8).frame(minHeight: 36)
                     }
-                    .buttonStyle(.borderedProminent).tint(h.ink).foregroundStyle(h.paper)
+                    .buttonStyle(AdmissionStyle())
                     .accessibilityHint("Opens your watched films")
                     .accessibilityIdentifier("enter-theater")
                     .padding(.top, 10)
                 }
-                .multilineTextAlignment(.center).padding(24)
+                .multilineTextAlignment(.center).padding(.vertical, 18)
+                .modifier(MarqueePanel()).frame(maxWidth: 520).padding(18)
                 .frame(maxWidth: .infinity, minHeight: bounds.size.height)
             }
         }.background(h.paper).foregroundStyle(h.ink)
@@ -202,6 +209,7 @@ struct FilmDetail: View {
     @Environment(\.colorScheme) private var scheme
     @State private var placing = false
     @State private var posterOpen = false
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var plexUnavailable = false
     @Environment(\.openURL) private var openURL
     var body: some View {
@@ -209,16 +217,20 @@ struct FilmDetail: View {
         ScrollView {
             if let j = studio.journal, let f = j.base.films.first(where: { $0.ref == ref }) {
                 VStack(alignment: .leading, spacing: 16) {
-                    HStack(alignment: .top, spacing: 18) {
+                    let billing = typeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 14))
+                        : AnyLayout(HStackLayout(alignment: .top, spacing: 14))
+                    billing {
                         Button { posterOpen = true } label: { Poster(film: f, width: 96) }
                             .buttonStyle(.plain).accessibilityLabel("View full poster for \(f.title)")
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("FILM DETAIL").font(.caption.monospaced()).foregroundStyle(h.brass)
+                            Text("BIJOU  /  FILM NOTES").font(.caption.weight(.semibold)).tracking(1.4)
+                                .foregroundStyle(MarqueeFinish.gold)
                             Text(f.title).font(.system(.title, design: .serif).weight(.medium))
                             if let year = f.year { Text(year).font(.headline) }
                             Text(f.viewingLabel).font(.subheadline)
                         }
-                    }
+                    }.frame(maxWidth: .infinity, alignment: .leading).modifier(MarqueePanel())
                     if let d = f.description { Text(d).font(.system(.title3, design: .serif)) }
                     VStack(alignment: .leading, spacing: 10) {
                         if let destination = f.tmdbEntry ?? f.tmdbSearch {
@@ -240,7 +252,7 @@ struct FilmDetail: View {
                         }
                     #endif
                     }
-                    .buttonStyle(.borderedProminent).controlSize(.large)
+                    .buttonStyle(AdmissionStyle())
                     let rank = j.order.firstIndex(of: ref)
                     if let rank { Text("Your ranking: #\(rank + 1) of \(j.order.count)").font(.headline).accessibilityIdentifier("rank-position") }
                     if f.isViewed {

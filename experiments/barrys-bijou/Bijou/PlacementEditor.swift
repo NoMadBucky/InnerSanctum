@@ -26,7 +26,7 @@ struct PlacementEditor: View {
         let gap = choices[index]
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text(review ? "PLACEMENT REVIEW" : "THE RANKING ROOM").font(.caption.monospaced()).foregroundStyle(h.brass)
+                Text(review ? "PLACEMENT REVIEW" : "THE RANKING ROOM").font(.caption.weight(.semibold)).tracking(1.4).foregroundStyle(h.brass)
                 Spacer()
                 Button("Cancel") { dismiss() }.accessibilityIdentifier("cancel-placement")
             }
@@ -76,7 +76,7 @@ struct PlacementEditor: View {
                         selected = order.firstIndex(of: film) ?? order.count / 2
                     }
                 }
-            }.buttonStyle(.borderedProminent)
+            }.buttonStyle(AdmissionStyle())
                 .accessibilityIdentifier("confirm-placement")
                 .disabled(!review && order.firstIndex(of: film) == index)
         }
