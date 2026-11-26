@@ -1,5 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(iOS)
+import UIKit
+#endif
 
 private struct RankingExport: FileDocument {
     static let markdown = UTType(filenameExtension: "md") ?? .plainText
@@ -19,12 +22,18 @@ private struct RankingExport: FileDocument {
 struct HomePanel: View {
     @EnvironmentObject private var studio: Studio
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @AppStorage("houseLights") private var lights = "Automatic"
-    @State private var code = ""
+    @StateObject private var nearby = HomeDiscovery()
+    @State private var draft = PairingDraft()
+    @State private var showPairingHint = false
+    @State private var pairing = false
+    @FocusState private var pairingFocus: PairingDraft.Field?
     @State private var reviewing = false
     @State private var exporting = false
     @State private var importing = false
     var body: some View {
+        let form = draft.check(nearby: nearby.macs.map(\.url))
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
@@ -64,12 +73,57 @@ struct HomePanel: View {
                 }
                 Divider()
                 Text("Pair with the Mac").font(.headline)
-                Text("Paste an unused code from the fixture’s home adapter. Each device uses its own code.").font(.subheadline)
-                SecureField("Pairing code", text: $code).textFieldStyle(.roundedBorder)
-                Button("Pair this device") {
-                    let entry = code; code = ""
-                    Task { await studio.pair(entry) }
-                }.disabled(code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || studio.syncing)
+                if let problem = nearby.problem {
+                    Text(problem.message).font(.callout)
+                    #if os(iOS)
+                    if problem == .permission, let settings = URL(string: UIApplication.openSettingsURLString) {
+                        Button("Open Bijou settings") { openURL(settings) }
+                    }
+                    #endif
+                    Button("Find Macs again") { nearby.stop(); nearby.start() }
+                }
+                if draft.manual || nearby.macs.isEmpty {
+                    if nearby.macs.isEmpty && nearby.problem == nil {
+                        Text("No Mac listed yet. Enter its address from Terminal, or wait for it to appear on home Wi-Fi.")
+                            .font(.subheadline)
+                    }
+                    TextField("Mac address (from Terminal)", text: Binding(
+                        get: { draft.address }, set: { draft.manual = true; draft.address = $0 }
+                    )).textFieldStyle(.roundedBorder)
+                        .focused($pairingFocus, equals: .address)
+                        .autocorrectionDisabled()
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never).keyboardType(.URL)
+                        #endif
+                    if !nearby.macs.isEmpty {
+                        Button("Find nearby Macs instead") { draft.manual = false; pairingFocus = nil }
+                    }
+                } else {
+                    if nearby.macs.count > 1 {
+                        Picker("Home Mac", selection: $draft.selectedMac) {
+                            Text("Choose a Mac").tag("")
+                            ForEach(nearby.macs) { mac in Text("\(mac.name) (\(mac.url.host ?? ""))").tag(mac.id) }
+                        }.focused($pairingFocus, equals: .mac)
+                    } else if let mac = nearby.macs.first {
+                        Label(mac.name, systemImage: "desktopcomputer")
+                    }
+                    Button("Enter Mac address manually") { draft.manual = true; pairingFocus = .address }
+                }
+                Text("Type the seven-character code shown in Terminal on your Mac.").font(.subheadline)
+                TextField("7-character code", text: $draft.code)
+                    .textFieldStyle(.roundedBorder).font(.body.monospaced()).autocorrectionDisabled()
+                    .focused($pairingFocus, equals: .code)
+                    #if os(iOS)
+                    .textInputAutocapitalization(.characters).keyboardType(.asciiCapable)
+                    #endif
+                    .onSubmit { submitPairing() }
+                if case .incomplete(let field, let message) = form, showPairingHint || field != .code {
+                    Text(message).font(.callout).accessibilityIdentifier("pairing-hint")
+                }
+                Button(pairing ? "Pairing…" : "Pair this device", action: submitPairing)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(pairing || studio.syncing)
+                if !pairing && studio.syncing { Text("Wait for the current sync to finish, then pair.").font(.callout) }
                 if studio.credentials != nil && (studio.isSample || studio.isSnapshot) {
                     Button("Open paired library") { Task { await studio.showHome() } }.disabled(studio.syncing)
                 }
@@ -96,6 +150,29 @@ struct HomePanel: View {
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             if case let .success(url) = result { Task { await studio.importScreeningCopy(url) } }
+        }
+        .onAppear { nearby.start() }
+        .onDisappear { nearby.stop() }
+        .onChange(of: pairingFocus) { _, field in
+            if field == .address { draft.manual = true }
+        }
+    }
+    private func submitPairing() {
+        guard !pairing, !studio.syncing else { return }
+        switch draft.check(nearby: nearby.macs.map(\.url)) {
+        case .incomplete(let field, _):
+            showPairingHint = true
+            if field == .address { draft.manual = true }
+            pairingFocus = field
+        case .ready(let entry, let dest):
+            showPairingHint = false
+            pairingFocus = nil
+            pairing = true
+            let submitted = draft.code
+            Task {
+                defer { pairing = false }
+                if await studio.pair(entry, at: dest), draft.code == submitted { draft.code = "" }
+            }
         }
     }
     private func orderList(_ heading: String, _ order: [FilmRef], _ catalog: Catalog, _ selected: FilmRef) -> some View {

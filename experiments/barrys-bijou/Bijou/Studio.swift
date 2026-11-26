@@ -87,12 +87,11 @@ final class Studio: ObservableObject {
         } catch { notice = error.localizedDescription }
     }
 
-    func pair(_ text: String) async {
-        guard !syncing else { return }
+    func pair(_ code: PairCode, at address: URL) async -> Bool {
+        guard !syncing else { return false }
         syncing = true; defer { syncing = false }
         do {
-            let code = try PairCode.parse(text)
-            let next = try await HomeClient.pair(code)
+            let next = try await HomeClient.pair(code, at: address)
             if let old = credentials, old.library != next.library,
                let saved = try storage?.load(old.library), !saved.pending.isEmpty {
                 throw BijouError("The previous home library has saved moves. Sync those before changing libraries.")
@@ -101,7 +100,8 @@ final class Studio: ObservableObject {
             credentials = next
             try await loadHome(next)
             notice = nil
-        } catch { notice = error.localizedDescription }
+            return true
+        } catch { notice = error.localizedDescription; return false }
     }
 
     private func loadHome(_ creds: Credentials) async throws {

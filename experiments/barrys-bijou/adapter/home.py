@@ -1,15 +1,18 @@
 """Pair and serve a disposable Bijou library over pinned HTTPS on the Mac."""
 
 import argparse
-import base64
-from contextlib import closing
+from contextlib import closing, contextmanager
 import hashlib
+import hmac
 import http.server
+import ipaddress
 import json
 import os
 from pathlib import Path
 import re
 import secrets
+import signal
+import socket
 import sqlite3
 import ssl
 import subprocess
@@ -26,6 +29,18 @@ def hashed(s):
     return hashlib.sha256(s.encode()).hexdigest()
 
 
+CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"  # No 0/O or 1/I/L.
+MAX_GUESSES = 6
+CODE_LIFETIME = 600
+
+
+def pairing_keys(code, salt, fingerprint):
+    """Bind both proofs to this invitation window and the actual TLS certificate."""
+    context = b"Bijou home pairing v2\0" + bytes.fromhex(salt) + bytes.fromhex(fingerprint)
+    key = hashlib.pbkdf2_hmac("sha256", code.encode("ascii"), context, 600_000)
+    return hmac.digest(key, b"enroll", "sha256").hex(), hmac.digest(key, b"confirm", "sha256")
+
+
 class Home:
     def __init__(self, root):
         self.root = root
@@ -35,7 +50,9 @@ class Home:
         writer.validate_state(root, self.state)
         self.db = self.state / "devices.sqlite"
         with closing(sqlite3.connect(self.db)) as con, con:
-            con.execute("CREATE TABLE IF NOT EXISTS invites (hash TEXT PRIMARY KEY, expires INTEGER)")
+            con.execute("""CREATE TABLE IF NOT EXISTS pair_codes (
+                claim_hash TEXT PRIMARY KEY, confirmation BLOB NOT NULL, salt TEXT NOT NULL,
+                expires INTEGER NOT NULL, remaining INTEGER NOT NULL)""")
             con.execute("CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, token TEXT UNIQUE)")
         self.cert, self.key = (self.state / n for n in ("server.pem", "key.pem"))
 
@@ -47,25 +64,48 @@ class Home:
         der = ssl.PEM_cert_to_DER_cert(self.cert.read_text())
         return hashlib.sha256(der).hexdigest()
 
-    def invitation(self, url):
-        invite = secrets.token_urlsafe(24)
+    def invitation(self):
         with closing(sqlite3.connect(self.db)) as con, con:
-            con.execute("DELETE FROM invites WHERE expires < ?", (time.time(),))
-            con.execute("INSERT INTO invites VALUES (?,?)", (hashed(invite), int(time.time()) + 600))
-        config = {"url": url, "fingerprint": self.identity(), "invitation": invite}
-        return base64.urlsafe_b64encode(writer.json_bytes(config)).decode()
+            con.execute("BEGIN IMMEDIATE")
+            now = int(time.time())
+            con.execute("DELETE FROM pair_codes WHERE expires<=?", (now,))
+            active = con.execute("SELECT salt FROM pair_codes WHERE remaining>0 LIMIT 1").fetchone()
+            salt = active[0] if active else secrets.token_hex(16)
+            fingerprint = self.identity()
+            while True:
+                code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(7))
+                claim, confirmation = pairing_keys(code, salt, fingerprint)
+                if con.execute("INSERT OR IGNORE INTO pair_codes VALUES (?,?,?,?,?)",
+                               (hashed(claim), confirmation, salt, now + CODE_LIFETIME, MAX_GUESSES)).rowcount:
+                    return code
 
-    def enroll(self, invite):
-        if not isinstance(invite, str) or len(invite) > 128:
+    def pairing_options(self):
+        # Public bootstrap: no code, proof, credential, or offline password verifier.
+        with closing(sqlite3.connect(self.db)) as con:
+            row = con.execute("SELECT salt FROM pair_codes WHERE expires>? AND remaining>0 LIMIT 1",
+                              (time.time(),)).fetchone()
+            return {"version": 2, "salt": row[0]} if row else None
+
+    def enroll(self, salt, claim):
+        if (not isinstance(salt, str) or not re.fullmatch("[0-9a-f]{32}", salt)
+                or not isinstance(claim, str) or not re.fullmatch("[0-9a-f]{64}", claim)):
             return None
         with closing(sqlite3.connect(self.db)) as con, con:
-            if not con.execute("DELETE FROM invites WHERE hash=? AND expires>=?",
-                               (hashed(invite), time.time())).rowcount:
+            con.execute("BEGIN IMMEDIATE")
+            now = time.time()
+            row = con.execute("UPDATE pair_codes SET remaining=0 WHERE salt=? AND claim_hash=? "
+                              "AND expires>? AND remaining>0 RETURNING confirmation", (salt, hashed(claim), now)).fetchone()
+            if not row:
+                con.execute("UPDATE pair_codes SET remaining=remaining-1 WHERE salt=? AND expires>? AND remaining>0",
+                            (salt, now))
                 return None
             token = secrets.token_urlsafe(32)
             device = secrets.token_hex(8)
             con.execute("INSERT INTO devices VALUES (?,?)", (device, hashed(token)))
-            return {"device": device, "token": token, "library": self.cfg["library"]}
+            library = self.cfg["library"]
+            receipt = f"Bijou enrolled v2:{device}:{token}:{library}".encode("ascii")
+            return {"device": device, "token": token, "library": library,
+                    "proof": hmac.digest(row[0], receipt, "sha256").hex()}
 
     def authenticated(self, token):
         with closing(sqlite3.connect(self.db)) as con:
@@ -140,9 +180,14 @@ def handler(home):
                     payload = json.loads(self.rfile.read(length))
                     if not isinstance(payload, dict):
                         return self.reply(400, {"error": "Expected an object."})
+                if self.command == "GET" and self.path == "/pair/options":
+                    options = home.pairing_options()
+                    return self.reply(200, options) if options else self.reply(410, {"error": "Ask the Mac for a fresh pairing code."})
                 if self.command == "POST" and self.path == "/pair":
-                    device = home.enroll(payload.get("invitation"))
-                    return self.reply(200, device) if device else self.reply(403, {"error": "Code expired or used."})
+                    if "invitation" in payload:
+                        return self.reply(400, {"error": "Update Bijou to enter the seven-character code."})
+                    device = home.enroll(payload.get("salt"), payload.get("claim"))
+                    return self.reply(200, device) if device else self.reply(403, {"error": "Code not accepted. Check the code and selected Mac, or get a fresh code."})
                 auth = self.headers.get("Authorization", "")
                 if not auth.startswith("Bearer ") or not home.authenticated(auth[7:]):
                     return self.reply(401, {"error": "Pair this device."})
@@ -168,18 +213,41 @@ def handler(home):
     return Handler
 
 
+@contextmanager
+def advertise(address, port):
+    """Announce a locator only. A loopback server is discoverable only on this Mac."""
+    if ipaddress.ip_address(address).is_unspecified:
+        raise ValueError("Choose a home-network address, or 127.0.0.1 for a Mac-only trial.")
+    # NWBrowser sees multicast on lo0; DNSService's special LocalOnly index is not a network path.
+    options = ["-i", "lo0"] if ipaddress.ip_address(address).is_loopback else []
+    name = "Bijou on " + socket.gethostname().split(".")[0][:35]
+    try:
+        process = subprocess.Popen(
+            ["/usr/bin/dns-sd", *options, "-R", name, "_bijou-home._tcp", "local.", str(port),
+             f"url=https://{address}:{port}"],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        print("Bonjour unavailable. Use Enter Mac address manually.")
+        process = None
+    try:
+        yield
+    finally:
+        if process is not None:
+            process.terminate()
+            process.wait()
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("action", choices=["serve", "invite", "devices", "revoke"])
     p.add_argument("--bundle", type=Path, required=True)
-    p.add_argument("--host", default="127.0.0.1", help="Loopback or the Mac's home LAN address")
+    p.add_argument("--host", default="127.0.0.1", help="Serve on loopback or the Mac's home LAN address")
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--device", help="Device ID to revoke")
     p.add_argument("--art-host", action="append", default=[], help="Allow this HTTPS artwork hostname")
     args = p.parse_args()
     os.umask(0o077)
     home = Home(args.bundle.absolute())
-    url = f"https://{args.host}:{args.port}"
     if args.action in {"devices", "revoke"}:
         with closing(sqlite3.connect(home.db)) as con, con:
             if args.action == "devices":
@@ -189,7 +257,7 @@ def main():
                 p.error("Unknown device ID.")
         return
     if args.action == "invite":
-        print(home.invitation(url))
+        print(home.invitation())
         return
     home.identity()
     server = http.server.ThreadingHTTPServer((args.host, args.port), handler(home))
@@ -197,14 +265,21 @@ def main():
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.load_cert_chain(home.cert, home.key)
     server.socket = ctx.wrap_socket(server.socket, server_side=True)
-    print("Pair in Bijou → Home Sync (one use, ten minutes):", home.invitation(url), sep="\n", flush=True)
-    threading.Thread(target=home.cache_covers, args=(args.art_host,), daemon=True).start()
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    def interrupt(*_):
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, interrupt)
+    with server:
+        address, port = server.server_address
+        if ipaddress.ip_address(address).is_unspecified:
+            p.error("Choose the Mac’s home-network address, or 127.0.0.1 for a Mac-only trial.")
+        with advertise(address, port):
+            print(f"Mac address: https://{address}:{port}\nPairing code (one use, ten minutes): {home.invitation()}", flush=True)
+            threading.Thread(target=home.cache_covers, args=(args.art_host,), daemon=True).start()
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
 
 
 if __name__ == "__main__":

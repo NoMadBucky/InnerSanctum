@@ -2,25 +2,6 @@ import CryptoKit
 import Foundation
 import Security
 
-struct PairCode: Codable {
-    let url: URL
-    let fingerprint: String
-    let invitation: String
-
-    static func parse(_ text: String) throws -> PairCode {
-        let raw = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        guard raw.count < 2048, let bytes = Data(base64Encoded: raw),
-              let code = try? JSONDecoder().decode(Self.self, from: bytes),
-              code.url.scheme == "https", let host = code.url.host, !host.isEmpty,
-              code.url.user == nil, code.url.password == nil, code.url.query == nil,
-              code.url.fragment == nil, ["", "/"].contains(code.url.path),
-              code.fingerprint.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil,
-              !code.invitation.isEmpty else { throw BijouError("Paste a complete pairing code from the Mac.") }
-        return code
-    }
-}
-
 struct Credentials: Codable {
     let url: URL
     let fingerprint: String
@@ -55,15 +36,24 @@ enum Keyring {
 
 private final class Pin: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     let host: String
-    let digest: String
-    init(_ host: String, _ digest: String) { self.host = host; self.digest = digest }
+    private let lock = NSLock()
+    private var digest: String?
+    var observed: String? { lock.withLock { digest } }
+    init(_ host: String, _ digest: String?) { self.host = host; self.digest = digest }
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         let space = challenge.protectionSpace
         guard space.authenticationMethod == NSURLAuthenticationMethodServerTrust, space.host == host,
               let trust = space.serverTrust, let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
-              let leaf = chain.first,
-              SHA256.hash(data: SecCertificateCopyData(leaf) as Data).map({ String(format: "%02x", $0) }).joined() == digest else {
+              let leaf = chain.first else {
+            completionHandler(.cancelAuthenticationChallenge, nil); return
+        }
+        let actual = SHA256.hash(data: SecCertificateCopyData(leaf) as Data).map { String(format: "%02x", $0) }.joined()
+        let matches = lock.withLock {
+            if digest == nil { digest = actual } // Only the isolated, credential-free bootstrap session.
+            return digest == actual
+        }
+        guard matches else {
             completionHandler(.cancelAuthenticationChallenge, nil); return
         }
         completionHandler(.useCredential, URLCredential(trust: trust))
@@ -84,15 +74,19 @@ final class HomeClient {
     let url: URL
     private let token: String?
     private let session: URLSession
-    init(url: URL, fingerprint: String, token: String? = nil) {
-        self.url = url; self.token = token
+    private let pin: Pin
+    private init(url: URL, pin: Pin, token: String?) {
+        self.url = url; self.token = token; self.pin = pin
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 8
         config.timeoutIntervalForResource = 15
         config.httpShouldSetCookies = false
         config.urlCredentialStorage = nil
         config.allowsCellularAccess = false
-        session = URLSession(configuration: config, delegate: Pin(url.host ?? "", fingerprint), delegateQueue: nil)
+        session = URLSession(configuration: config, delegate: pin, delegateQueue: nil)
+    }
+    convenience init(url: URL, fingerprint: String, token: String? = nil) {
+        self.init(url: url, pin: Pin(url.host ?? "", fingerprint), token: token)
     }
     convenience init(_ creds: Credentials) {
         self.init(url: creds.url, fingerprint: creds.fingerprint, token: creds.token)
@@ -112,14 +106,28 @@ final class HomeClient {
         return bytes
     }
 
-    static func pair(_ code: PairCode) async throws -> Credentials {
-        struct Enrolled: Decodable { let device, token, library: String }
-        let client = HomeClient(url: code.url, fingerprint: code.fingerprint)
-        let data = try await client.send("pair", data: JSONEncoder().encode(["invitation": code.invitation]))
+    static func pair(_ code: PairCode, at address: URL) async throws -> Credentials {
+        struct Options: Decodable { let version: Int; let salt: String }
+        struct Enrolled: Decodable { let device, token, library, proof: String }
+        let url = try HomeAddress.parse(address.absoluteString)
+        let bootstrap = HomeClient(url: url, pin: Pin(url.host ?? "", nil), token: nil)
+        let raw = try await bootstrap.send("pair/options")
+        let options = try JSONDecoder().decode(Options.self, from: raw)
+        guard options.version == 2, let fingerprint = bootstrap.pin.observed else {
+            throw BijouError("Restart the updated home adapter and request a new code.")
+        }
+        let proof = try PairingProof(code: code, salt: options.salt, certificate: fingerprint)
+        // Only a public salt is fetched before locking the request to the actual TLS leaf.
+        let client = HomeClient(url: url, fingerprint: fingerprint)
+        let data = try await client.send("pair", data: JSONEncoder().encode(["salt": options.salt, "claim": proof.claim]))
         let r = try JSONDecoder().decode(Enrolled.self, from: data)
         guard r.library.range(of: "^[0-9a-f]{32}$", options: .regularExpression) != nil,
-              !r.token.isEmpty, !r.device.isEmpty else { throw BijouError("Invalid home enrollment.") }
-        return Credentials(url: code.url, fingerprint: code.fingerprint, device: r.device, token: r.token, library: r.library)
+              r.device.range(of: "^[0-9a-f]{16}$", options: .regularExpression) != nil,
+              r.token.range(of: "^[a-zA-Z0-9_-]{43}$", options: .regularExpression) != nil,
+              proof.verifies(r.proof, device: r.device, token: r.token, library: r.library) else {
+            throw BijouError("This Mac could not confirm the pairing code.")
+        }
+        return Credentials(url: url, fingerprint: fingerprint, device: r.device, token: r.token, library: r.library)
     }
     func catalog() async throws -> Catalog { try await JSONDecoder().decode(Catalog.self, from: send("catalog")) }
     func place(_ p: Placement) async throws -> Receipt {

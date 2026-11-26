@@ -26,6 +26,11 @@ open "$BIJOU/Build/Mac/Build/Products/Debug/Bijou.app"
 
 ## Try home sync
 
+**Upgrading from the long pairing string?** Keep your existing practice
+library. Run the updated app from Xcode, stop the old `serve` command with
+Ctrl-C, and restart it as in step 2. Already-paired devices keep their
+credentials. For a new pairing, use the short code from the restarted Mac.
+
 1. **Make a practice library.** From the repository root, choose a **new**
    directory outside repositories, SynologyDrive and existing OKF bundles:
 
@@ -49,20 +54,29 @@ open "$BIJOU/Build/Mac/Build/Products/Debug/Bijou.app"
    uv run --locked python "$BIJOU/adapter/home.py" serve --bundle "$ROOM" --host "$HOME_IP"
    ```
 
-3. **Pair one app.** Paste the displayed code into **Home Sync → Pair this
-   device**. Allow Local Network access if prompted. The code identifies the
-   exact HTTPS certificate and carries a one-use, ten-minute invitation. The
-   paired credential is stored in that device’s Keychain.
+3. **Pair one app.** On the same home Wi-Fi, open **Home Sync** and allow
+   Local Network access if prompted. Bijou finds your Mac automatically;
+   choose it if more than one appears. Type the **seven-character code**
+   from the Mac’s Terminal and tap **Pair this device**. Uppercase and
+   lowercase both work. If the list is empty, enter the address printed
+   above the code in the **Mac address (from Terminal)** field. If an older
+   build hides the field, tap **Enter Mac address manually**. Tapping **Pair
+   this device** also points to the missing field and keeps your code
+   while you enter the address. If Local Network access is off, turn it on
+   for Bijou in **Settings → Privacy & Security → Local Network**.
+   Each code works once and expires after ten minutes; expiry is checked
+   by the Mac after you tap Pair.
 4. **Pair the other app.** In a second Terminal at the repository root,
    request another code using the same library and address:
 
    ```sh
    uv run --locked python experiments/barrys-bijou/adapter/home.py invite \
-     --bundle "$HOME/BijouPractice" --host 192.168.1.20
+     --bundle "$HOME/BijouPractice"
    ```
 
-   Replace the example address as in step 2. Enter the new code on the
-   other device. Each should now say **Paired home library**. Text arrives
+   Enter the new code on the other device. If a code expires or too many
+   incorrect entries are made, this command issues a fresh one. Each
+   paired app should now say **Paired home library**. Text arrives
    first; the Mac prepares thumbnails and the clients keep them for offline
    use. If a poster was still being prepared, **Sync now** retries it.
 5. **Try a conflict.** Sync both devices. Disconnect the phone, move a film

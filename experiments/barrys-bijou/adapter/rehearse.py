@@ -9,7 +9,7 @@ import threading
 from http.server import ThreadingHTTPServer
 
 from fixture import EXPERIMENT, create
-from home import Home, handler
+from home import Home, advertise, handler
 from pack_snapshot import pack
 from innersanctum import bijou, writer
 
@@ -31,12 +31,14 @@ def main():
             ctx.load_cert_chain(home.cert, home.key)
             server.socket = ctx.wrap_socket(server.socket, server_side=True)
             url = f"https://127.0.0.1:{server.server_port}"
-            native = {**os.environ, "BIJOU_TEST_MAC": home.invitation(url), "BIJOU_TEST_PHONE": home.invitation(url),
+            native = {**os.environ, "BIJOU_TEST_HOME": url, "BIJOU_TEST_PIN": home.identity(),
+                      "BIJOU_TEST_MAC": home.invitation(), "BIJOU_TEST_PHONE": home.invitation(),
                       "BIJOU_TEST_SCREENING": str(package)}
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             try:
-                subprocess.run(["/usr/bin/xcrun", "swift", "test"], cwd=EXPERIMENT, env=native, check=True)
+                with advertise(*server.server_address):
+                    subprocess.run(["/usr/bin/xcrun", "swift", "test"], cwd=EXPERIMENT, env=native, check=True)
             finally:
                 server.shutdown()
                 thread.join()

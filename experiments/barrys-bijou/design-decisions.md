@@ -93,9 +93,12 @@ images.
 1. A Mac-side adapter supplies the watched catalog, thumbnails, and the
    ranking with its revision. The Mac app connects
    locally; the iPhone connects over home-network HTTPS while the Mac is
-   awake and the adapter is running. Pair the phone once using a code shown
-   by the Mac that identifies its TLS key and authorizes enrollment. Keep a
-   revocable device credential in Keychain. After the first catalog load,
+   awake and the adapter is running. Bonjour supplies the Mac’s address,
+   or Barry can enter it manually. A seven-character, single-use code
+   authorizes enrollment. The client and Mac derive separate enrollment
+   and confirmation proofs from the code, a temporary public salt and
+   the observed TLS certificate. The client verifies the returned credential
+   before saving it with the certificate pin in Keychain. After the first catalog load,
    browsing and ranking on either device work without a connection.
 2. Send one **place this film in this gap** request per changed placement,
    oldest first. It carries a stable request ID, expected ranking revision,

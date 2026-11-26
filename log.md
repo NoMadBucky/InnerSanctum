@@ -2,6 +2,9 @@
 
 ## 2026-11-25
 
+* **Bijou home pairing:** Replaced long pairing strings with seven-character
+  invitations and nearby Mac discovery. Existing pairings keep their
+  credentials. See the [pairing guide](experiments/barrys-bijou/run.md#try-home-sync).
 * **Barry’s Bijou prototype**: Built the iPhone and Mac movie journal,
   including offline rankings and a fixture-only OKF placement writer.
   The [build and pairing guide](experiments/barrys-bijou/run.md) records

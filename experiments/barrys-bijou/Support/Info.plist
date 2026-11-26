@@ -11,6 +11,7 @@
     <key>CFBundleVersion</key><string>1</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.entertainment</string>
     <key>NSLocalNetworkUsageDescription</key><string>Bijou connects to your paired Mac to sync your movie rankings and posters at home.</string>
+    <key>NSBonjourServices</key><array><string>_bijou-home._tcp</string></array>
     <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
     <key>UILaunchScreen</key><dict/>
 </dict></plist>

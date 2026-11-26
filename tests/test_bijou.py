@@ -157,17 +157,70 @@ def test_false_flag_preserves_comments_and_a_changed_ranked_identity_needs_revie
 
 
 def test_home_pairing_expires_is_single_use_and_revocable(root):
-    import base64
+    import hmac
     import sqlite3
 
-    home = adapter("home").Home(root)
-    code = json.loads(base64.urlsafe_b64decode(home.invitation("https://127.0.0.1:8765")))
-    assert home.enroll("wrong") is None
-    device = home.enroll(code["invitation"])
+    server = adapter("home")
+    home = server.Home(root)
+    code = home.invitation()
+    assert len(code) == 7 and set(code) <= set(server.CODE_ALPHABET)
+    options = home.pairing_options()
+    assert set(options) == {"version", "salt"} and options["version"] == 2
+    salt = options["salt"]
+    pin = home.identity()
+    claim, confirmation = server.pairing_keys(code, salt, pin)
+    wrong_pin_claim, _ = server.pairing_keys(code, salt, "0" * 64)
+    assert home.enroll(salt, wrong_pin_claim) is None
+    assert home.enroll(salt, code) is None
+    device = home.enroll(salt, claim)
     assert home.authenticated(device["token"]) and not home.authenticated("wrong")
-    assert home.enroll(code["invitation"]) is None
-    code = json.loads(base64.urlsafe_b64decode(home.invitation("https://127.0.0.1:8765")))
+    msg = "Bijou enrolled v2:{device}:{token}:{library}".format(**device).encode()
+    assert device["proof"] == hmac.digest(confirmation, msg, "sha256").hex()
+    assert home.enroll(salt, claim) is None
+    code = home.invitation()
+    salt = home.pairing_options()["salt"]
+    claim, _ = server.pairing_keys(code, salt, pin)
     with sqlite3.connect(home.db) as con:
-        con.execute("UPDATE invites SET expires=0")
+        con.execute("UPDATE pair_codes SET expires=0")
         con.execute("DELETE FROM devices WHERE id=?", (device["device"],))
-    assert home.enroll(code["invitation"]) is None and not home.authenticated(device["token"])
+    assert home.pairing_options() is None
+    assert home.enroll(salt, claim) is None and not home.authenticated(device["token"])
+
+
+def test_pair_attempt_budget_survives_restart_and_new_code_restores_pairing(root):
+    server = adapter("home")
+    home = server.Home(root)
+    code = home.invitation()
+    salt = home.pairing_options()["salt"]
+    correct, _ = server.pairing_keys(code, salt, home.identity())
+    for _ in range(server.MAX_GUESSES):
+        assert server.Home(root).enroll(salt, "0" * 64) is None
+    assert home.pairing_options() is None and home.enroll(salt, correct) is None
+    new_code = home.invitation()
+    new_salt = home.pairing_options()["salt"]
+    assert new_salt != salt
+    assert home.enroll(salt, correct) is None
+    valid, _ = server.pairing_keys(new_code, new_salt, home.identity())
+    assert home.enroll(new_salt, valid) is not None
+
+
+def test_short_pairing_preserves_existing_device_tokens_and_single_use_under_contention(root):
+    from concurrent.futures import ThreadPoolExecutor
+    import sqlite3
+
+    server = adapter("home")
+    state = root / ".bijou-home"
+    state.mkdir(mode=0o700)
+    with sqlite3.connect(state / "devices.sqlite") as con:
+        con.execute("CREATE TABLE devices (id TEXT PRIMARY KEY, token TEXT UNIQUE)")
+        con.execute("CREATE TABLE invites (hash TEXT PRIMARY KEY, expires INTEGER)")
+        con.execute("INSERT INTO devices VALUES (?,?)", ("already-paired", server.hashed("previous-token")))
+    home = server.Home(root)
+    assert home.authenticated("previous-token")
+    code = home.invitation()
+    salt = home.pairing_options()["salt"]
+    claim, _ = server.pairing_keys(code, salt, home.identity())
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(lambda _: home.enroll(salt, claim), range(2)))
+    assert sum(x is not None for x in results) == 1
+    assert home.authenticated("previous-token")
