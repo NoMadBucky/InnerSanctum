@@ -34,6 +34,15 @@ private struct GameLoader: View {
                     else { throw CocoaError(.fileNoSuchFile) }
                     let deck = try JSONDecoder().decode([Event].self, from: Data(contentsOf: url))
                     #if DEBUG
+                    if ProcessInfo.processInfo.arguments.contains("-interiorMissFixture") {
+                        var deck = deck.filter { $0.attribution == nil }.sorted { $0.year < $1.year }
+                        deck.swapAt(1, 2) // 1215, 1600, then 1453
+                        var fixture = try Round(deck: deck, shuffle: false)
+                        fixture.place(at: 1)
+                        fixture.advance()
+                        round = fixture
+                        return
+                    }
                     if ProcessInfo.processInfo.arguments.contains("-firstGuessFixture") {
                         round = try Round(deck: deck.sorted { $0.year > $1.year }, shuffle: false)
                         return
@@ -58,6 +67,7 @@ private struct GameView: View {
     @State var round: Round
     let restart: () -> Void
     @State private var gap = 0
+    @State private var timelinePosition = ScrollPosition(x: 0)
     @State private var scrolling = false
     @State private var showingAnswer = false
     @State private var reading: Event?
@@ -68,12 +78,6 @@ private struct GameView: View {
     private var motion: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.35) }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            board(proxy)
-        }
-    }
-
-    private func board(_ proxy: ScrollViewProxy) -> some View {
         VStack(spacing: 12) {
             Text("Chronology").font(.system(.largeTitle, design: .serif).bold())
             if !hasDrawn && round.turn == 1 {
@@ -96,10 +100,10 @@ private struct GameView: View {
                 timeline(event)
                 if round.reveal == nil {
                     HStack {
-                        jump("First", 0, proxy)
-                        jump("Earlier", gap - 1, proxy)
-                        jump("Later", gap + 1, proxy)
-                        jump("Last", round.table.count, proxy)
+                        jump("First", 0)
+                        jump("Earlier", gap - 1)
+                        jump("Later", gap + 1)
+                        jump("Last", round.table.count)
                     }.buttonStyle(.bordered)
                     Button("Place Here") {
                         guard !scrolling, round.reveal == nil else { return }
@@ -140,7 +144,7 @@ private struct GameView: View {
                 do { try await Task.sleep(for: .milliseconds(650)) } catch { return }
             }
             withAnimation(motion) {
-                proxy.scrollTo(reveal.actual, anchor: .center)
+                centerGap(reveal.actual)
                 showingAnswer = true
             }
         }
@@ -176,8 +180,13 @@ private struct GameView: View {
                 .padding(.horizontal)
     }
 
-    private func jump(_ title: String, _ index: Int, _ proxy: ScrollViewProxy) -> some View {
-        Button(title) { withAnimation(motion) { proxy.scrollTo(index, anchor: .center) } }
+    private func centerGap(_ index: Int) {
+        // Gap zero starts at the viewport center; each following gap is one pitch away.
+        timelinePosition.scrollTo(x: CGFloat(index) * TimelineSnap.pitch)
+    }
+
+    private func jump(_ title: String, _ index: Int) -> some View {
+        Button(title) { withAnimation(motion) { centerGap(index) } }
             .disabled(!(0...round.table.count).contains(index) || gap == index)
     }
 
@@ -199,7 +208,7 @@ private struct GameView: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 0) {
                     ForEach(0...round.table.count, id: \.self) { index in
-                        Color.clear.frame(width: slot, height: 1).id(index)
+                        Color.clear.frame(width: slot, height: 1)
                         if index < round.table.count {
                             card(round.table[index]).frame(width: pitch - slot)
                         }
@@ -211,6 +220,7 @@ private struct GameView: View {
                 }
             }
             .accessibilityIdentifier("timeline")
+            .scrollPosition($timelinePosition)
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(TimelineSnap())
             .onScrollGeometryChange(for: Int.self) { geometry in

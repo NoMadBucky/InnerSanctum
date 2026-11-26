@@ -241,7 +241,10 @@ struct AudioReactions: View {
     let film: FilmRef
     let viewed: String?
     let focusedTake: UUID?
-    init(store: ReactionStore, viewed: String?, film: FilmRef, archived: [ArchivedReaction], focusedTake: UUID? = nil) {
+    @Binding private var recordRequest: UUID?
+    init(store: ReactionStore, viewed: String?, film: FilmRef, archived: [ArchivedReaction], focusedTake: UUID? = nil,
+         recordRequest: Binding<UUID?> = .constant(nil)) {
+        _recordRequest = recordRequest
         self.focusedTake = focusedTake
         self.archived = archived
         _room = StateObject(wrappedValue: ReactionRoom(store: store)); self.viewed = viewed; self.film = film
@@ -370,6 +373,15 @@ struct AudioReactions: View {
             if room.needsUnmute { Button("Unmute microphone") { room.unmute() } }
         }
         .onAppear { room.reload() }
+        .onChange(of: recordRequest, initial: true) { _, request in
+            guard request != nil else { return }
+            recordRequest = nil
+            if room.preview != nil {
+                room.notice = "Keep or discard your current take before recording another."
+            } else {
+                Task { await room.record(viewed: viewed) }
+            }
+        }
         .sheet(item: $transcribing) { take in
             ReactionTranscript(take: take, store: room.store, remote: archived.first { $0.id == take.id })
         }

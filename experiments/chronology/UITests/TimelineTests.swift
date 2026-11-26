@@ -1,6 +1,25 @@
 import XCTest
 
 final class TimelineTests: XCTestCase {
+    func testInteriorMissCentersBetweenVisibleCardEdges() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-interiorMissFixture"]
+        app.launch()
+        app.buttons["New Game"].tap()
+        app.buttons["Place Here"].tap() // Before both, instead of between them.
+        XCTAssertTrue(app.staticTexts["ghost"].waitForExistence(timeout: 5))
+        let board = app.scrollViews["timeline"]
+        let left = board.buttons["tableCard.Magna_Carta"]
+        let right = board.buttons["tableCard.Battle_of_Sekigahara"]
+        let centered = NSPredicate { _, _ in
+            guard left.isHittable, right.isHittable else { return false }
+            let midpoint = (left.frame.maxX + right.frame.minX) / 2
+            return abs(midpoint - board.frame.midX) <= 1
+        }
+        expectation(for: centered, evaluatedWith: board)
+        waitForExpectations(timeout: 4)
+    }
+
     func testFirstCorrectPlacementAllowsNextDraw() {
         let app = XCUIApplication()
         app.launchArguments = ["-firstGuessFixture"]
