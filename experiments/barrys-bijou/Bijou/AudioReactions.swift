@@ -5,6 +5,7 @@ import SwiftUI
 private final class ReactionRoom: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     @Published var takes: [AudioReaction] = []
     @Published var recording = false
+    @Published var finishing = false
     @Published var requesting = false
     @Published var elapsed: TimeInterval = 0
     @Published var preview: AudioReaction?
@@ -46,18 +47,20 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioRecorderDel
             #endif
             let id = UUID()
             try store.begin(id); draftID = id
-            let r = try AVAudioRecorder(url: store.audio(id, draft: true), settings: [
-                AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100,
-                AVNumberOfChannelsKey: 1, AVEncoderBitRateKey: 64_000
-            ])
+            let r = try AVAudioRecorder(url: store.audio(id, draft: true), settings: ReactionStore.recordingSettings)
             r.delegate = self
             guard r.record(forDuration: ReactionStore.limit) else { throw BijouError("Could not start recording. Check your microphone.") }
             recorder = r; started = Date(); viewing = viewed; elapsed = 0; recording = true
         } catch { discard(); notice = error.localizedDescription }
     }
 
-    func tick() { if let recorder { elapsed = min(recorder.currentTime, ReactionStore.limit) } }
-    func stop() { recorder?.stop(); finish(success: true) }
+    func tick() { if let recorder { elapsed = max(elapsed, min(recorder.currentTime, ReactionStore.limit)) } }
+    func stop() {
+        guard recording, !finishing else { return }
+        tick()
+        finishing = true
+        recorder?.stop() // Validate only after AVFoundation signals that the file has finished.
+    }
     nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
         Task { @MainActor in if self.recorder === recorder { self.finish(success: flag) } }
     }
@@ -66,12 +69,10 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioRecorderDel
     }
     private func finish(success: Bool) {
         guard let id = draftID, recording else { return }
-        recorder?.delegate = nil; recorder = nil; recording = false; releaseSession()
+        recorder?.delegate = nil; recorder = nil; recording = false; finishing = false; releaseSession()
         do {
             guard success else { throw BijouError("Recording was interrupted before it could be saved.") }
-            let duration = try AVAudioPlayer(contentsOf: store.audio(id, draft: true)).duration
-            guard duration.isFinite, duration > 0 else { throw BijouError("The recording was empty. Please try again.") }
-            elapsed = min(duration, ReactionStore.limit)
+            elapsed = try store.recordedSeconds(id, expected: elapsed)
             preview = AudioReaction(id: id, recordedAt: started, viewingDate: viewing, seconds: elapsed)
         } catch { discard(); notice = error.localizedDescription }
     }
@@ -85,7 +86,7 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioRecorderDel
     }
     func discard() {
         permissionRequest = nil; requesting = false
-        recorder?.delegate = nil; recorder?.stop(); recorder = nil; recording = false
+        recorder?.delegate = nil; recorder?.stop(); recorder = nil; recording = false; finishing = false
         stopPlayback()
         if let draftID {
             do { try store.discard(draftID) } catch { notice = error.localizedDescription }
@@ -128,14 +129,17 @@ struct AudioReactions: View {
     init(store: ReactionStore, viewed: String?) {
         _room = StateObject(wrappedValue: ReactionRoom(store: store)); self.viewed = viewed
     }
-    private func clock(_ t: Double) -> String { String(format: "%d:%02d", Int(t) / 60, Int(t) % 60) }
+    private func clock(_ t: Double) -> String {
+        if t > 0 && t < 1 { return "<1s" }
+        return String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Audio reactions").font(.headline)
             Text("Up to two minutes per take · Saved on this device").font(.caption).foregroundStyle(.secondary)
             if room.recording {
                 Text("Recording \(clock(room.elapsed)) / 2:00").monospacedDigit()
-                Button("Stop recording") { room.stop() }
+                Button(room.finishing ? "Finishing recording…" : "Stop recording") { room.stop() }.disabled(room.finishing)
             } else if let take = room.preview {
                 Text("New take · \(clock(take.seconds))").font(.subheadline)
                 ViewThatFits(in: .horizontal) {

@@ -19,15 +19,18 @@ final class ReactionStoreTests: XCTestCase {
             try store.begin(id)
             do {
                 let audio = try AVAudioFile(forWriting: store.audio(id, draft: true),
-                                            settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44100, AVNumberOfChannelsKey: 1])
-                try audio.write(from: buffer)
+                                            settings: ReactionStore.recordingSettings)
+                for _ in 0..<(i == 2 ? 1 : 30) { try audio.write(from: buffer) }
             }
             XCTAssertEqual(try open().list().count, ids.count)
             if i == 2 {
+                XCTAssertThrowsError(try store.recordedSeconds(id, expected: 3))
+                XCTAssertThrowsError(try store.keep(AudioReaction(id: id, recordedAt: Date(), viewingDate: nil, seconds: 0.1)))
                 try store.discard(id)
                 XCTAssertFalse(FileManager.default.fileExists(atPath: store.audio(id, draft: true).path))
             } else {
-                let duration = try AVAudioPlayer(contentsOf: store.audio(id, draft: true)).duration
+                let duration = try store.recordedSeconds(id, expected: 3)
+                XCTAssertEqual(duration, 3, accuracy: 0.001)
                 try store.keep(AudioReaction(id: id, recordedAt: Date(timeIntervalSince1970: Double(i)),
                                              viewingDate: "2026-01-01", seconds: duration))
                 ids.append(id)

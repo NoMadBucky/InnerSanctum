@@ -1,3 +1,4 @@
+import AVFoundation
 import CryptoKit
 import Foundation
 
@@ -23,7 +24,23 @@ struct ReactionStore {
         directory.appendingPathComponent((draft ? ".draft-" : "") + id.uuidString)
     }
     func audio(_ id: UUID, draft: Bool = false) -> URL {
-        folder(id, draft: draft).appendingPathComponent("reaction.m4a")
+        let dir = folder(id, draft: draft)
+        let legacy = dir.appendingPathComponent("reaction.m4a")
+        if !draft && FileManager.default.fileExists(atPath: legacy.path) { return legacy }
+        return dir.appendingPathComponent("reaction.wav")
+    }
+    static let recordingSettings: [String: Any] = [
+        AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 44_100,
+        AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16,
+        AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false
+    ]
+    func recordedSeconds(_ id: UUID, expected: Double) throws -> Double {
+        let file = try AVAudioFile(forReading: audio(id, draft: true))
+        let seconds = Double(file.length) / file.processingFormat.sampleRate
+        guard seconds.isFinite, seconds >= 0.25, seconds + 0.75 >= expected else {
+            throw BijouError("The microphone recording was empty or cut short. No take was saved. Please try again.")
+        }
+        return min(seconds, Self.limit)
     }
     func begin(_ id: UUID) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
@@ -37,7 +54,7 @@ struct ReactionStore {
     }
     func keep(_ take: AudioReaction) throws {
         guard take.seconds.isFinite, take.seconds > 0, take.seconds <= Self.limit,
-              (try audio(take.id, draft: true).resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0
+              abs(try recordedSeconds(take.id, expected: take.seconds) - take.seconds) < 0.01
         else { throw BijouError("There is no usable recording to keep.") }
         let draft = folder(take.id, draft: true)
         try JSONEncoder().encode(take).write(to: draft.appendingPathComponent("take.json"), options: .atomic)
