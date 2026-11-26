@@ -175,5 +175,10 @@ app. The Mac app opened a window. Four native storage, screening-copy and
 sync tests passed, including two clients talking to the Mac adapter over
 HTTPS. The Python suite passed all 166 tests. The separate Xcode UI test
 runner timed out enabling automation before it executed the click-through.
-Physical-phone installation, on-device UI and home Wi-Fi acceptance remain
-to be checked; no iOS simulator runtime was installed on this Mac.
+No iOS simulator runtime was installed on this Mac for that build.
+
+### Personal library acceptance · 2026-11-25
+
+Barry confirmed the end-to-end workflow on his iPhone and Mac: he reranked
+a film in the Personal library on the phone, saw **Synced to OKF**, and
+verified the new position on the Mac after syncing.
