@@ -1,4 +1,5 @@
 import Combine
+import AVFoundation
 import Foundation
 import XCTest
 @testable import BijouCore
@@ -144,5 +145,31 @@ final class HomeRoundTripTests: XCTestCase {
         let readback = try await mac.catalog()
         XCTAssertEqual(readback.order, [b, c, a]); XCTAssertTrue(readback.issues.isEmpty)
         XCTAssertEqual(local.order, readback.order); XCTAssertTrue(local.pending.isEmpty)
+        XCTAssertEqual(readback.fixtureReactionFiling, true)
+        try await exerciseFiling(phone, library: initial.library, film: a, directory: tmp)
+    }
+
+    private func exerciseFiling(_ client: HomeClient, library: String, film: FilmRef, directory: URL) async throws {
+        let store = ReactionStore(root: directory, library: library, film: film)
+        let take = AudioReaction(id: UUID(), recordedAt: Date(), viewingDate: "2026-11-25", seconds: 1)
+        try store.begin(take.id)
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 48000))
+        buffer.frameLength = buffer.frameCapacity
+        for i in 0..<48000 { buffer.floatChannelData![0][i] = 0.2 * sin(Float(i) * 0.1) }
+        let track = try MicrophoneTrack(url: store.audio(take.id, draft: true), format: format)
+        track.append(buffer)
+        track.close()
+        try store.keep(take)
+        let url = store.audio(take.id)
+        let first = try await client.fileReaction(take, url: url, film: film, library: library)
+        // Simulate losing the reply before saving the local filing receipt.
+        let retry = try await client.fileReaction(take, url: url, film: film, library: library)
+        XCTAssertEqual(first.id, retry.id)
+        XCTAssertEqual(first.path, retry.path)
+        try store.saveReceipt(retry)
+        XCTAssertTrue(ReactionStore(root: directory, library: library, film: film).filed(take.id))
+        try store.delete(take.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
     }
 }
