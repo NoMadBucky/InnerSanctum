@@ -1,17 +1,24 @@
-# Personal reaction filing: proposed rollout
+# Personal reaction filing
 
-**Decision as of November 26, 2026: InnerSanctum is designated the sole
-source writer; live activation is pending.** Bijou has rehearsed filing one WAV through an authenticated
-practice adapter, retrying it, and removing the local copy. That is evidence
-for the workflow, not authority to write the Personal source catalog.
+**Personal activation completed November 26, 2026.** The first user-selected
+recording is pending. With Personal Sync stopped and the adopted checkout
+locked, both stores matched the verified recovery manifests. The installer
+added only the reaction schema, parent listing, audit entry, receipt and
+source-writer state/directories. The source catalog remained byte-identical;
+no audio was filed or OKF publication left pending.
+
+Personal Sync restarted on the original TLS endpoint with the source pin.
+Readiness checks confirmed the original certificate, authentication required
+for Personal uploads, and rejection of the fixture upload route. The previous
+private start command and verified change list are with the recovery evidence.
 
 ## Who owns what?
 
-| Target | Evidence | Decision needed |
+| Target | Evidence | Disposition |
 | --- | --- | --- |
-| `OKF/` | The [Create cutover](../../create-cutover.md) names InnerSanctum as its sole writer. | Keep that writer; approve the additive reaction schema and route separately. |
+| `OKF/` | The [Create cutover](../../create-cutover.md) names InnerSanctum as its sole writer. | The approved reaction schema uses the same guarded writer. |
 | `SourceFiles/catalog.json` and native media | On November 26 the operator confirmed there are no writers or processes adding sources and designated InnerSanctum to own that process. MatterKeep Personal's `catalog_context.py` reads the catalog. | Implement new imports through InnerSanctum only. The earlier OKF cutover did not install or activate a source writer. |
-| Bijou | `reaction_filing.py` requires a physical external fixture and its private store binding; the HTTP adapter refuses fixture uploads in Personal mode. | Keep fixture guards. Implement a separately bound Personal operation only after the ownership decision. |
+| Bijou | The HTTP adapter refuses fixture uploads in Personal mode. | Personal uploads require the separately bound source store. |
 
 The designated owner is **InnerSanctum**, not the phone. Its source writer must
 coordinate *all* modifications of the shared catalog: reserving the `audio/`
@@ -29,7 +36,7 @@ or evidence of a completed backup. Repeat verification before activation.
 
 ### Implementation and rehearsal status
 
-The Personal importer and schema installer are implemented but not activated.
+The Personal importer and schema installer were rehearsed before activation.
 Tests on a disposable adopted checkout with an existing version-1 catalog
 recovered an interrupted schema install, retried a filing after source
 publication, preserved the existing catalog entry and refused a stale catalog
