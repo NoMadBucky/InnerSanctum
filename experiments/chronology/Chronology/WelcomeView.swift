@@ -3,22 +3,11 @@ import SwiftUI
 struct WelcomeView: View {
     @Binding var mode: GameMode
     let start, scores: () -> Void
-    @State private var spread = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var showingScores = false
 
     var body: some View {
         VStack(spacing: 18) {
             Spacer()
-            ZStack {
-                ForEach(0..<3) { index in
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill([Color.teal, .mint, .yellow][index].gradient)
-                        .frame(width: 82, height: 112)
-                        .overlay { Image(systemName: ["globe", "sparkles", "hourglass"][index]).font(.largeTitle).foregroundStyle(.black) }
-                        .rotationEffect(.degrees(spread ? Double(index - 1) * 16 : 0))
-                        .offset(x: spread ? CGFloat(index - 1) * 42 : 0)
-                }
-            }.accessibilityHidden(true).padding(.bottom)
             VStack(spacing: 4) {
                 Text("Periodical").font(.system(.largeTitle, design: .serif).bold())
                 Text("A Snap History Game").font(.subheadline).foregroundStyle(.secondary)
@@ -33,7 +22,9 @@ struct WelcomeView: View {
             Button("High Scores", action: scores)
         }
         .padding()
-        .onAppear { withAnimation(reduceMotion ? nil : .spring(duration: 0.8)) { spread = true } }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background { IntroBackdrop(visible: !showingScores) }
+        .environment(\.colorScheme, .dark)
     }
 }
 

@@ -16,7 +16,23 @@ Only Place Here commits. A correct guess grows the table; a miss shows the
 correct gap. You can keep browsing after either result. Tap any dated card
 to read about it, even on the final table. A perfect round has eleven cards.
 High Scores keeps the best ten finished rounds per mode on this iPhone, newest first
-for ties. The opening animation respects Reduce Motion.
+for ties. The welcome screen plays a silent, bundled montage. Reduce Motion
+shows a still; the player stops when the welcome screen is covered or inactive.
+
+## Intro montage
+
+The 12-second loop dissolves between three public-domain images:
+
+- [Under the Wave off Kanagawa](https://commons.wikimedia.org/wiki/File:The_Great_Wave_off_Kanagawa.jpg),
+  Katsushika Hokusai, early 1830s.
+- [First flight of the Wright Flyer](https://commons.wikimedia.org/wiki/File:Wrightflyer.jpg),
+  John T. Daniels, 1903.
+- [Earthrise](https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg),
+  William Anders / NASA, Apollo 8, 1968.
+
+To rebuild the H.264 video and matching still, download the originals under
+their linked filenames and run `python3 Tools/build_intro.py /path/to/originals`
+from this directory with Pillow and FFmpeg installed.
 
 `Chronology/events.json` holds the offline deck. Each clue names one event;
 `date` preserves the source's date precision and `year` controls grading.

@@ -21,7 +21,8 @@ private struct GameLoader: View {
 
     var body: some View {
         if !started {
-            WelcomeView(mode: $mode, start: { started = true }, scores: { showScores = true })
+            WelcomeView(mode: $mode, start: { started = true }, scores: { showScores = true },
+                        showingScores: showScores)
                 .sheet(isPresented: $showScores) { ScoreBoard(mode: mode) }
         } else if let round {
             GameView(round: round, restart: restart)
