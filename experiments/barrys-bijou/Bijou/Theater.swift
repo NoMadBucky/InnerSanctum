@@ -71,6 +71,8 @@ struct Theater: View {
     @EnvironmentObject private var studio: Studio
     @Environment(\.colorScheme) private var scheme
     @Environment(\.scenePhase) private var phase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var openingFinished = false
     @State private var home = false
     @State private var searchingTMDb = false
     @State private var query = ""
@@ -82,11 +84,16 @@ struct Theater: View {
     @State private var quiz = false
     var body: some View {
         Group {
-            if entered {
+            if !openingFinished && !reduceMotion {
+                OpeningReel { openingFinished = true }
+            } else if entered {
                 watched
             } else {
                 TheaterLobby(enter: { entered = true }, play: { quiz = true })
             }
+        }
+        .onChange(of: reduceMotion, initial: true) { _, reduced in
+            if reduced { openingFinished = true }
         }
         .sheet(isPresented: $quiz) { NameThatFilm().id(studio.journal?.base.library) }
         .task(id: phase) {
