@@ -76,7 +76,7 @@ struct PlacementEditor: View {
                         selected = order.firstIndex(of: film) ?? order.count / 2
                     }
                 }
-            }.buttonStyle(AdmissionStyle())
+            }.buttonStyle(JournalActionStyle())
                 .accessibilityIdentifier("confirm-placement")
                 .disabled(!review && order.firstIndex(of: film) == index)
         }

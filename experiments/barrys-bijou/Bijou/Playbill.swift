@@ -63,14 +63,15 @@ struct BillingLine: View {
     }
 }
 
-struct AdmissionStyle: ButtonStyle {
+struct JournalActionStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var scheme
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label.font(.headline)
+        configuration.label.font(.body.weight(.semibold))
             .padding(.horizontal, 18).frame(minHeight: 44)
-            .foregroundStyle(MarqueeFinish.enamel)
-            .background(MarqueeFinish.gold, in: SteppedRail())
-            .overlay { SteppedRail().stroke(MarqueeFinish.enamel.opacity(0.45)).padding(4).allowsHitTesting(false) }
+            .foregroundStyle(scheme == .dark ? MarqueeFinish.enamel : .white)
+            .background(scheme == .dark ? MarqueeFinish.ivory : MarqueeFinish.peacock,
+                        in: RoundedRectangle(cornerRadius: 9))
             .contentShape(Rectangle())
             .opacity(!enabled ? 0.45 : configuration.isPressed ? 0.75 : 1)
     }

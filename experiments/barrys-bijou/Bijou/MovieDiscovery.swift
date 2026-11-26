@@ -90,10 +90,10 @@ struct MovieDiscovery: View {
                                 }
                                 Button("Different movie — add to Watchlist") {
                                     add(hit.id, distinctFrom: candidates.map(\.ref.path))
-                                }.buttonStyle(AdmissionStyle())
+                                }.buttonStyle(JournalActionStyle())
                             } else {
                                 Button(adding == hit.id ? "Adding…" : "Add to Watchlist") { add(hit.id) }
-                                    .buttonStyle(AdmissionStyle()).disabled(studio.syncing || loading)
+                                    .buttonStyle(JournalActionStyle()).disabled(studio.syncing || loading)
                             }
                         }
                         HStack {

@@ -295,7 +295,7 @@ struct AudioReactions: View {
         } else {
             Button { Task { await room.record(viewed: viewed) } } label: {
                 Label(room.requesting ? "Waiting for microphone…" : "Record reaction", systemImage: "mic")
-            }.disabled(room.requesting)
+            }.buttonStyle(JournalActionStyle()).disabled(room.requesting)
         }
     }
 

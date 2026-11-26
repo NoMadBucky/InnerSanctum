@@ -70,7 +70,7 @@ private struct ReactionTranscript: View {
                 ProgressView("Preparing or transcribing…")
                 Button("Cancel transcription") { job?.cancel() }
             } else if local && text.isEmpty {
-                Button("Transcribe on this device") { generate() }.buttonStyle(AdmissionStyle())
+                Button("Transcribe on this device") { generate() }.buttonStyle(JournalActionStyle())
             } else if !local && text.isEmpty {
                 Text("Download the recording from the film card to transcribe it.")
             }

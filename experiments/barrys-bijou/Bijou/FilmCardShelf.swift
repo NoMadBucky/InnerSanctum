@@ -79,7 +79,7 @@ struct FilmCardShelf: View {
                 .font(.subheadline)
             if let rank = ranks[film.ref] { Text("Ranked · #\(rank)").font(.caption.bold()).foregroundStyle(house.brass) }
             Button { open(film.ref) } label: {
-                Label("Film details", systemImage: "ticket").font(.subheadline.weight(.semibold))
+                Label("Film details", systemImage: "book.pages").font(.subheadline.weight(.semibold))
             }.buttonStyle(.bordered).tint(house.brass)
         }
         .multilineTextAlignment(.center).padding(.top, 4).frame(maxWidth: .infinity)

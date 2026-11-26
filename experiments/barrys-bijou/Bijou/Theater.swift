@@ -113,27 +113,27 @@ struct Theater: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(spacing: 10) {
-                        BillingLine(title: "BIJOU").foregroundStyle(MarqueeFinish.gold)
+                        Text("Film journal").font(.subheadline).foregroundStyle(.secondary)
                         Text(shelf.rawValue).font(.system(.largeTitle, design: .serif).weight(.medium))
                             .multilineTextAlignment(.center).accessibilityAddTraits(.isHeader)
-                        Rectangle().fill(MarqueeFinish.gold.opacity(0.48)).frame(height: 1)
+                        Divider()
                         HStack {
                             Text(studio.isSample ? "SAMPLE PROGRAM" : studio.isSnapshot ? "SCREENING COPY" :
                                     studio.journal?.base.origin == "personal" ? "PERSONAL OKF" : "HOME PROGRAM")
                             Spacer()
                             Text(shelf == .reactions ? "\(reactionCount) TAKES" : "\(shelfFilms.count) FILMS")
-                        }.font(.caption.monospaced()).foregroundStyle(MarqueeFinish.gold)
-                    }.modifier(MarqueePanel())
+                        }.font(.caption.monospaced()).foregroundStyle(h.brass)
+                    }
                     if let j = studio.journal {
                         Button { home = true } label: {
-                            Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "ticket")
+                            Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "arrow.triangle.2.circlepath")
                         }.buttonStyle(.plain).accessibilityHint("Opens home sync")
                         if shelf != .reactions {
                             TextField("Find a film or transcript", text: $query).textFieldStyle(.roundedBorder)
                         }
                         if shelf != .reactions, j.base.origin == "personal", studio.credentials?.library == j.base.library {
                             Button { searchingTMDb = true } label: { Label("Search TMDb", systemImage: "magnifyingglass") }
-                                .buttonStyle(AdmissionStyle())
+                                .buttonStyle(.bordered)
                         }
                         HStack {
                             Text("Collection").font(.subheadline.bold())
@@ -204,10 +204,10 @@ private struct TheaterLobby: View {
                         .accessibilityAddTraits(.isHeader)
                     BillingLine(title: "MOVIE JOURNAL").foregroundStyle(MarqueeFinish.gold)
                     Button(action: enter) {
-                        Label("Enter theater", systemImage: "ticket")
+                        Label("Enter theater", systemImage: "arrow.right")
                             .font(.headline).padding(.horizontal, 8).frame(minHeight: 36)
                     }
-                    .buttonStyle(AdmissionStyle())
+                    .buttonStyle(.borderedProminent).tint(MarqueeFinish.ivory).foregroundStyle(MarqueeFinish.enamel)
                     .accessibilityHint("Opens your watched films")
                     .accessibilityIdentifier("enter-theater")
                     .padding(.top, 10)
@@ -266,13 +266,18 @@ struct FilmDetail: View {
                             Button { posterOpen = true } label: { Poster(film: f, width: 96) }
                                 .buttonStyle(.plain).accessibilityLabel("View full poster for \(f.title)")
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("BIJOU  /  FILM NOTES").font(.caption.weight(.semibold)).tracking(1.4)
-                                    .foregroundStyle(MarqueeFinish.gold)
+                                Text("Film notes").font(.subheadline).foregroundStyle(.secondary)
                                 Text(f.title).font(.system(.title, design: .serif).weight(.medium))
                                 if let year = f.year { Text(year).font(.headline) }
                                 Text(f.viewingLabel).font(.subheadline)
                             }
-                        }.frame(maxWidth: .infinity, alignment: .leading).modifier(MarqueePanel())
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                        if let store = studio.reactionStore(library: j.base.library, film: ref) {
+                            Divider()
+                            AudioReactions(store: store, viewed: f.watched, film: ref, archived: f.archivedReactions ?? [],
+                                           recordRequest: $recordRequest).id(store.directory)
+                            Divider()
+                        }
                         if let d = f.description { Text(d).font(.system(.title3, design: .serif)) }
                         VStack(alignment: .leading, spacing: 10) {
                             if let destination = f.tmdbEntry ?? f.tmdbSearch {
@@ -294,7 +299,7 @@ struct FilmDetail: View {
                             }
                         #endif
                         }
-                        .buttonStyle(AdmissionStyle())
+                        .buttonStyle(.bordered).controlSize(.large)
                         let rank = j.order.firstIndex(of: ref)
                         if let rank { Text("Your ranking: #\(rank + 1) of \(j.order.count)").font(.headline).accessibilityIdentifier("rank-position") }
                         if f.isViewed {
@@ -302,14 +307,9 @@ struct FilmDetail: View {
                                 .buttonStyle(.borderedProminent).disabled(j.needsReview).accessibilityIdentifier("rank-action")
                         } else if studio.credentials?.library == j.base.library {
                             Button { dating = true } label: { Label("Mark as watched", systemImage: "calendar.badge.checkmark") }
-                                .buttonStyle(AdmissionStyle())
+                                .buttonStyle(JournalActionStyle())
                         }
                         if j.needsReview { Text("Open Home Sync to review the ranking.").font(.caption) }
-                        if let store = studio.reactionStore(library: j.base.library, film: ref) {
-                            Divider()
-                            AudioReactions(store: store, viewed: f.watched, film: ref, archived: f.archivedReactions ?? [],
-                                           recordRequest: $recordRequest).id(store.directory)
-                        }
                         Divider()
                         ForEach(Array(f.body.components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, block in
                             if block.hasPrefix("#") {
@@ -397,7 +397,7 @@ private struct WatchedDateSheet: View {
                     recordReaction()
                     dismiss()
                 } label: { Label("Record reaction", systemImage: "mic") }
-                .buttonStyle(AdmissionStyle())
+                .buttonStyle(JournalActionStyle())
                 Button("Done") { dismiss() }
             } else {
                 DatePicker("Watched date", selection: $date, in: ...Date(), displayedComponents: .date)
@@ -412,7 +412,7 @@ private struct WatchedDateSheet: View {
                             do { try await studio.markWatched(film, date: date); saved = true }
                             catch { issue = error.localizedDescription }
                         }
-                    }.buttonStyle(AdmissionStyle()).disabled(studio.syncing)
+                    }.buttonStyle(JournalActionStyle()).disabled(studio.syncing)
                 }
             }
         }.padding(24).disabled(saving).interactiveDismissDisabled(saving)

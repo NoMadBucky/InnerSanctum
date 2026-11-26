@@ -21,7 +21,7 @@ struct QuizScoreboard: View {
     var body: some View {
         let scores = board
         VStack(alignment: .leading, spacing: 12) {
-            BillingLine(title: "HIGH SCORES")
+            Text("High scores").font(.headline).accessibilityAddTraits(.isHeader)
             if let score, scores.qualifies(score), !skipped, !scores.entries.contains(where: { $0.id == round }) {
                 Text("You made the board! Enter three initials.").font(.headline)
                 HStack {
