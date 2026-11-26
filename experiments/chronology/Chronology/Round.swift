@@ -5,6 +5,7 @@ struct Event: Codable, Identifiable, Equatable {
     let year: Int
     let date, title, note: String
     let source: URL?
+    let attribution: String?
     var article: URL { URL(string: "https://en.wikipedia.org/wiki/")!.appendingPathComponent(id) }
 }
 

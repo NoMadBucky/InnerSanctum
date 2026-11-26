@@ -5,10 +5,25 @@ final class TimelineTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-firstGuessFixture"]
         app.launch()
+        app.buttons["New Game"].tap()
+        let openingID = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tableCard.'"))
+            .firstMatch.identifier
+        app.buttons["Learn More"].tap()
+        XCTAssertTrue(app.navigationBars["Learn More"].exists)
+        app.buttons["Done"].tap()
+        app.buttons["Draw First Card"].tap()
         app.buttons["Place Here"].tap()
         let next = app.buttons["Draw Next"]
         XCTAssertTrue(next.waitForExistence(timeout: 3))
         XCTAssertTrue(next.isEnabled)
+        let table = app.scrollViews["timeline"]
+        table.swipeLeft()
+        let anchor = table.buttons[openingID]
+        if !anchor.isHittable { table.swipeLeft() }
+        XCTAssertTrue(anchor.isHittable)
+        anchor.tap()
+        XCTAssertTrue(app.navigationBars["Learn More"].exists)
+        app.buttons["Done"].tap()
         next.tap()
         XCTAssertTrue(app.staticTexts["Guess 2 of 10  ·  1 correct"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["Place Here"].isEnabled)
@@ -18,6 +33,7 @@ final class TimelineTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-lastGuessFixture"]
         app.launch()
+        app.buttons["New Game"].tap()
         XCTAssertTrue(app.staticTexts["Guess 10 of 10  ·  9 correct"].waitForExistence(timeout: 5))
         let timeline = app.scrollViews["timeline"]
         timeline.swipeLeft()
@@ -33,5 +49,11 @@ final class TimelineTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Beginning · Before 1453"].isHittable)
         app.buttons["See Results"].tap()
         XCTAssertTrue(app.staticTexts["9 of 10 placed correctly"].exists)
+        app.buttons["High Scores"].tap()
+        XCTAssertTrue(app.staticTexts["9/10"].firstMatch.exists)
+        app.terminate()
+        app.launch()
+        app.buttons["High Scores"].tap()
+        XCTAssertTrue(app.staticTexts["9/10"].firstMatch.exists)
     }
 }

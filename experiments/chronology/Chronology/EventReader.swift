@@ -13,6 +13,11 @@ struct EventReader: View {
                     Text(event.title).font(.headline)
                     Text(event.note)
                     Link("Historical source", destination: event.source ?? event.article)
+                    if let attribution = event.attribution {
+                        Text(attribution).font(.caption).foregroundStyle(.secondary)
+                        Link("Creative Commons Attribution-ShareAlike 4.0",
+                             destination: URL(string: "https://creativecommons.org/licenses/by-sa/4.0/")!)
+                    }
                 }
                 Section("Wikipedia") {
                     if loading { ProgressView() }

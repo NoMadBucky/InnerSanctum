@@ -1,24 +1,2871 @@
 [
-  {"id":"Magna_Carta","year":1215,"date":"15 June 1215","title":"King John seals Magna Carta","note":"The king and rebel barons met at Runnymede."},
-  {"id":"Fall_of_Constantinople","year":1453,"date":"29 May 1453","title":"Constantinople falls to the Ottomans","note":"The capture ended a siege of 53 days."},
-  {"id":"Battle_of_Sekigahara","year":1600,"date":"21 October 1600","title":"The battle of Sekigahara is fought","note":"The battlefield lies in what is now Japan’s Gifu Prefecture."},
-  {"id":"First_Folio","year":1623,"date":"1623","title":"Shakespeare’s First Folio is published","note":"The collection appeared seven years after the playwright’s death."},
-  {"id":"United_States_Declaration_of_Independence","year":1776,"date":"4 July 1776","title":"Congress adopts the US Declaration of Independence","note":"Delegates began signing the parchment copy in August.","source":"https://www.archives.gov/milestone-documents/declaration-of-independence"},
-  {"id":"Haitian_Declaration_of_Independence","year":1804,"date":"1 January 1804","title":"Haiti declares independence","note":"The declaration renounced French rule.","source":"https://repository.duke.edu/dc/haitideclaration/hdims01001"},
-  {"id":"Treaty_of_Waitangi","year":1840,"date":"6 February 1840","title":"The first signatories sign the Treaty of Waitangi","note":"Māori chiefs and a representative of the British Crown signed at Waitangi."},
-  {"id":"Great_Exhibition","year":1851,"date":"1 May 1851","title":"London’s Great Exhibition opens","note":"The Crystal Palace in Hyde Park housed the international exhibition."},
-  {"id":"Meiji_Restoration","year":1868,"date":"1868","title":"The Meiji Restoration returns power to Japan’s emperor","note":"Japan’s government and industry would change rapidly during the Meiji era."},
-  {"id":"1896_Summer_Olympics","year":1896,"date":"6 April 1896","title":"The first modern Olympics open in Athens","note":"Spectators filled the rebuilt Panathenaic Stadium.","source":"https://www.olympics.com/en/news/the-opening-ceremony"},
-  {"id":"Wright_Flyer","year":1903,"date":"17 December 1903","title":"Orville Wright pilots the Flyer’s first flight","note":"The flight lasted twelve seconds.","source":"https://airandspace.si.edu/stories/editorial/wright-brothers-made-history-kitty-hawk"},
-  {"id":"The_Rite_of_Spring","year":1913,"date":"29 May 1913","title":"The Rite of Spring premieres in Paris","note":"The Ballets Russes performed to music by Igor Stravinsky.","source":"https://www.britannica.com/topic/The-Rite-of-Spring"},
-  {"id":"Salt_March","year":1930,"date":"12 March 1930","title":"Gandhi sets out on the Salt March","note":"The marchers traveled on foot to Dandi to challenge the British salt laws.","source":"https://www.britannica.com/event/Salt-March"},
-  {"id":"Independence_Day_(India)","year":1947,"date":"15 August 1947","title":"India gains independence","note":"Independence preceded the establishment of the republic.","source":"https://www.pib.gov.in/PressReleasePage.aspx?PRID=2218369"},
-  {"id":"Sputnik_1","year":1957,"date":"4 October 1957","title":"Sputnik enters orbit","note":"Earth’s first artificial satellite was about the size of a beach ball.","source":"https://www.nasa.gov/history/65-years-ago-sputnik-ushers-in-the-space-age/"},
-  {"id":"Vostok_1","year":1961,"date":"12 April 1961","title":"Yuri Gagarin orbits Earth","note":"The Vostok flight took him around the planet once.","source":"https://www.nasa.gov/history/SP-4225/hhs/hhs.htm"},
-  {"id":"Apollo_11","year":1969,"date":"20 July 1969","title":"Apollo 11 lands on the Moon","note":"Eagle touched down in the Sea of Tranquility.","source":"https://www.nasa.gov/missions/apollo/apollo-11/apollo-11-mission-overview/"},
-  {"id":"Sydney_Opera_House","year":1973,"date":"20 October 1973","title":"The Sydney Opera House officially opens","note":"Its first opera production had already taken place the previous month.","source":"https://www.sydneyoperahouse.com/our-story/50-years-extraordinary-moments"},
-  {"id":"Fall_of_the_Berlin_Wall","year":1989,"date":"9 November 1989","title":"The Berlin Wall’s checkpoints open","note":"Crowds crossed at Bornholmer Straße that night.","source":"https://www.berlin.de/en/history/8482274-8619314-opening-and-fall-of-the-berlin-wall.en.html"},
-  {"id":"STS-31","year":1990,"date":"24 April 1990","title":"Hubble launches aboard Discovery","note":"The crew deployed the telescope the next day.","source":"https://www.nasa.gov/mission/sts-31/"},
-  {"id":"Presidency_of_Nelson_Mandela","year":1994,"date":"10 May 1994","title":"Nelson Mandela takes office as president","note":"His inauguration followed South Africa’s first national election open to voters of all races.","source":"https://www.gov.za/issues/milestones-20-years-freedom"},
-  {"id":"Dolly_(sheep)","year":1996,"date":"5 July 1996","title":"Dolly the sheep is born","note":"Dolly was born in Scotland; her birth was announced the following year.","source":"https://vet.ed.ac.uk/roslin/about/history/dolly/facts/life-of-dolly"}
+  {
+    "id": "Magna_Carta",
+    "year": 1215,
+    "date": "15 June 1215",
+    "title": "King John seals Magna Carta",
+    "note": "The king and rebel barons met at Runnymede."
+  },
+  {
+    "id": "Fall_of_Constantinople",
+    "year": 1453,
+    "date": "29 May 1453",
+    "title": "Constantinople falls to the Ottomans",
+    "note": "The capture ended a siege of 53 days."
+  },
+  {
+    "id": "Battle_of_Sekigahara",
+    "year": 1600,
+    "date": "21 October 1600",
+    "title": "The battle of Sekigahara is fought",
+    "note": "The battlefield lies in what is now Japan’s Gifu Prefecture."
+  },
+  {
+    "id": "First_Folio",
+    "year": 1623,
+    "date": "1623",
+    "title": "Shakespeare’s First Folio is published",
+    "note": "The collection appeared seven years after the playwright’s death."
+  },
+  {
+    "id": "United_States_Declaration_of_Independence",
+    "year": 1776,
+    "date": "4 July 1776",
+    "title": "Congress adopts the US Declaration of Independence",
+    "note": "Delegates began signing the parchment copy in August.",
+    "source": "https://www.archives.gov/milestone-documents/declaration-of-independence"
+  },
+  {
+    "id": "Haitian_Declaration_of_Independence",
+    "year": 1804,
+    "date": "1 January 1804",
+    "title": "Haiti declares independence",
+    "note": "The declaration renounced French rule.",
+    "source": "https://repository.duke.edu/dc/haitideclaration/hdims01001"
+  },
+  {
+    "id": "Treaty_of_Waitangi",
+    "year": 1840,
+    "date": "6 February 1840",
+    "title": "The first signatories sign the Treaty of Waitangi",
+    "note": "Māori chiefs and a representative of the British Crown signed at Waitangi."
+  },
+  {
+    "id": "Great_Exhibition",
+    "year": 1851,
+    "date": "1 May 1851",
+    "title": "London’s Great Exhibition opens",
+    "note": "The Crystal Palace in Hyde Park housed the international exhibition."
+  },
+  {
+    "id": "Meiji_Restoration",
+    "year": 1868,
+    "date": "1868",
+    "title": "The Meiji Restoration returns power to Japan’s emperor",
+    "note": "Japan’s government and industry would change rapidly during the Meiji era."
+  },
+  {
+    "id": "1896_Summer_Olympics",
+    "year": 1896,
+    "date": "6 April 1896",
+    "title": "The first modern Olympics open in Athens",
+    "note": "Spectators filled the rebuilt Panathenaic Stadium.",
+    "source": "https://www.olympics.com/en/news/the-opening-ceremony"
+  },
+  {
+    "id": "Wright_Flyer",
+    "year": 1903,
+    "date": "17 December 1903",
+    "title": "Orville Wright pilots the Flyer’s first flight",
+    "note": "The flight lasted twelve seconds.",
+    "source": "https://airandspace.si.edu/stories/editorial/wright-brothers-made-history-kitty-hawk"
+  },
+  {
+    "id": "The_Rite_of_Spring",
+    "year": 1913,
+    "date": "29 May 1913",
+    "title": "The Rite of Spring premieres in Paris",
+    "note": "The Ballets Russes performed to music by Igor Stravinsky.",
+    "source": "https://www.britannica.com/topic/The-Rite-of-Spring"
+  },
+  {
+    "id": "Salt_March",
+    "year": 1930,
+    "date": "12 March 1930",
+    "title": "Gandhi sets out on the Salt March",
+    "note": "The marchers traveled on foot to Dandi to challenge the British salt laws.",
+    "source": "https://www.britannica.com/event/Salt-March"
+  },
+  {
+    "id": "Independence_Day_(India)",
+    "year": 1947,
+    "date": "15 August 1947",
+    "title": "India gains independence",
+    "note": "Independence preceded the establishment of the republic.",
+    "source": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2218369"
+  },
+  {
+    "id": "Sputnik_1",
+    "year": 1957,
+    "date": "4 October 1957",
+    "title": "Sputnik enters orbit",
+    "note": "Earth’s first artificial satellite was about the size of a beach ball.",
+    "source": "https://www.nasa.gov/history/65-years-ago-sputnik-ushers-in-the-space-age/"
+  },
+  {
+    "id": "Vostok_1",
+    "year": 1961,
+    "date": "12 April 1961",
+    "title": "Yuri Gagarin orbits Earth",
+    "note": "The Vostok flight took him around the planet once.",
+    "source": "https://www.nasa.gov/history/SP-4225/hhs/hhs.htm"
+  },
+  {
+    "id": "Apollo_11",
+    "year": 1969,
+    "date": "20 July 1969",
+    "title": "Apollo 11 lands on the Moon",
+    "note": "Eagle touched down in the Sea of Tranquility.",
+    "source": "https://www.nasa.gov/missions/apollo/apollo-11/apollo-11-mission-overview/"
+  },
+  {
+    "id": "Sydney_Opera_House",
+    "year": 1973,
+    "date": "20 October 1973",
+    "title": "The Sydney Opera House officially opens",
+    "note": "Its first opera production had already taken place the previous month.",
+    "source": "https://www.sydneyoperahouse.com/our-story/50-years-extraordinary-moments"
+  },
+  {
+    "id": "Fall_of_the_Berlin_Wall",
+    "year": 1989,
+    "date": "9 November 1989",
+    "title": "The Berlin Wall’s checkpoints open",
+    "note": "Crowds crossed at Bornholmer Straße that night.",
+    "source": "https://www.berlin.de/en/history/8482274-8619314-opening-and-fall-of-the-berlin-wall.en.html"
+  },
+  {
+    "id": "STS-31",
+    "year": 1990,
+    "date": "24 April 1990",
+    "title": "Hubble launches aboard Discovery",
+    "note": "The crew deployed the telescope the next day.",
+    "source": "https://www.nasa.gov/mission/sts-31/"
+  },
+  {
+    "id": "Presidency_of_Nelson_Mandela",
+    "year": 1994,
+    "date": "10 May 1994",
+    "title": "Nelson Mandela takes office as president",
+    "note": "His inauguration followed South Africa’s first national election open to voters of all races.",
+    "source": "https://www.gov.za/issues/milestones-20-years-freedom"
+  },
+  {
+    "id": "Dolly_(sheep)",
+    "year": 1996,
+    "date": "5 July 1996",
+    "title": "Dolly the sheep is born",
+    "note": "Dolly was born in Scotland; her birth was announced the following year.",
+    "source": "https://vet.ed.ac.uk/roslin/about/history/dolly/facts/life-of-dolly"
+  },
+  {
+    "id": "Guiana_Space_Centre",
+    "year": 1979,
+    "date": "24 December 1979",
+    "title": "The first Ariane 1 rocket is launched from ELA-1 at the Guiana Space Centre",
+    "note": "The Guiana Space Centre, also called Europe's Spaceport, is a spaceport to the northwest of Kourou in French Guiana, an overseas region of France in South America.",
+    "source": "https://en.wikipedia.org/wiki/December_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pueblo_of_Isleta",
+    "year": 1987,
+    "date": "1 January 1987",
+    "title": "The Isleta Pueblo tribe elect Verna Williamson to be their first female governor",
+    "note": "Pueblo of Isleta is a federally recognized tribe and an unincorporated community in Bernalillo County, New Mexico, United States.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Negro_National_League_(1920–1931)",
+    "year": 1920,
+    "date": "2 May 1920",
+    "title": "The first game of the Negro National League baseball is played in Indianapolis",
+    "note": "The first Negro National League was a major professional baseball organization that laid the foundation for Black baseball in the early twentieth century.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Albert_Günther",
+    "year": 1867,
+    "date": "2 May 1867",
+    "title": "Albert Günther publishes the first study to recognise that the New Zealand tuatara is not a lizard",
+    "note": "Albert Karl Ludwig Gotthilf Günther, also Albert Charles Lewis Gotthilf Günther, was a German-born British zoologist, ichthyologist, and herpetologist.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Bardo_National_Museum_(Tunis)",
+    "year": 2015,
+    "date": "18 March 2015",
+    "title": "The Bardo National Museum in Tunisia is attacked by gunmen",
+    "note": "Twenty-four people, almost all tourists, are killed, and at least 50 other people are wounded.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Vladimir_Komarov",
+    "year": 1967,
+    "date": "24 April 1967",
+    "title": "Cosmonaut Vladimir Komarov dies in Soyuz 1 when its parachute fails to open",
+    "note": "Vladimir Mikhaylovich Komarov was a Soviet test pilot, aerospace engineer, and cosmonaut.",
+    "source": "https://en.wikipedia.org/wiki/April_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "The_Boston_News-Letter",
+    "year": 1704,
+    "date": "24 April 1704",
+    "title": "The first regular newspaper in British Colonial America, The Boston News-Letter, is published",
+    "note": "The Boston News-Letter, first published on April 24, 1704, is regarded as the first continuously published newspaper in the colony of Massachusetts.",
+    "source": "https://en.wikipedia.org/wiki/April_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "I_Lombardi_alla_prima_crociata",
+    "year": 1843,
+    "date": "11 February 1843",
+    "title": "Giuseppe Verdi's opera I Lombardi alla prima crociata receives its first performance in Milan, Italy",
+    "note": "Read more about I Lombardi alla prima crociata in the linked article.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Royal_Canadian_Institute",
+    "year": 1879,
+    "date": "8 February 1879",
+    "title": "Sandford Fleming first proposes the adoption of Universal Standard Time at a meeting of the Royal Canadian Institute",
+    "note": "The Royal Canadian Institute for Science (RCIScience), known also as the Royal Canadian Institute, is a Canadian nonprofit organization dedicated to connecting the public with Canadian science.",
+    "source": "https://en.wikipedia.org/wiki/February_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Prague_astronomical_clock",
+    "year": 1410,
+    "date": "9 October 1410",
+    "title": "The first known mention of the Prague astronomical clock",
+    "note": "The Prague astronomical clock, or Prague Orloj, is a medieval astronomical clock attached to the Old Town Hall in Prague, the capital of the Czech Republic.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "New_Zealand",
+    "year": 1962,
+    "date": "1 January 1962",
+    "title": "Western Samoa achieves independence from New Zealand; its name is changed to the Independent State of Western Samoa",
+    "note": "New Zealand is an island country in the southwestern Pacific Ocean.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Kentucky_Derby",
+    "year": 1952,
+    "date": "3 May 1952",
+    "title": "The Kentucky Derby is televised nationally for the first time, on the CBS network",
+    "note": "The Kentucky Derby is an American Grade I stakes race run at Churchill Downs in Louisville, Kentucky.",
+    "source": "https://en.wikipedia.org/wiki/May_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_John_II",
+    "year": 533,
+    "date": "2 January 533",
+    "title": "Mercurius becomes Pope John II, the first pope to adopt a new name upon elevation to the papacy",
+    "note": "Pope John II, born Mercurius, was the Bishop of Rome from 2 January 533 to his death on 8 May 535.",
+    "source": "https://en.wikipedia.org/wiki/January_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Hämeenlinna",
+    "year": 1862,
+    "date": "17 March 1862",
+    "title": "The first railway line of Finland between cities of Helsinki and Hämeenlinna, called Päärata, is officially opened",
+    "note": "Hämeenlinna is a city in Finland and the regional capital of Kanta-Häme.",
+    "source": "https://en.wikipedia.org/wiki/March_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Fox_Broadcasting_Company",
+    "year": 1986,
+    "date": "9 October 1986",
+    "title": "Fox Broadcasting Company (FBC) launches as the fourth US television network",
+    "note": "Fox Broadcasting Company, LLC is an American commercial broadcast television network serving as the flagship namesake property of Fox Corporation and operated through Fox Entertainment.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Gulf_of_Finland",
+    "year": 1789,
+    "date": "24 August 1789",
+    "title": "The first naval battle of the Svensksund begins in the Gulf of Finland",
+    "note": "The Gulf of Finland is the easternmost arm of the Baltic Sea.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Royal_Albert_Bridge",
+    "year": 1859,
+    "date": "4 May 1859",
+    "title": "The Cornwall Railway opens across the Royal Albert Bridge linking Devon and Cornwall in England",
+    "note": "The Royal Albert Bridge is a railway bridge which spans the River Tamar in England, between Plymouth, Devon and Saltash, Cornwall.",
+    "source": "https://en.wikipedia.org/wiki/May_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Berlingske",
+    "year": 1749,
+    "date": "3 January 1749",
+    "title": "The first issue of Berlingske, Denmark's oldest continually operating newspaper, is published",
+    "note": "Berlingske, previously known as Berlingske Tidende, is a Danish national daily newspaper based in Copenhagen.",
+    "source": "https://en.wikipedia.org/wiki/January_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Chandrayaan-3",
+    "year": 2023,
+    "date": "23 August 2023",
+    "title": "Chandrayaan-3 mission initiates first Moon landing in Indian history",
+    "note": "Chandrayaan-3 is the third mission in the Chandrayaan programme, a series of lunar-exploration missions developed by ISRO.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "King_of_Egypt",
+    "year": 1922,
+    "date": "15 March 1922",
+    "title": "After Egypt gains nominal independence from the United Kingdom, Fuad I becomes King of Egypt",
+    "note": "King of Egypt was the title used by the Head of State in the Kingdom of Egypt between 1922 and 1951.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Fabian_Society",
+    "year": 1884,
+    "date": "4 January 1884",
+    "title": "The Fabian Society is founded in London, United Kingdom",
+    "note": "The Fabian Society is a British socialist organisation whose purpose is to advance the principles of democratic socialism via gradualist and reformist effort in democracies, rather than by revolutionary overthrow.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "University_College_London",
+    "year": 1826,
+    "date": "11 February 1826",
+    "title": "University College London is founded as University of London",
+    "note": "University College London, which operates as UCL, is a public research university in London, England.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Vega",
+    "year": 1850,
+    "date": "17 July 1850",
+    "title": "Vega becomes the first star (other than the Sun) to be photographed",
+    "note": "Vega is the brightest star in the northern constellation of Lyra.",
+    "source": "https://en.wikipedia.org/wiki/July_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Portuguese_Restoration_War",
+    "year": 1663,
+    "date": "8 June 1663",
+    "title": "Portuguese Restoration War: Portuguese victory at the Battle of Ameixial ensures Portugal's independence from Spain",
+    "note": "The Portuguese Restoration War was a series of armed conflicts from December 1640 to February 1668 that ended with the Treaty of Lisbon which dissolved the Iberian Union between Portugal and Spain.",
+    "source": "https://en.wikipedia.org/wiki/June_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "British_Rail",
+    "year": 1948,
+    "date": "1 January 1948",
+    "title": "The British railway network is nationalized to form British Railways",
+    "note": "British Railways, which traded as British Rail after 1965, was the state-owned company responsible for rail transport in Great Britain from its inception in 1948 to its privatisation in the 1990s; the organisation was dissolved in 1997.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Lincoln_Tunnel",
+    "year": 1937,
+    "date": "22 December 1937",
+    "title": "The Lincoln Tunnel opens to traffic in New York City",
+    "note": "The Lincoln Tunnel is an approximately 1.5-mile-long (2.4 km) tunnel under the Hudson River, connecting Weehawken, New Jersey, to the west with Midtown Manhattan in New York City to the east.",
+    "source": "https://en.wikipedia.org/wiki/December_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Solar_cell",
+    "year": 1954,
+    "date": "25 April 1954",
+    "title": "The first practical solar cell is publicly demonstrated by Bell Telephone Laboratories",
+    "note": "A solar cell, also known as a photovoltaic cell, is an electronic device that converts the energy of light directly into electricity by using the photovoltaic effect.",
+    "source": "https://en.wikipedia.org/wiki/April_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Vladimir_Lenin",
+    "year": 1905,
+    "date": "23 December 1905",
+    "title": "The Tampere conference, where Vladimir Lenin and Joseph Stalin meet for the first time, is held in Tampere, Finland",
+    "note": "Vladimir Ilyich Ulyanov, better known as Vladimir Lenin, was a Russian revolutionary, politician, and political theorist.",
+    "source": "https://en.wikipedia.org/wiki/December_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_States_Space_Force_Combat_Forces_Command",
+    "year": 1982,
+    "date": "1 September 1982",
+    "title": "The United States Air Force Space Command is founded",
+    "note": "United States Space Force Combat Forces Command (USSF CFC) is the United States Space Force's space operations, cyber operations, and intelligence field command.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Les_Horribles_Cernettes",
+    "year": 1992,
+    "date": "18 July 1992",
+    "title": "A picture of Les Horribles Cernettes was taken, which became the first ever photo posted to the World Wide Web",
+    "note": "Les Horribles Cernettes was an all-female parody pop group, self-labelled \"the one and only High Energy Rock Band\", which was founded by employees of CERN and performed at CERN and other HEP-related events.",
+    "source": "https://en.wikipedia.org/wiki/July_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Santiniketan",
+    "year": 1921,
+    "date": "22 December 1921",
+    "title": "Opening of Visva-Bharati College, also known as Santiniketan College, now Visva Bharati University, India",
+    "note": "Santiniketan is a neighbourhood of Bolpur town in the Bolpur subdivision of Birbhum district in West Bengal, India, approximately 152 km north of Kolkata.",
+    "source": "https://en.wikipedia.org/wiki/December_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mont_Blanc_Tunnel",
+    "year": 1965,
+    "date": "16 July 1965",
+    "title": "The Mont Blanc Tunnel linking France and Italy opens",
+    "note": "The Mont Blanc Tunnel is a highway tunnel between France and Italy, under Mont Blanc in the Alps.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "African_National_Congress",
+    "year": 1980,
+    "date": "10 June 1980",
+    "title": "The African National Congress in South Africa publishes a call to fight from their imprisoned leader Nelson Mandela",
+    "note": "The African National Congress (ANC) is a political party in South Africa.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Adolf_Hitler",
+    "year": 1925,
+    "date": "18 July 1925",
+    "title": "Adolf Hitler publishes Mein Kampf",
+    "note": "Adolf Hitler was an Austrian-born German politician who was dictator of Germany in the Nazi era from 1933 until his suicide in 1945.",
+    "source": "https://en.wikipedia.org/wiki/July_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Linus_Torvalds",
+    "year": 1991,
+    "date": "25 August 1991",
+    "title": "Linus Torvalds announces the first version of what will become Linux",
+    "note": "Linus Benedict Torvalds is a Finnish and American software engineer who is the creator and lead developer of the Linux kernel since 1991.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pontiac_Silverdome",
+    "year": 1975,
+    "date": "23 August 1975",
+    "title": "The Pontiac Silverdome opens in Pontiac, Michigan, 30 miles (48 km) northwest of Detroit, Michigan",
+    "note": "The Pontiac Silverdome was a multi-purpose stadium in Pontiac, Michigan, United States.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "North_America",
+    "year": 2001,
+    "date": "15 November 2001",
+    "title": "Microsoft launches the Xbox game console in North America",
+    "note": "North America is a continent in the Northern and Western hemispheres.",
+    "source": "https://en.wikipedia.org/wiki/November_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "National_Union_of_Women's_Suffrage_Societies",
+    "year": 1907,
+    "date": "9 February 1907",
+    "title": "The Mud March is the first large procession organised by the National Union of Women's Suffrage Societies (NUWSS)",
+    "note": "The National Union of Women Suffrage Societies (NUWSS), also known as the suffragists was an organisation founded in 1897 of women's suffrage societies around the United Kingdom.",
+    "source": "https://en.wikipedia.org/wiki/February_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Richard_I_of_England",
+    "year": 1194,
+    "date": "2 May 1194",
+    "title": "King Richard I of England gives Portsmouth its first royal charter",
+    "note": "Richard I, known as Richard the Lionheart or Richard Cœur de Lion because of his reputation as a great military leader and warrior, was King of England from 1189 until his death in 1199.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Second_Battle_of_Villers-Bretonneux",
+    "year": 1918,
+    "date": "24 April 1918",
+    "title": "World War I: First tank-to-tank combat, during the second Battle of Villers-Bretonneux",
+    "note": "The Second Battle of Villers-Bretonneux took place from 24 to 27 April 1918, during the German spring offensive to the east of Amiens.",
+    "source": "https://en.wikipedia.org/wiki/April_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Limelight_Department",
+    "year": 1892,
+    "date": "11 June 1892",
+    "title": "The Limelight Department, one of the world's first film studios, is officially established in Melbourne, Australia",
+    "note": "The Limelight Department was one of the world's first film studios, beginning in 1898, operated by The Salvation Army in Melbourne, Australia.",
+    "source": "https://en.wikipedia.org/wiki/June_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "European_Central_Bank",
+    "year": 1998,
+    "date": "2 May 1998",
+    "title": "The European Central Bank is founded in Brussels in order to define and execute the European Union's monetary policy",
+    "note": "The European Central Bank (ECB) is the central component of the Eurosystem and the European System of Central Banks (ESCB) as well as one of seven institutions of the European Union.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Siege_of_Alkmaar",
+    "year": 1573,
+    "date": "8 October 1573",
+    "title": "The Spanish siege of Alkmaar ends with the first Dutch victory in the Eighty Years' War",
+    "note": "The siege of Alkmaar (1573) was a turning point in the Eighty Years' War.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Vehementer_Nos",
+    "year": 1906,
+    "date": "11 February 1906",
+    "title": "Pope Pius X publishes the encyclical Vehementer Nos",
+    "note": "Vehementer Nos was a papal encyclical promulgated by Pope Pius X on 11 February 1906.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Rose_Heilbron",
+    "year": 1972,
+    "date": "4 January 1972",
+    "title": "Rose Heilbron becomes the first female judge to sit at the Old Bailey in London, UK",
+    "note": "Dame Rose Heilbron, DBE was a British barrister who served later as a High Court judge.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Sheikh_Muszaphar_Shukor",
+    "year": 2007,
+    "date": "10 October 2007",
+    "title": "Sheikh Muszaphar Shukor becomes the first Malaysian in space on board Soyuz TMA-11",
+    "note": "Sheikh Muszaphar Shukor Al Masrie bin Sheikh Mustapha is a Malaysian doctor.",
+    "source": "https://en.wikipedia.org/wiki/October_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Saint_Petersburg_Metro",
+    "year": 1955,
+    "date": "15 November 1955",
+    "title": "The first part of the Saint Petersburg Metro is opened",
+    "note": "The Saint Petersburg Metro is a rapid transit system in Saint Petersburg, Russia.",
+    "source": "https://en.wikipedia.org/wiki/November_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Thorvald_Stauning",
+    "year": 1924,
+    "date": "24 April 1924",
+    "title": "Thorvald Stauning becomes premier of Denmark (first term)",
+    "note": "Thorvald August Marinus Stauning was the first social democratic prime minister of Denmark.",
+    "source": "https://en.wikipedia.org/wiki/April_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Charles_Kingsford_Smith",
+    "year": 1928,
+    "date": "9 June 1928",
+    "title": "Charles Kingsford Smith completes the first trans-Pacific flight in a Fokker Trimotor monoplane, the Southern Cross",
+    "note": "Sir Charles Edward Kingsford Smith, nicknamed Smithy, was an Australian aviation pioneer.",
+    "source": "https://en.wikipedia.org/wiki/June_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Cameroon",
+    "year": 1960,
+    "date": "1 January 1960",
+    "title": "Cameroon achieves independence from France and the United Kingdom",
+    "note": "Cameroon, officially the Republic of Cameroon, is a country in Central Africa.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "London_International_Surrealist_Exhibition",
+    "year": 1936,
+    "date": "11 June 1936",
+    "title": "The London International Surrealist Exhibition opens",
+    "note": "\nThe International Surrealist Exhibition was held from 11 June to 4 July 1936 at the New Burlington Galleries, near Savile Row in London's Mayfair, England.",
+    "source": "https://en.wikipedia.org/wiki/June_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Spacecraft",
+    "year": 1959,
+    "date": "4 January 1959",
+    "title": "Luna 1 becomes the first spacecraft to reach the vicinity of the Moon",
+    "note": "A spacecraft is a vehicle that is designed to fly and operate in outer space.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Constantinople_Conference",
+    "year": 1876,
+    "date": "23 December 1876",
+    "title": "First day of the Constantinople Conference which resulted in agreement for political reforms in the Balkans",
+    "note": "The 1876–77 Constantinople Conference of the Great Powers was held in Constantinople from 23 December 1876 until 20 January 1877.",
+    "source": "https://en.wikipedia.org/wiki/December_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mikhail_Nikolayevich_Muravyov",
+    "year": 1898,
+    "date": "24 August 1898",
+    "title": "Count Muravyov, Foreign Minister of Russia presents a rescript that convoked the First Hague Peace Conference",
+    "note": "Count Mikhail Nikolayevich Muravyov was a Russian statesman who advocated transferring the attention of Russian foreign policy from Europe to the Far East.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Sancti_Spiritu_(Argentina)",
+    "year": 1529,
+    "date": "1 September 1529",
+    "title": "The Spanish fort of Sancti Spiritu, the first one built in modern Argentina, is destroyed by indigenous people",
+    "note": "Sancti Spiritu was a fortification established in 1527 near the Paraná River by the explorer Sebastian Cabot.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_Red_Army",
+    "year": 1971,
+    "date": "15 July 1971",
+    "title": "The United Red Army is founded in Japan",
+    "note": "The United Red Army  (URA) was a far-left militant organization that operated in Japan between July 1971 and March 1972.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Spitzer_Space_Telescope",
+    "year": 2003,
+    "date": "25 August 2003",
+    "title": "NASA successfully launches the Spitzer Space Telescope into space",
+    "note": "The Spitzer Space Telescope, formerly the Space Infrared Telescope Facility (SIRTF), was an infrared space telescope that was active between 2003 and 2020.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "First_Opium_War",
+    "year": 1839,
+    "date": "23 August 1839",
+    "title": "The United Kingdom captures Hong Kong as a base as it prepares for the First Opium War with Qing China",
+    "note": "The First Opium War, also known as the Anglo-Chinese War, was a series of military engagements fought between the British Empire and Qing China between 1839 and 1842.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "The_Holocaust",
+    "year": 1942,
+    "date": "17 March 1942",
+    "title": "Holocaust: The first Jews from the Lvov Ghetto are gassed at the Belzec death camp in what is today eastern Poland",
+    "note": "The Holocaust, known in Hebrew as the Shoah, was the genocide of European Jews during World War II.",
+    "source": "https://en.wikipedia.org/wiki/March_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Chelsea,_London",
+    "year": 1873,
+    "date": "23 August 1873",
+    "title": "The Albert Bridge in Chelsea, London opens",
+    "note": "Chelsea is an area in West London, England, due south-west of Charing Cross by approximately 2.5 miles (4 km).",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "European_Southern_Observatory",
+    "year": 2016,
+    "date": "24 August 2016",
+    "title": "Proxima Centauri b, the closest exoplanet to Earth, is discovered by the European Southern Observatory",
+    "note": "The European Organisation for Astronomical Research in the Southern Hemisphere, commonly referred to as the European Southern Observatory (ESO), is an intergovernmental research organisation made up of 16 member states for ground-based astronomy.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Guayaquil",
+    "year": 1820,
+    "date": "9 October 1820",
+    "title": "Guayaquil declares independence from Spain",
+    "note": "Guayaquil, officially Santiago de Guayaquil, is the capital of Guayas Province and the seat of Guayaquil Canton.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Arthur_Rose_Eldred",
+    "year": 1912,
+    "date": "2 September 1912",
+    "title": "Arthur Rose Eldred is awarded the first Eagle Scout award of the Boy Scouts of America",
+    "note": "Arthur Rose Eldred was an American agricultural and railroad industry executive, civic leader, and the first Eagle Scout in the Boy Scouts of America (BSA).",
+    "source": "https://en.wikipedia.org/wiki/September_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Zapatista_Army_of_National_Liberation",
+    "year": 1983,
+    "date": "17 November 1983",
+    "title": "The Zapatista Army of National Liberation is founded in Mexico",
+    "note": "The Zapatista Army of National Liberation, often referred to as the Zapatistas, is a political and militant organization that controls a substantial amount of territory in Chiapas, the southernmost state of Mexico.",
+    "source": "https://en.wikipedia.org/wiki/November_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Open_Door_Policy",
+    "year": 1900,
+    "date": "2 January 1900",
+    "title": "American statesman and diplomat John Hay announces the Open Door Policy to promote trade with China",
+    "note": "The Open Door Policy was the United States diplomatic policy established in the late 19th and early 20th century that called for a system of equal trade and investment and to guarantee the territorial integrity of Qing China.",
+    "source": "https://en.wikipedia.org/wiki/January_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Philipp_Wolfrum",
+    "year": 1916,
+    "date": "16 July 1916",
+    "title": "Max Reger's Hebbel Requiem is first performed in a memorial concert for the composer, conducted by Philipp Wolfrum",
+    "note": "Philipp Julius Wolfrum was a German conductor, musicologist, composer, organist and academic teacher.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Lunar_Precursor_Robotic_Program",
+    "year": 2009,
+    "date": "9 October 2009",
+    "title": "First lunar impact of NASA's Lunar Precursor Robotic Program",
+    "note": "The Lunar Precursor Robotic Program (LPRP) is a NASA program that uses robotic spacecraft to prepare for future crewed missions to the Moon.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Washington,_D.C.",
+    "year": 1894,
+    "date": "1 May 1894",
+    "title": "Coxey's Army, the first significant American protest march, arrives in Washington, D.C.",
+    "note": "Washington, D.C., officially the District of Columbia and commonly shortened to Washington or DC, is the capital city of the United States, and its only federal district.",
+    "source": "https://en.wikipedia.org/wiki/May_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_States_Naval_Academy",
+    "year": 1854,
+    "date": "10 June 1854",
+    "title": "The United States Naval Academy graduates its first class of students",
+    "note": "The United States Naval Academy is a federal service academy adjacent to Annapolis, Maryland.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jesse_Fell",
+    "year": 1808,
+    "date": "11 February 1808",
+    "title": "Jesse Fell burns anthracite on an open grate as an experiment in heating homes with coal",
+    "note": "Jesse Fell was an early political leader in Wilkes-Barre, Pennsylvania.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mission_San_Luis_Obispo_de_Tolosa",
+    "year": 1772,
+    "date": "1 September 1772",
+    "title": "The Mission San Luis Obispo de Tolosa is founded in San Luis Obispo, California",
+    "note": "Mission San Luis Obispo de Tolosa is a Spanish mission founded September 1, 1772 by Father Junípero Serra in San Luis Obispo, California.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Colorado",
+    "year": 1858,
+    "date": "17 November 1858",
+    "title": "The city of Denver, Colorado is founded",
+    "note": "Colorado is a landlocked state in the Mountain West subregion of the Western United States.",
+    "source": "https://en.wikipedia.org/wiki/November_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Antonio_Meucci",
+    "year": 2002,
+    "date": "11 June 2002",
+    "title": "Antonio Meucci is acknowledged as the first inventor of the telephone by the United States Congress",
+    "note": "Antonio Santi Giuseppe Meucci was an Italian inventor and an associate of Giuseppe Garibaldi, a major political figure in the history of Italy.",
+    "source": "https://en.wikipedia.org/wiki/June_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Optical_fiber",
+    "year": 1977,
+    "date": "22 April 1977",
+    "title": "Optical fiber is first used to carry live telephone traffic",
+    "note": "An optical fiber, or optical fibre, is a flexible glass or plastic fiber that can transmit light from one end to the other.",
+    "source": "https://en.wikipedia.org/wiki/April_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Apollo_program",
+    "year": 1968,
+    "date": "24 December 1968",
+    "title": "Apollo program: The crew of Apollo 8 enters into orbit around the Moon, becoming the first humans to do so",
+    "note": "They performed ten lunar orbits, took the Earthrise photograph, broadcast live TV pictures, and read the first ten verses of Genesis.",
+    "source": "https://en.wikipedia.org/wiki/December_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Thirty-Three_Orientals",
+    "year": 1825,
+    "date": "25 August 1825",
+    "title": "The Thirty-Three Orientals declare the independence of Uruguay from Brazil",
+    "note": "The Treinta y Tres Orientales were a revolutionary group led by Juan Antonio Lavalleja and Manuel Oribe that started an insurrection against the Empire of Brazil during the Brazilian occupation of the Provincia Oriental.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Zollverein",
+    "year": 1834,
+    "date": "1 January 1834",
+    "title": "Most of Germany forms the Zollverein customs union, the first such union between sovereign states",
+    "note": "The Zollverein, or German Customs Union, was a coalition of German states formed to manage tariffs and economic policies within their territories.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Venice",
+    "year": 1849,
+    "date": "15 July 1849",
+    "title": "The first air raid in history occurs; Austria launches pilotless balloons against the city of Venice",
+    "note": "Venice is a coastal city in northeastern Italy and the capital of the region of Veneto, as well as the Metropolitan City of Venice.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "William_Lassell",
+    "year": 1846,
+    "date": "10 October 1846",
+    "title": "Triton, the largest moon of the planet Neptune, is discovered by English astronomer William Lassell",
+    "note": "William Lassell was an English merchant and astronomer.",
+    "source": "https://en.wikipedia.org/wiki/October_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Peruvian_Navy",
+    "year": 1821,
+    "date": "8 October 1821",
+    "title": "The Peruvian Navy is established during the War of Independence",
+    "note": "The Peruvian Navy is the branch of the Peruvian Armed Forces tasked with surveillance, patrol and defense on lakes, rivers and the Pacific Ocean up to 200 nautical miles from the Peruvian littoral.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Texas_Tech_University",
+    "year": 1923,
+    "date": "10 February 1923",
+    "title": "Texas Tech University is founded as Texas Technological College in Lubbock, Texas",
+    "note": "Texas Tech University is a public research university in Lubbock, Texas, United States.",
+    "source": "https://en.wikipedia.org/wiki/February_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Tang_dynasty",
+    "year": 759,
+    "date": "24 December 759",
+    "title": "Tang dynasty poet Du Fu departs for Chengdu, where he is hosted by fellow poet Pei Di",
+    "note": "The Tang dynasty was an imperial dynasty of China that ruled from 618 to 907, with an interregnum between 690 and 705.",
+    "source": "https://en.wikipedia.org/wiki/December_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Tremont_Street_subway",
+    "year": 1897,
+    "date": "1 September 1897",
+    "title": "The Tremont Street Subway in Boston opens, becoming the first underground rapid transit system in North America",
+    "note": "The Tremont Street subway in Boston's MBTA subway system is the oldest subway tunnel in North America and the third-oldest still in use worldwide to exclusively use electric traction, opening on September 1, 1897.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Geocaching",
+    "year": 2000,
+    "date": "3 May 2000",
+    "title": "The sport of geocaching begins, with the first cache placed and the coordinates from a GPS posted on Usenet",
+    "note": "Explore the linked article for more about Geocaching.",
+    "source": "https://en.wikipedia.org/wiki/May_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Governor_of_Puerto_Rico",
+    "year": 1949,
+    "date": "2 January 1949",
+    "title": "Luis Muñoz Marín is inaugurated as the first democratically elected Governor of Puerto Rico",
+    "note": "The governor of Puerto Rico is the head of government of the Commonwealth of Puerto Rico, an unincorporated territory of the United States.",
+    "source": "https://en.wikipedia.org/wiki/January_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Ohsumi_(satellite)",
+    "year": 1970,
+    "date": "11 February 1970",
+    "title": "Japan launches Ohsumi, becoming the fourth nation to put an object into orbit using its own booster",
+    "note": "Explore the linked article for more about Ohsumi (satellite).",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Voyager_1",
+    "year": 2012,
+    "date": "25 August 2012",
+    "title": "Voyager 1 spacecraft enters interstellar space, becoming the first man-made object to do so",
+    "note": "Voyager 1 is a space probe launched by NASA on September 5, 1977, as part of the Voyager program, to study the outer Solar System and the interstellar space beyond the Sun's heliosphere.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Galileo_Galilei",
+    "year": 1609,
+    "date": "25 August 1609",
+    "title": "Galileo Galilei demonstrates his first telescope to Venetian lawmakers",
+    "note": "Galileo di Vincenzo Bonaiuti de' Galilei, commonly referred to as Galileo Galilei or mononymously as Galileo, was an Italian astronomer, physicist, engineer and polymath.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Ioannis_Kapodistrias",
+    "year": 1831,
+    "date": "9 October 1831",
+    "title": "Ioannis Kapodistrias, the first head of state of independent Greece, is assassinated",
+    "note": "Count Ioannis Antoniou Kapodistrias, sometimes anglicized as John Capodistrias, was a Greek statesman who was one of the most distinguished politicians and diplomats of 19th-century Europe.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Rio_Carnival",
+    "year": 2021,
+    "date": "10 February 2021",
+    "title": "The traditional Carnival in Rio de Janeiro, Brazil is canceled for the first time because of the COVID-19 pandemic",
+    "note": "The Carnival in Rio de Janeiro is a festival held every year before Lent; it is considered the biggest celebration of Carnival in the world, with two million people per day on the streets.",
+    "source": "https://en.wikipedia.org/wiki/February_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "First_Taranaki_War",
+    "year": 1860,
+    "date": "17 March 1860",
+    "title": "The First Taranaki War begins in Taranaki, New Zealand, a major phase of the New Zealand Wars",
+    "note": "The First Taranaki War was an armed conflict over land ownership and sovereignty that took place between Māori and the Colony of New Zealand in the Taranaki region of New Zealand's North Island from March 1860 to March 1861.",
+    "source": "https://en.wikipedia.org/wiki/March_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_Nations",
+    "year": 1993,
+    "date": "23 April 1993",
+    "title": "Eritreans vote overwhelmingly for independence from Ethiopia in a United Nations-monitored referendum",
+    "note": "Read more about United Nations in the linked article.",
+    "source": "https://en.wikipedia.org/wiki/April_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Kiritimati",
+    "year": 1777,
+    "date": "24 December 1777",
+    "title": "James Cook reaches Kiritimati in the Pacific",
+    "note": "Kiritimati, also known as Christmas Island, is a Pacific Ocean atoll in the northern Line Islands.",
+    "source": "https://en.wikipedia.org/wiki/December_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jacques_Cartier",
+    "year": 1534,
+    "date": "9 June 1534",
+    "title": "Jacques Cartier is the first European to describe and map the Saint Lawrence River",
+    "note": "Jacques Cartier was a French maritime explorer from Brittany.",
+    "source": "https://en.wikipedia.org/wiki/June_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Fort_Wayne,_Indiana",
+    "year": 1871,
+    "date": "4 May 1871",
+    "title": "The National Association, the first professional baseball league, opens its first season in Fort Wayne, Indiana",
+    "note": "Fort Wayne is a city in Allen County, Indiana, United States, and its county seat.",
+    "source": "https://en.wikipedia.org/wiki/May_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "President_of_Portugal",
+    "year": 1911,
+    "date": "24 August 1911",
+    "title": "Manuel de Arriaga is elected and sworn in as the first President of Portugal",
+    "note": "The president of Portugal, officially the president of the Portuguese Republic, is the head of state and highest office of Portugal.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Old_Saybrook,_Connecticut",
+    "year": 1701,
+    "date": "9 October 1701",
+    "title": "The Collegiate School of Connecticut (later renamed Yale University) is chartered in Old Saybrook, Connecticut",
+    "note": "Old Saybrook is a town in Middlesex County, Connecticut, lying on the west bank of the Connecticut River at the point where it flows into Long Island Sound.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "King_James_Version",
+    "year": 1611,
+    "date": "2 May 1611",
+    "title": "The King James Version of the Bible is published for the first time in London, England, by printer Robert Barker",
+    "note": "Explore the linked article for more about King James Version.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "David_Livingstone",
+    "year": 1855,
+    "date": "16 November 1855",
+    "title": "David Livingstone becomes the first European to see the Victoria Falls in what is now Zambia-Zimbabwe",
+    "note": " David Livingstone was a Scottish doctor, Congregationalist, pioneer Christian missionary with the London Missionary Society, and an explorer in Africa.",
+    "source": "https://en.wikipedia.org/wiki/November_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Moscow_State_Academy_of_Choreography",
+    "year": 1773,
+    "date": "23 December 1773",
+    "title": "Moscow State Academy of Choreography is founded under the reign of Catherine II",
+    "note": "It is the second ballet school in Russia after Vaganova Academy of Russian Ballet.",
+    "source": "https://en.wikipedia.org/wiki/December_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Japanese_in_Hawaii",
+    "year": 1885,
+    "date": "8 February 1885",
+    "title": "The first Japanese immigrants arrive in Hawaii",
+    "note": "The Japanese in Hawaii are the second largest ethnic group in Hawaii.",
+    "source": "https://en.wikipedia.org/wiki/February_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jeanne_Mance",
+    "year": 1645,
+    "date": "8 October 1645",
+    "title": "Jeanne Mance opens the first lay hospital of North America in Montreal",
+    "note": "Jeanne Mance was a French nurse and settler of New France.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "John_Robertson_Duigan",
+    "year": 1910,
+    "date": "16 July 1910",
+    "title": "John Robertson Duigan makes the first flight of the Duigan pusher biplane, the first aircraft built in Australia",
+    "note": "John Robertson Duigan MC was an Australian pioneer aviator who built and flew the first Australian-made aircraft.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Robert_Ballard",
+    "year": 1985,
+    "date": "1 September 1985",
+    "title": "The wreck of the Titanic is discovered by an American-French expedition led by Robert Ballard and Jean-Louis Michel",
+    "note": "Robert Duane Ballard is an American retired Navy officer and a professor of oceanography at the University of Rhode Island who is noted for his work in underwater archaeology and marine geology.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Guru_Granth_Sahib",
+    "year": 1604,
+    "date": "1 September 1604",
+    "title": "Adi Granth, now known as Guru Granth Sahib, the holy scripture of Sikhs, is first installed at Harmandir Sahib",
+    "note": "The Guru Granth Sahib is the central holy religious scripture of Sikhism, regarded by Sikhs as the final, sovereign, and eternal Guru following the lineage of the ten human gurus of the religion.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Netherlands",
+    "year": 1988,
+    "date": "15 November 1988",
+    "title": "The first Fairtrade label, Max Havelaar, is launched in the Netherlands",
+    "note": "The Netherlands, also informally known as Holland, is a country in Northwestern Europe, with overseas territories in the Caribbean.",
+    "source": "https://en.wikipedia.org/wiki/November_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Cer",
+    "year": 1914,
+    "date": "24 August 1914",
+    "title": "World War I: The Battle of Cer ends as the first Allied victory in the war",
+    "note": "The Battle of Cer was a military campaign fought between Austria-Hungary and Serbia in August 1914, starting three weeks into the Serbian Campaign of 1914, the initial military action of the First World War.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Melbourne",
+    "year": 1877,
+    "date": "15 March 1877",
+    "title": "First ever official cricket test match is played: Australia vs England at the MCG Stadium, in Melbourne, Australia",
+    "note": "Melbourne is the capital and most populous city of the Australian state of Victoria and the second-most populous city in Australia.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Tartu_Art_Museum",
+    "year": 1940,
+    "date": "17 November 1940",
+    "title": "The Tartu Art Museum is established in Tartu, Estonia",
+    "note": "The Tartu Art Museum is a state-owned museum of art located in Tartu, Estonia.",
+    "source": "https://en.wikipedia.org/wiki/November_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Council_of_Chalcedon",
+    "year": 451,
+    "date": "8 October 451",
+    "title": "The first session of the Council of Chalcedon begins",
+    "note": "The Council of Chalcedon was the fourth ecumenical council of the Christian Church.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_States_Congress",
+    "year": 1800,
+    "date": "17 November 1800",
+    "title": "The United States Congress holds its first session in Washington, D.C.",
+    "note": "The United States Congress is the legislative branch of the federal government of the United States.",
+    "source": "https://en.wikipedia.org/wiki/November_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Silent_Night",
+    "year": 1818,
+    "date": "24 December 1818",
+    "title": "The first performance of \"Silent Night\" takes place in the Nikolauskirche in Oberndorf, Austria",
+    "note": "\"Silent Night\" is a popular Christmas carol, composed in 1818 by Franz Xaver Gruber to lyrics by Joseph Mohr in Oberndorf bei Salzburg, Austria.",
+    "source": "https://en.wikipedia.org/wiki/December_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Haile_Selassie",
+    "year": 1931,
+    "date": "16 July 1931",
+    "title": "Emperor Haile Selassie signs the first constitution of Ethiopia",
+    "note": "Haile Selassie I was Emperor of Ethiopia from 1930 to 1974.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Henry_James",
+    "year": 1915,
+    "date": "16 July 1915",
+    "title": "Henry James becomes a British citizen to highlight his commitment to Britain during the first World War",
+    "note": "Henry James was an American-British author.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "President_of_Panama",
+    "year": 1999,
+    "date": "2 May 1999",
+    "title": "Panamanian general election: Mireya Moscoso becomes the first woman to be elected President of Panama",
+    "note": "This article lists the heads of state of Panama since the short-lived first independence from the Republic of New Granada in 1840 and the final secession from Colombia in 1903.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Sachsenhausen_concentration_camp",
+    "year": 1945,
+    "date": "22 April 1945",
+    "title": "World War II: Sachsenhausen concentration camp is liberated by soldiers of the Red Army and Polish First Army",
+    "note": "Sachsenhausen or Sachsenhausen-Oranienburg was a Nazi concentration camp in Oranienburg, Germany, used from 1936 until April 1945, shortly before the defeat of Nazi Germany in May.",
+    "source": "https://en.wikipedia.org/wiki/April_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Athens",
+    "year": 1837,
+    "date": "3 May 1837",
+    "title": "The University of Athens is founded in Athens, Greece",
+    "note": "Athens is the capital and largest city of Greece.",
+    "source": "https://en.wikipedia.org/wiki/May_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Al_Jazeera_English",
+    "year": 2006,
+    "date": "15 November 2006",
+    "title": "Al Jazeera English launches worldwide",
+    "note": "Al Jazeera English, often known as Al Jazeera, is a 24-hour English-language news channel operating under Al Jazeera Media Network, which is partially funded by the government of Qatar.",
+    "source": "https://en.wikipedia.org/wiki/November_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "António_Mota",
+    "year": 1543,
+    "date": "25 August 1543",
+    "title": "António Mota and a few companions become the first Europeans to visit Japan",
+    "note": "António da Mota was a Portuguese trader and explorer who, in 1543, together with Fernão Mendes Pinto and Francisco Zeimoto, became one of the first Europeans to set foot in Japan.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Stephen_I_of_Hungary",
+    "year": 1001,
+    "date": "1 January 1001",
+    "title": "Grand Prince Stephen I of Hungary is named the first King of Hungary by Pope Sylvester II (probable)",
+    "note": "Stephen I, also known as King Saint Stephen, was the last grand prince of the Hungarians between 997 and 1000 or 1001, and the first king of Hungary from 1000 or 1001 until his death in 1038.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jane_Austen",
+    "year": 1815,
+    "date": "23 December 1815",
+    "title": "The novel Emma by Jane Austen is first published",
+    "note": "Jane Austen was an English writer known primarily for her six novels, which implicitly interpret, critique, and comment on the English landed gentry at the end of the 18th century.",
+    "source": "https://en.wikipedia.org/wiki/December_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Chester_Racecourse",
+    "year": 1539,
+    "date": "9 February 1539",
+    "title": "The first recorded race is held on Chester Racecourse, known as the Roodee",
+    "note": "Chester Racecourse, also known as the Roodee, is a racecourse located in Chester, England.",
+    "source": "https://en.wikipedia.org/wiki/February_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Boston_Latin_School",
+    "year": 1635,
+    "date": "23 April 1635",
+    "title": "The first public school in the United States, the Boston Latin School, is founded",
+    "note": "The Boston Latin School is a magnet Latin grammar state school in Boston, Massachusetts.",
+    "source": "https://en.wikipedia.org/wiki/April_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "The_Times",
+    "year": 1788,
+    "date": "1 January 1788",
+    "title": "The first edition of The Times of London, previously The Daily Universal Register, is published",
+    "note": "The Times is a British daily national newspaper based in London.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "John_McCloskey",
+    "year": 1875,
+    "date": "15 March 1875",
+    "title": "Archbishop of New York John McCloskey is named the first cardinal in the United States",
+    "note": "John McCloskey was an American Catholic prelate who served as the first American-born archbishop of New York from 1864 until his death in 1885.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "First_Jewish–Roman_War",
+    "year": 70,
+    "date": "15 July 70",
+    "title": "First Jewish–Roman War: Titus and his armies breach the walls of Jerusalem",
+    "note": "(17th of Tammuz in the Hebrew calendar).",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mission_San_Diego_de_Alcalá",
+    "year": 1769,
+    "date": "16 July 1769",
+    "title": "Father Junípero Serra founds California's first mission, Mission San Diego de Alcalá",
+    "note": "Mission Basilica San Diego de Alcalá was the second Franciscan-founded mission in the Californias, a province of New Spain.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Thailand",
+    "year": 1933,
+    "date": "15 November 1933",
+    "title": "Thailand holds its first election",
+    "note": "Thailand, officially the Kingdom of Thailand, and formerly known as Siam, is a country located in Mainland Southeast Asia.",
+    "source": "https://en.wikipedia.org/wiki/November_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Please_Please_Me",
+    "year": 1963,
+    "date": "11 February 1963",
+    "title": "The Beatles record their first album, Please Please Me",
+    "note": "Please Please Me is the debut studio album by English rock band the Beatles.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "American_Legion",
+    "year": 1919,
+    "date": "15 March 1919",
+    "title": "The American Legion is founded",
+    "note": "The American Legion, commonly known as the Legion, is an organization of U.S. veterans headquartered in Indianapolis, Indiana.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Joseph_Jenkins_Roberts",
+    "year": 1848,
+    "date": "3 January 1848",
+    "title": "Joseph Jenkins Roberts is sworn in as the first president of Liberia",
+    "note": "Joseph Jenkins Roberts was an African American merchant who emigrated to Liberia in 1829, where he became a politician.",
+    "source": "https://en.wikipedia.org/wiki/January_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Kallikratis_executions",
+    "year": 1943,
+    "date": "8 October 1943",
+    "title": "World War II: Around 30 civilians are executed by Friedrich Schubert's paramilitary group in Kallikratis, Crete",
+    "note": "\nThe Kallikratis executions refer to the mass execution, by German Army and Greek collaborationist paramilitary forces, of some 30 mostly male civilians of Kallikratis, in southwest Crete, on 8 October 1943.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Christopher_Columbus",
+    "year": 1492,
+    "date": "10 October 1492",
+    "title": "The crew of Christopher Columbus's ship, the Santa Maria, attempt a mutiny",
+    "note": "Explore the linked article for more about Christopher Columbus.",
+    "source": "https://en.wikipedia.org/wiki/October_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Mello",
+    "year": 1358,
+    "date": "10 June 1358",
+    "title": "Battle of Mello: The peasant forces of the Jacquerie are crushed by the army of the French nobility",
+    "note": "The Battle of Mello was the decisive and largest engagement of the Peasant Jacquerie of 1358, a rebellion of peasants in the Beauvais region of France, a major upheaval in this region at the height of the Hundred Years' War with England.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_Honorius_III",
+    "year": 1216,
+    "date": "22 December 1216",
+    "title": "Pope Honorius III approves the Dominican Order through the papal bull of confirmation Religiosam vitam",
+    "note": "Pope Honorius III, born Cencio Savelli, was head of the Catholic Church and ruler of the Papal States from 18 July 1216 to his death.",
+    "source": "https://en.wikipedia.org/wiki/December_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Seventh_Crusade",
+    "year": 1250,
+    "date": "8 February 1250",
+    "title": "Seventh Crusade: Crusaders engage Ayyubid forces in the Battle of Al Mansurah",
+    "note": "The Seventh Crusade (1248–1254) was the first of the two crusades led by Louis IX of France.",
+    "source": "https://en.wikipedia.org/wiki/February_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "World_War_II",
+    "year": 1941,
+    "date": "2 January 1941",
+    "title": "World War II: The Cardiff Blitz severely damages the cathedral in Cardiff, Wales",
+    "note": "World War II, or the Second World War, was a global conflict between two coalitions: the Allies and the Axis powers.",
+    "source": "https://en.wikipedia.org/wiki/January_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Fushimi-ku",
+    "year": 2019,
+    "date": "18 July 2019",
+    "title": "A man sets fire to an anime studio in Fushimi-ku, Kyoto, Japan, killing 36 people and injuring dozens of others",
+    "note": "Fushimi  is one of the eleven wards in the city of Kyoto, in Kyoto Prefecture, Japan.",
+    "source": "https://en.wikipedia.org/wiki/July_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Imperial_Trans-Antarctic_Expedition",
+    "year": 1909,
+    "date": "4 January 1909",
+    "title": "Explorer Aeneas Mackintosh of the Imperial Trans-Antarctic Expedition escaped death by fleeing across ice floes",
+    "note": "The Imperial Trans-Antarctic Expedition of 1914–1917 is considered to be the last major expedition of the Heroic Age of Antarctic Exploration.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Frederick_II,_Holy_Roman_Emperor",
+    "year": 1229,
+    "date": "18 March 1229",
+    "title": "Frederick II, Holy Roman Emperor, declares himself King of Jerusalem in the Sixth Crusade",
+    "note": "Frederick II was King of Sicily from 1198, King of Germany from 1212, King of Italy and Holy Roman Emperor from 1220, and King of Jerusalem from 1225 to 1228.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "First_Vatican_Council",
+    "year": 1870,
+    "date": "18 July 1870",
+    "title": "The First Vatican Council decrees the dogma of papal infallibility",
+    "note": "The First Ecumenical Council of the Vatican, commonly known as the First Vatican Council or Vatican I, was the 20th ecumenical council of the Catholic Church, held three centuries after the preceding Council of Trent which was adjourned in 1563.",
+    "source": "https://en.wikipedia.org/wiki/July_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Hürtgen_Forest",
+    "year": 1944,
+    "date": "16 November 1944",
+    "title": "World War II: In support of the Battle of Hürtgen Forest, the town of Düren is destroyed by Allied aircraft",
+    "note": "Explore the linked article for more about Battle of Hürtgen Forest.",
+    "source": "https://en.wikipedia.org/wiki/November_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Sultanate_of_Sulu",
+    "year": 1405,
+    "date": "17 November 1405",
+    "title": "Sharif ul-Hāshim establishes the Sultanate of Sulu",
+    "note": "Read more about Sultanate of Sulu in the linked article.",
+    "source": "https://en.wikipedia.org/wiki/November_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Demetrius_Zvonimir",
+    "year": 1075,
+    "date": "8 October 1075",
+    "title": "Dmitar Zvonimir is crowned King of Croatia",
+    "note": "Demetrius Zvonimir was a King of Croatia and Dalmatia from 1075 or 1076 until his death in 1089.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jardin_des_Plantes",
+    "year": 1793,
+    "date": "10 June 1793",
+    "title": "The Jardin des Plantes museum opens in Paris",
+    "note": "A year later, it becomes the first public zoo.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Tvrtko_I_of_Bosnia",
+    "year": 1355,
+    "date": "1 September 1355",
+    "title": "King Tvrtko I of Bosnia writes In castro nostro Vizoka vocatum from the Old town of Visoki",
+    "note": "Stephen Tvrtko I was the first king of Bosnia.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Nationalization_of_the_Iranian_oil_industry",
+    "year": 1951,
+    "date": "15 March 1951",
+    "title": "The Iranian oil industry is nationalized",
+    "note": "The nationalization of the Iranian oil industry resulted from a movement in the Iranian parliament (Majlis) to seize control of Iran's oil industry, which had been run by private companies, largely controlled by foreign interests.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_States_Military_Academy",
+    "year": 1802,
+    "date": "16 March 1802",
+    "title": "The Army Corps of Engineers is established to found and operate the United States Military Academy at West Point",
+    "note": "The United States Military Academy (USMA), commonly known as West Point, is a United States service academy in West Point, New York, that educates cadets for service as commissioned officers in the United States Army.",
+    "source": "https://en.wikipedia.org/wiki/March_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Me_at_the_zoo",
+    "year": 2005,
+    "date": "23 April 2005",
+    "title": "The first YouTube video, titled \"Me at the zoo\", is published by co-founder Jawed Karim",
+    "note": "\"Me at the zoo\" is a YouTube video uploaded on April 23, 2005, recognized as the first video uploaded to the platform.",
+    "source": "https://en.wikipedia.org/wiki/April_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Academy_of_Motion_Picture_Arts_and_Sciences",
+    "year": 1927,
+    "date": "4 May 1927",
+    "title": "The Academy of Motion Picture Arts and Sciences is incorporated",
+    "note": "The Academy of Motion Picture Arts and Sciences is a professional honorary organization in Beverly Hills, California, U.S., with the stated goal of advancing the arts and sciences of motion pictures.",
+    "source": "https://en.wikipedia.org/wiki/May_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Treaty_of_Loudun",
+    "year": 1616,
+    "date": "3 May 1616",
+    "title": "Treaty of Loudun ends a French civil war",
+    "note": "Explore the linked article for more about Treaty of Loudun.",
+    "source": "https://en.wikipedia.org/wiki/May_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Reassertion_of_British_sovereignty_over_the_Falkland_Islands_(1833)",
+    "year": 1833,
+    "date": "3 January 1833",
+    "title": "Captain James Onslow, in the Clio, reasserts British sovereignty over the Falkland Islands",
+    "note": "Explore the linked article for more about Reassertion of British sovereignty over the Falkland Islands (1833).",
+    "source": "https://en.wikipedia.org/wiki/January_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Catherine_of_Aragon",
+    "year": 1509,
+    "date": "11 June 1509",
+    "title": "Henry VIII of England marries Catherine of Aragon",
+    "note": "Catherine of Aragon was Queen of England as the first wife of Henry VIII from their marriage on 11 June 1509 until its annulment on 23 May 1533.",
+    "source": "https://en.wikipedia.org/wiki/June_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Viking_program",
+    "year": 1976,
+    "date": "3 September 1976",
+    "title": "Viking program: The American Viking 2 spacecraft lands at Utopia Planitia on Mars",
+    "note": "The Viking program consisted of a pair of identical American space probes, Viking 1 and Viking 2 both launched in 1975, and landed on Mars in 1976.",
+    "source": "https://en.wikipedia.org/wiki/September_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Bihar_school_meal_poisoning_incident",
+    "year": 2013,
+    "date": "16 July 2013",
+    "title": "As many as 27 children die and 25 others are hospitalized after eating lunch served at their school in eastern India",
+    "note": "On 16 July 2013, 23–27 students died, and dozens more fell ill at a primary school in the village of Gandaman in the Saran district of the Indian state of Bihar after eating a Midday Meal contaminated with pesticide.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_Damasus_II",
+    "year": 1048,
+    "date": "17 July 1048",
+    "title": "Damasus II is elected pope, and dies 23 days later",
+    "note": "Pope Damasus II was the Bishop of Rome and ruler of the Papal States from 17 July 1048 to his death on 9 August that same year.",
+    "source": "https://en.wikipedia.org/wiki/July_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_Gregory_I",
+    "year": 590,
+    "date": "3 September 590",
+    "title": "Consecration of Pope Gregory I (Gregory the Great)",
+    "note": "Pope Gregory I, commonly known as Saint Gregory the Great, was the 64th Bishop of Rome from 3 September 590 until his death on 12 March 604.",
+    "source": "https://en.wikipedia.org/wiki/September_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Stephen_Langton",
+    "year": 1207,
+    "date": "15 July 1207",
+    "title": "King John of England expels Canterbury monks for supporting Archbishop Stephen Langton",
+    "note": "Stephen Langton was an English cardinal of the Catholic Church and Archbishop of Canterbury from 1207 until his death in 1228.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "War_of_the_Portuguese_Succession",
+    "year": 1580,
+    "date": "25 August 1580",
+    "title": "War of the Portuguese Succession: Spanish victory at the Battle of Alcântara brings about the Iberian Union",
+    "note": "Explore the linked article for more about War of the Portuguese Succession.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Ommen",
+    "year": 1248,
+    "date": "25 August 1248",
+    "title": "The Dutch city of Ommen receives city rights and fortification rights from Otto III, the Archbishop of Utrecht",
+    "note": "Ommen is a municipality and a Hanseatic city in the eastern Netherlands.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Claudia_Octavia",
+    "year": 53,
+    "date": "9 June 53",
+    "title": "The Roman emperor Nero marries Claudia Octavia",
+    "note": "Claudia Octavia was a Roman empress.",
+    "source": "https://en.wikipedia.org/wiki/June_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Burj_Khalifa",
+    "year": 2010,
+    "date": "4 January 2010",
+    "title": "The Burj Khalifa, the current tallest building in the world, officially opens in Dubai",
+    "note": "The Burj Khalifa is a megatall skyscraper in Dubai, United Arab Emirates.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "North_Borneo",
+    "year": 1946,
+    "date": "15 July 1946",
+    "title": "The State of North Borneo, now Sabah, Malaysia, is annexed by the United Kingdom",
+    "note": "North Borneo was a British protectorate in the northern part of the island of Borneo.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Treaty_of_the_Triple_Alliance",
+    "year": 1865,
+    "date": "1 May 1865",
+    "title": "The Empire of Brazil, Argentina, and Uruguay sign the Treaty of the Triple Alliance",
+    "note": "The Treaty of the Triple Alliance allied the Empire of Brazil, Argentina, and Uruguay against Paraguay.",
+    "source": "https://en.wikipedia.org/wiki/May_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Google_Chrome",
+    "year": 2008,
+    "date": "2 September 2008",
+    "title": "Google launches its Google Chrome web browser",
+    "note": "Google Chrome is a cross-platform web browser developed by Google.",
+    "source": "https://en.wikipedia.org/wiki/September_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Macario_Sakay",
+    "year": 1902,
+    "date": "18 March 1902",
+    "title": "Macario Sakay issues Presidential Order No",
+    "note": "1 of his Tagalog Republic.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Victoria_Cross",
+    "year": 1857,
+    "date": "16 November 1857",
+    "title": "Second relief of Lucknow: Twenty-four Victoria Crosses are awarded, the most in a single day",
+    "note": "The Victoria Cross (VC) is the highest and most prestigious decoration of the British decorations system.",
+    "source": "https://en.wikipedia.org/wiki/November_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "John_Ambrose_Fleming",
+    "year": 1904,
+    "date": "16 November 1904",
+    "title": "English engineer John Ambrose Fleming receives a patent for the thermionic valve (vacuum tube)",
+    "note": "Sir John Ambrose Fleming was a British electrical engineer and physicist.",
+    "source": "https://en.wikipedia.org/wiki/November_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Annapolis,_Maryland",
+    "year": 1845,
+    "date": "10 October 1845",
+    "title": "In Annapolis, Maryland, the Naval School (later the United States Naval Academy) opens with 50 students",
+    "note": "Annapolis is the capital of the U.S. state of Maryland.",
+    "source": "https://en.wikipedia.org/wiki/October_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Voyager_2",
+    "year": 1981,
+    "date": "25 August 1981",
+    "title": "Voyager 2 spacecraft makes its closest approach to Saturn",
+    "note": "Voyager 2 is a space probe launched by NASA on August 20, 1977, as a part of the Voyager program.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Toulouse_(721)",
+    "year": 721,
+    "date": "9 June 721",
+    "title": "Odo of Aquitaine defeats the Moors in the Battle of Toulouse",
+    "note": "Read more about Battle of Toulouse (721) in the linked article.",
+    "source": "https://en.wikipedia.org/wiki/June_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Kunovica",
+    "year": 1444,
+    "date": "2 January 1444",
+    "title": "Christian forces defeat the Turks in the battle of Kunovica",
+    "note": "The Battle of Kunovica or Battle at Kunovitsa was fought between crusaders led by John Hunyadi and the armies of the Ottoman Empire on 2 or 5 January 1444, near the mountain Kunovica between Pirot and Niš, in present-day Serbia.",
+    "source": "https://en.wikipedia.org/wiki/January_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Alexandria",
+    "year": 1882,
+    "date": "11 June 1882",
+    "title": "Nationalist riots break out in Alexandria directed against foreign domination",
+    "note": "Alexandria is a major city in Egypt.",
+    "source": "https://en.wikipedia.org/wiki/June_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Sobota",
+    "year": 1655,
+    "date": "23 August 1655",
+    "title": "Battle of Sobota: The Swedish Empire led by Charles X Gustav defeats the Polish–Lithuanian Commonwealth",
+    "note": "The Battle of Sobota took place near Sobota, Poland, on 23 August 1655, between the armies of the Polish–Lithuanian Commonwealth on the one hand and of Sweden on the other.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Burning_of_Washington",
+    "year": 1814,
+    "date": "24 August 1814",
+    "title": "British troops capture Washington, D.C.",
+    "note": "The burning of Washington, also known as the capture of Washington, was a successful British amphibious attack conducted by Rear Admiral George Cockburn as part of the Chesapeake campaign planned by Admiral John Warren.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mariupol_theatre_airstrike",
+    "year": 2022,
+    "date": "16 March 2022",
+    "title": "Mariupol theatre airstrike during the siege of Mariupol",
+    "note": "On 16 March 2022, during the Russian invasion of Ukraine, the Russian Armed Forces bombed the Mariupol theatre in Mariupol, Ukraine.",
+    "source": "https://en.wikipedia.org/wiki/March_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Iowa_City,_Iowa",
+    "year": 1856,
+    "date": "9 June 1856",
+    "title": "Five hundred Mormons leave Iowa City, Iowa for the Mormon Trail",
+    "note": "Iowa City is the largest city in Johnson County, Iowa, United States, and its county seat.",
+    "source": "https://en.wikipedia.org/wiki/June_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Virginia",
+    "year": 2011,
+    "date": "23 August 2011",
+    "title": "A magnitude 5.8 (class: moderate) earthquake occurs in Virginia",
+    "note": "Virginia, officially the Commonwealth of Virginia, is a state in the Southeastern and Mid-Atlantic regions of the United States between the Atlantic Coast and the Appalachian Mountains.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "English_invasion_of_Scotland_(1482)",
+    "year": 1482,
+    "date": "24 August 1482",
+    "title": "The town and castle of Berwick-upon-Tweed is captured from Scotland by an English army",
+    "note": "In July 1482, an English army invaded Scotland during the Anglo-Scottish Wars.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Isabella_of_France",
+    "year": 1326,
+    "date": "16 November 1326",
+    "title": "King Edward II of England is captured by forces of his wife Isabella of France",
+    "note": "Isabella of France was Queen of England as the wife of King Edward II, and de facto regent of England from 1327 until 1330.",
+    "source": "https://en.wikipedia.org/wiki/November_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "1964_Summer_Olympics",
+    "year": 1964,
+    "date": "10 October 1964",
+    "title": "The Tokyo Summer Olympics opening ceremony is the first to be relayed live by satellites",
+    "note": "The 1964 Summer Olympics, officially the Games of the XVIII Olympiad and commonly known as Tokyo 1964, were an international multi-sport event held from 10 to 24 October 1964 in Tokyo, Japan.",
+    "source": "https://en.wikipedia.org/wiki/October_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Massachusetts",
+    "year": 1812,
+    "date": "11 February 1812",
+    "title": "Massachusetts governor Elbridge Gerry is accused of \"gerrymandering\" for the first time",
+    "note": "Massachusetts, officially the Commonwealth of Massachusetts, is a state in the New England region of the Northeastern United States.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mary,_Queen_of_Scots",
+    "year": 1558,
+    "date": "24 April 1558",
+    "title": "Mary, Queen of Scots, marries the Dauphin of France, François, at Notre-Dame de Paris",
+    "note": "Mary, Queen of Scots, also known as Mary Stuart or Mary I of Scotland, was Queen of Scotland from 14 December 1542 until her forced abdication on 24 July 1567.",
+    "source": "https://en.wikipedia.org/wiki/April_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Stockholms_Banco",
+    "year": 1661,
+    "date": "16 July 1661",
+    "title": "The first banknotes in Europe are issued by the Swedish bank Stockholms Banco",
+    "note": "Stockholms Banco was the first European bank to print banknotes.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mladen_II_Šubić_of_Bribir",
+    "year": 1322,
+    "date": "8 October 1322",
+    "title": "Mladen II Šubić of Bribir is deposed as the Croatian Ban after the Battle of Bliska",
+    "note": "Mladen II Šubić of Bribir, a Croatian leader and member of the Šubić noble family, was a Ban of Croatia and Lord of all of Bosnia.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Dominican_Republic",
+    "year": 1822,
+    "date": "9 February 1822",
+    "title": "Haiti attacks the newly established Dominican Republic on the other side of the island of Hispaniola",
+    "note": "The Dominican Republic is an island country on the eastern part of the Caribbean island of Hispaniola in the Greater Antilles of the Caribbean Sea in the North Atlantic Ocean.",
+    "source": "https://en.wikipedia.org/wiki/February_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Formosat-5",
+    "year": 2017,
+    "date": "24 August 2017",
+    "title": "The National Space Agency of Taiwan successfully launches the observation satellite Formosat-5 into space",
+    "note": "Formosat-5 is the first Earth observation satellite manufactured and operated solely by the National Space Organization, the national civilian space agency of Taiwan.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "William_Penn",
+    "year": 1682,
+    "date": "24 August 1682",
+    "title": "William Penn receives the area that is now the state of Delaware, and adds it to his colony of Pennsylvania",
+    "note": "William Penn was an English writer, theologian, religious thinker, and influential Quaker who founded the Province of Pennsylvania.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Constantius_Gallus",
+    "year": 351,
+    "date": "15 March 351",
+    "title": "Constantius Gallus is elevated as Caesar and then sent to Antioch to govern the Roman East",
+    "note": "Flavius Claudius Constantius Gallus was a statesman and ruler in the eastern provinces of the Roman Empire from 351 to 354, as Caesar under emperor Constantius II, his cousin.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Treaty_of_Compiègne_(1624)",
+    "year": 1624,
+    "date": "10 June 1624",
+    "title": "Signing of the Treaty of Compiègne between France and the Netherlands",
+    "note": "The Treaty of Compiègne, signed on 10 June 1624, was a mutual defence alliance between the Kingdom of France and the Dutch Republic, for an initial period of three years.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "St._Andrew's_Scots_School",
+    "year": 1838,
+    "date": "1 September 1838",
+    "title": "Saint Andrew's Scots School, the oldest school of British origin in South America, is established",
+    "note": "The Saint Andrew's Scots School, also referred to as Saint Andrew's, is an Argentine bilingual school in Olivos, Vicente López Partido, Buenos Aires Province.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Cornwallis_Valley_Railway",
+    "year": 1890,
+    "date": "22 December 1890",
+    "title": "Cornwallis Valley Railway begins operation between Kentville and Kingsport, Nova Scotia",
+    "note": "The Cornwallis Valley Railway (CVR) was a historic Canadian railway in Nova Scotia's Annapolis Valley.",
+    "source": "https://en.wikipedia.org/wiki/December_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "American_Revolutionary_War",
+    "year": 1775,
+    "date": "9 February 1775",
+    "title": "American Revolutionary War: The British Parliament declares Massachusetts in rebellion",
+    "note": "Explore the linked article for more about American Revolutionary War.",
+    "source": "https://en.wikipedia.org/wiki/February_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Memphis_massacre_of_1866",
+    "year": 1866,
+    "date": "1 May 1866",
+    "title": "The Memphis Race Riots begin",
+    "note": "Over three days, 46 blacks and two whites were killed. Reports of the atrocities influenced passage of the Fourteenth Amendment to the United States Constitution.",
+    "source": "https://en.wikipedia.org/wiki/May_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Spanish_Civil_War",
+    "year": 1939,
+    "date": "10 February 1939",
+    "title": "Spanish Civil War: The Nationalists conclude their conquest of Catalonia and seal the border with France",
+    "note": "The Spanish Civil War was fought in Spain from 1936 to 1939 between the Republicans and the Nationalist rebels.",
+    "source": "https://en.wikipedia.org/wiki/February_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Isaac_I_Komnenos",
+    "year": 1057,
+    "date": "1 September 1057",
+    "title": "Byzantine general Isaak Komnenos is crowned Byzantine Emperor by patriarch Cerularius at the Hagia Sophia",
+    "note": "Isaac I Komnenos or Comnenus was Byzantine emperor from 1057 to 1059, the first reigning member of the Komnenian dynasty.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Oliver_Cromwell",
+    "year": 1658,
+    "date": "3 September 1658",
+    "title": "The death of Oliver Cromwell; Richard Cromwell becomes Lord Protector of England",
+    "note": "Oliver Cromwell was an English statesman and soldier, widely regarded as one of the most important figures in British history.",
+    "source": "https://en.wikipedia.org/wiki/September_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Grande_Comore",
+    "year": 1974,
+    "date": "22 December 1974",
+    "title": "Grande Comore, Anjouan and Mohéli vote to become the independent nation of Comoros",
+    "note": "Mayotte remains under French administration.",
+    "source": "https://en.wikipedia.org/wiki/December_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Edward_the_Black_Prince",
+    "year": 1337,
+    "date": "17 March 1337",
+    "title": "Edward the Black Prince is made Duke of Cornwall, the first duchy in England",
+    "note": "Edward of Woodstock, known as the Black Prince, was the eldest son and heir apparent of King Edward III of England.",
+    "source": "https://en.wikipedia.org/wiki/March_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_Pelagius_I",
+    "year": 561,
+    "date": "17 July 561",
+    "title": "Consecration of Pope John III following the death of Pope Pelagius I earlier that year",
+    "note": "Pope Pelagius I was the bishop of Rome from 16 April 556 to his death on 3 March 561.",
+    "source": "https://en.wikipedia.org/wiki/July_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "American_Civil_War",
+    "year": 1861,
+    "date": "8 June 1861",
+    "title": "American Civil War: Tennessee secedes from the Union",
+    "note": "The American Civil War was fought in the United States between the Union and the Confederacy, which was formed in 1861 by Southern states that had seceded from the Union to preserve the institution of slavery.",
+    "source": "https://en.wikipedia.org/wiki/June_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Campaign_of_Danture",
+    "year": 1594,
+    "date": "9 October 1594",
+    "title": "Troops of the Portuguese Empire are defeated on Sri Lanka, bringing an end to the Campaign of Danture",
+    "note": "The Campaign of Danture comprised a series of encounters between the Portuguese and the Kingdom of Kandy in 1594, part of the Sinhalese–Portuguese War.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Saint_Telemachus",
+    "year": 404,
+    "date": "1 January 404",
+    "title": "Saint Telemachus tries to stop a gladiatorial fight in a Roman amphitheatre, and is stoned to death by the crowd",
+    "note": "This act impresses the Christian Emperor Honorius, who issues a historic ban on gladiatorial fights.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Sudan",
+    "year": 1956,
+    "date": "1 January 1956",
+    "title": "Sudan achieves independence from Egypt and the United Kingdom",
+    "note": "Sudan, officially the Republic of the Sudan, is a country in Northeast Africa.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Charles_VIII_of_France",
+    "year": 1494,
+    "date": "17 November 1494",
+    "title": "French King Charles VIII occupies Florence, Italy",
+    "note": "Charles VIII, called the Affable, was King of France from 1483 to his death in 1498.",
+    "source": "https://en.wikipedia.org/wiki/November_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Leinster",
+    "year": 1169,
+    "date": "1 May 1169",
+    "title": "Norman mercenaries land at Bannow Bay in Leinster, marking the beginning of the Norman invasion of Ireland",
+    "note": "Leinster is one of the four provinces of Ireland, in the east of the island.",
+    "source": "https://en.wikipedia.org/wiki/May_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Saima_(newspaper)",
+    "year": 1844,
+    "date": "4 January 1844",
+    "title": "The newspaper Saima publishes its first issue in Kuopio, Finland",
+    "note": "Saima was a Swedish language weekly newspaper which was published in Kuopio, Finland in the 1840s.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Visigoths",
+    "year": 410,
+    "date": "24 August 410",
+    "title": "The Visigoths under King Alaric I begin to pillage Rome",
+    "note": "The Visigoths were a Gothic people who emerged in the Balkans during late antiquity.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Southern_Nigeria_Protectorate",
+    "year": 1901,
+    "date": "1 January 1901",
+    "title": "The Southern Nigeria Protectorate is established within the British Empire",
+    "note": "Southern Nigeria was a British protectorate in the coastal areas of modern-day Nigeria formed in 1900 from the union of the Niger Coast Protectorate with territories chartered by the Royal Niger Company below Lokoja on the Niger River.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Isabella_of_Angoulême",
+    "year": 1200,
+    "date": "8 October 1200",
+    "title": "Isabella of Angoulême is crowned Queen consort of England",
+    "note": "Isabella was Queen of England from 1200 to 1216 as the second wife of King John, Countess of Angoulême in her own right from 1202 until her death in 1246, and Countess of La Marche from 1220 to 1246 as the wife of Count Hugh.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_Kingdom",
+    "year": 1926,
+    "date": "4 May 1926",
+    "title": "The United Kingdom general strike begins",
+    "note": "The United Kingdom of Great Britain and Northern Ireland, commonly known as the United Kingdom (UK) or Britain, is a country in Northwestern Europe, off the coast of the continental mainland.",
+    "source": "https://en.wikipedia.org/wiki/May_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Al-Hadi_ila'l-Haqq_Yahya",
+    "year": 897,
+    "date": "15 March 897",
+    "title": "Al-Hadi ila'l-Haqq Yahya enters Sa'dah and founds the Zaydi Imamate of Yemen",
+    "note": "Abūʾl-Ḥusayn Yaḥyā ibn al-Ḥusayn ibn al-Qāsim ibn Ibrāhīm Ṭabāṭabā al-Ḥasanī, better known by his honorific title of al-Hādī ilāʾl-Ḥaqq, was a religious and political leader in the Arabian Peninsula.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Ottoman_Empire",
+    "year": 1703,
+    "date": "23 August 1703",
+    "title": "Edirne event: Sultan Mustafa II of the Ottoman Empire is dethroned",
+    "note": "The Ottoman Empire, also known historically as Turkey or the Turkish Empire, was a state that spanned much of Southeastern Europe, West Asia, and North Africa from the 14th century to the early 20th century, centred in modern-day Turkey.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "First_Barbary_War",
+    "year": 1805,
+    "date": "10 June 1805",
+    "title": "First Barbary War: Yusuf Karamanli signs a treaty ending the hostilities between Tripolitania and the United States",
+    "note": "The First Barbary War (1801–1805), also known as the Tripolitan War and the Barbary Coast War, was a conflict during the 1801–1815 Barbary Wars, in which the United States fought against Ottoman Tripolitania.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Aleksei_Chirikov",
+    "year": 1741,
+    "date": "15 July 1741",
+    "title": "Aleksei Chirikov sights land in Southeast Alaska",
+    "note": "He sends men ashore in a longboat, making them the first Europeans to visit Alaska.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Conquistador",
+    "year": 1519,
+    "date": "22 April 1519",
+    "title": "Spanish conquistador Hernán Cortés establishes a settlement at Veracruz, Mexico",
+    "note": "Conquistadors or conquistadores were Spanish and Portuguese colonists who explored, traded with, and conquered many parts of the Americas, Africa, Asia, and Oceania during the Age of Discovery.",
+    "source": "https://en.wikipedia.org/wiki/April_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Alarcos",
+    "year": 1195,
+    "date": "18 July 1195",
+    "title": "Battle of Alarcos: Almohad forces defeat the Castilian army of Alfonso VIII and force its retreat to Toledo",
+    "note": "Battle of Alarcos was fought between the Almohads led by Abu Yusuf Ya'qub al-Mansur and King Alfonso VIII of Castile.",
+    "source": "https://en.wikipedia.org/wiki/July_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_States_Senate",
+    "year": 1794,
+    "date": "11 February 1794",
+    "title": "First session of United States Senate opens to the public",
+    "note": "The United States Senate is a chamber of the bicameral United States Congress; it is the upper house, and the U.S. House of Representatives is the lower house.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pemex",
+    "year": 1938,
+    "date": "18 March 1938",
+    "title": "Mexico creates Pemex by expropriating all foreign-owned oil reserves and facilities",
+    "note": "Pemex is the Mexican state-owned petroleum corporation managed and operated by the Mexican government.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jean-Baptiste_Charles_Bouvet_de_Lozier",
+    "year": 1739,
+    "date": "1 January 1739",
+    "title": "Bouvet Island, the world's remotest island, is discovered by French explorer Jean-Baptiste Charles Bouvet de Lozier",
+    "note": "Jean-Baptiste Charles Bouvet de Lozier was a French explorer and colonial administrator of the Mascarene Islands to the east of Madagascar.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Parking_meter",
+    "year": 1935,
+    "date": "16 July 1935",
+    "title": "The world's first parking meter is installed in Oklahoma City, Oklahoma",
+    "note": "A parking meter is a device used to collect money in exchange for the right to park a vehicle in a particular place for a limited amount of time.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jacques_de_Molay",
+    "year": 1314,
+    "date": "18 March 1314",
+    "title": "Jacques de Molay, the 23rd and final Grand Master of the Knights Templar, is burned at the stake",
+    "note": "Jacques de Molay, also spelled \"Molai\", was the 23rd and last grand master of the Knights Templar, leading the order sometime before 20 April 1292 until it was dissolved by order of Pope Clement V in 1312.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Roman_Empire",
+    "year": 250,
+    "date": "3 January 250",
+    "title": "Emperor Decius orders everyone in the Roman Empire (except Jews) to make sacrifices to the Roman gods",
+    "note": "The Roman Empire was a state that dominated the Mediterranean sea and much of Europe, Western Asia, and North Africa during the classical period.",
+    "source": "https://en.wikipedia.org/wiki/January_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Giuseppe_Piazzi",
+    "year": 1801,
+    "date": "1 January 1801",
+    "title": "Ceres, the largest and first known object in the Asteroid belt, is discovered by Giuseppe Piazzi",
+    "note": "Giuseppe Piazzi was an Italian Catholic priest of the Theatine order, mathematician, and astronomer.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Treaty_of_Jaffa_(1192)",
+    "year": 1192,
+    "date": "2 September 1192",
+    "title": "The Treaty of Jaffa is signed between Richard I of England and Saladin, leading to the end of the Third Crusade",
+    "note": "The Treaty of Jaffa, less commonly referred to as the Treaty of Ramla or the treaty of 1192, was a truce agreed to during the Crusades.",
+    "source": "https://en.wikipedia.org/wiki/September_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Engelbert_Humperdinck_(composer)",
+    "year": 1893,
+    "date": "23 December 1893",
+    "title": "The opera Hansel and Gretel by Engelbert Humperdinck is first performed",
+    "note": "Engelbert Humperdinck was a German composer of opera.",
+    "source": "https://en.wikipedia.org/wiki/December_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Lunar_Orbiter_1",
+    "year": 1966,
+    "date": "23 August 1966",
+    "title": "Lunar Orbiter 1 takes the first photograph of Earth from orbit around the Moon",
+    "note": "The 1966 Lunar Orbiter 1 robotic spacecraft mission, part of NASA's Lunar Orbiter program, was the first American spacecraft to orbit the Moon.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Emperor_Tenji",
+    "year": 671,
+    "date": "10 June 671",
+    "title": "Emperor Tenji of Japan introduces a water clock (clepsydra) called Rokoku",
+    "note": "The instrument, which measures time and indicates hours, is placed in the capital of Ōtsu.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Scottish_Reformation",
+    "year": 1559,
+    "date": "2 May 1559",
+    "title": "John Knox returns from exile to Scotland to become the leader of the nascent Scottish Reformation",
+    "note": "The Scottish Reformation was the process whereby Scotland broke away from the Catholic Church, and established the Protestant Church of Scotland.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Antioch_(218)",
+    "year": 218,
+    "date": "8 June 218",
+    "title": "Battle of Antioch: With the support of the Syrian legions, Elagabalus defeats the forces of emperor Macrinus",
+    "note": "The Battle of Antioch was fought between the Roman army of the Emperor Macrinus and his rival Elagabalus, whose troops were commanded by General Gannys, probably a short distance from Antioch.",
+    "source": "https://en.wikipedia.org/wiki/June_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Vaganova_Academy_of_Russian_Ballet",
+    "year": 1738,
+    "date": "4 May 1738",
+    "title": "The Imperial Theatrical School, the first ballet school in Russia, is founded",
+    "note": "The Vaganova Academy of Russian Ballet is a school of classical ballet in Saint Petersburg, Russia.",
+    "source": "https://en.wikipedia.org/wiki/May_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Yaxchilan",
+    "year": 752,
+    "date": "3 May 752",
+    "title": "Mayan king Bird Jaguar IV of Yaxchilan in modern-day Chiapas, Mexico, assumes the throne",
+    "note": "Yaxchilan is an ancient Maya city located on the bank of the Usumacinta River in the state of Chiapas, Mexico.",
+    "source": "https://en.wikipedia.org/wiki/May_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Battle_of_Worcester",
+    "year": 1651,
+    "date": "3 September 1651",
+    "title": "The Battle of Worcester is the last significant action in the Wars of the Three Kingdoms",
+    "note": "The Battle of Worcester took place on 3 September 1651 in and around the city of Worcester, England and was the last major battle of the 1642 to 1651 Wars of the Three Kingdoms.",
+    "source": "https://en.wikipedia.org/wiki/September_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Crimea",
+    "year": 2014,
+    "date": "18 March 2014",
+    "title": "The parliaments of Russia and Crimea sign an accession treaty",
+    "note": "Crimea is a peninsula in Eastern Europe, on the northern coast of the Black Sea, almost entirely surrounded by the Black Sea and the smaller Sea of Azov.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Valdivia",
+    "year": 1643,
+    "date": "24 August 1643",
+    "title": "A Dutch fleet establishes a new colony in the ruins of Valdivia in southern Chile",
+    "note": "Valdivia is a city and commune in southern Chile, administered by the Municipality of Valdivia.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Army_of_the_Holy_Roman_Empire",
+    "year": 1595,
+    "date": "2 September 1595",
+    "title": "An imperial army retakes the city of Esztergom from the Ottoman Empire",
+    "note": "The Army of the Holy Roman Empire was created in 1422 and came to an end when the Holy Roman Empire was dissolved in 1806 as a result of the Napoleonic Wars.",
+    "source": "https://en.wikipedia.org/wiki/September_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "NEC",
+    "year": 1899,
+    "date": "17 July 1899",
+    "title": "NEC Corporation is organized as the first Japanese joint venture with foreign capital",
+    "note": "NEC Corporation  is a Japanese multinational conglomerate corporation headquartered at the NEC Supertower in Minato, Tokyo, Japan.",
+    "source": "https://en.wikipedia.org/wiki/July_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Palo_Verde,_Arizona",
+    "year": 1995,
+    "date": "9 October 1995",
+    "title": "An Amtrak Sunset Limited train is derailed by saboteurs near Palo Verde, Arizona",
+    "note": "Palo Verde is a small populated place in Maricopa County, Arizona, United States.",
+    "source": "https://en.wikipedia.org/wiki/October_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Philip_II_of_Spain",
+    "year": 1555,
+    "date": "18 July 1555",
+    "title": "The College of Arms is reincorporated by Royal charter signed by Queen Mary I of England and King Philip II of Spain",
+    "note": "Philip II, sometimes known in Spain as Philip the Prudent, was King of Spain from 1556, King of Portugal from 1580, and King of Naples and Sicily from 1554 until his death in 1598.",
+    "source": "https://en.wikipedia.org/wiki/July_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Hundred_Years'_War",
+    "year": 1429,
+    "date": "11 June 1429",
+    "title": "Hundred Years' War: Start of the Battle of Jargeau",
+    "note": "The Hundred Years' War was a series of conflicts between the kingdoms of England and France, and a civil war in France during the late Middle Ages.",
+    "source": "https://en.wikipedia.org/wiki/June_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "European_Economic_Community",
+    "year": 1958,
+    "date": "1 January 1958",
+    "title": "The European Economic Community is established",
+    "note": "The European Economic Community (EEC) was a regional organisation created by the Treaty of Rome of 1957, aiming to foster economic integration among its member states.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Surat",
+    "year": 1608,
+    "date": "24 August 1608",
+    "title": "The first official English representative to India lands in Surat",
+    "note": "Surat is a city in the western Indian state of Gujarat.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Seven_Years'_War",
+    "year": 1762,
+    "date": "4 January 1762",
+    "title": "Great Britain declares war on Spain, which meant the entry of Spain into the Seven Years' War",
+    "note": "The Seven Years' War, 1756 to 1763, was a global conflict fought by numerous great powers, primarily in Europe, with significant subsidiary campaigns in North America and the Indian subcontinent.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "2004_Russian_aircraft_bombings",
+    "year": 2004,
+    "date": "24 August 2004",
+    "title": "Ninety passengers die after two airliners explode after flying out of Domodedovo International Airport, near Moscow",
+    "note": "The explosions are caused by suicide bombers from Chechnya.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Huilliche_uprising_of_1712",
+    "year": 1712,
+    "date": "10 February 1712",
+    "title": "Huilliches in Chiloé rebel against Spanish encomenderos",
+    "note": "The Huilliche uprising of 1712 was an Indigenous uprising against the Spanish encomenderos of the Chiloé Archipelago, which was then a part of the Captaincy General of Chile.",
+    "source": "https://en.wikipedia.org/wiki/February_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Arjona,_Spain",
+    "year": 1232,
+    "date": "16 July 1232",
+    "title": "The Spanish town of Arjona declares independence and names its native Muhammad ibn Yusuf as ruler",
+    "note": "This marks the Muhammad's first rise to prominence; he later established the Nasrid Emirate of Granada, the last independent Muslim state in Spain.",
+    "source": "https://en.wikipedia.org/wiki/July_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "France_national_football_team",
+    "year": 2018,
+    "date": "15 July 2018",
+    "title": "France win their second World Cup title, defeating Croatia 4–2",
+    "note": "The France national football team represents France in men's international football.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "New_South_Greenland",
+    "year": 1823,
+    "date": "15 March 1823",
+    "title": "Sailor Benjamin Morrell erroneously reports the existence of the island of New South Greenland near Antarctica",
+    "note": "New South Greenland, sometimes known as Morrell's Land, was an appearance of land recorded by the American captain Benjamin Morrell of the schooner Wasp in March 1823, during a sealing and exploration voyage in the Weddell Sea area of Antarctica.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Acclamation_(papal_elections)",
+    "year": 1621,
+    "date": "9 February 1621",
+    "title": "Gregory XV becomes Pope, the last Pope elected by acclamation",
+    "note": "Acclamation  was formerly one of the methods of papal election.",
+    "source": "https://en.wikipedia.org/wiki/February_9#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Brunei",
+    "year": 1984,
+    "date": "1 January 1984",
+    "title": "Brunei becomes independent of the United Kingdom",
+    "note": "Brunei, officially Brunei Darussalam, is a country in Southeast Asia, situated on the northern coast of the island of Borneo.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Aldo_Moro",
+    "year": 1978,
+    "date": "16 March 1978",
+    "title": "Former Italian Prime Minister Aldo Moro is kidnapped; he is later murdered by his captors",
+    "note": "Aldo Moro was an Italian statesman and prominent member of Christian Democracy (DC) and its centre-left wing.",
+    "source": "https://en.wikipedia.org/wiki/March_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Mongol_Empire",
+    "year": 1238,
+    "date": "8 February 1238",
+    "title": "The Mongols burn the Russian city of Vladimir",
+    "note": "The Mongol Empire was the largest contiguous empire in history.",
+    "source": "https://en.wikipedia.org/wiki/February_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Vasco_da_Gama",
+    "year": 1502,
+    "date": "10 February 1502",
+    "title": "Vasco da Gama sets sail from Lisbon, Portugal, on his second voyage to India",
+    "note": "Vasco da Gama was a Portuguese mariner, explorer, and nobleman.",
+    "source": "https://en.wikipedia.org/wiki/February_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Alexander_Suvorov",
+    "year": 1790,
+    "date": "22 December 1790",
+    "title": "The Turkish fortress of Izmail is stormed and captured by Alexander Suvorov and his Russian armies",
+    "note": "Count Alexander Vasilyevich Suvorov-Rymniksky, Prince of Italy was a Russian general and military theorist in the service of the Russian Empire.",
+    "source": "https://en.wikipedia.org/wiki/December_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Duke_of_Buckingham",
+    "year": 1628,
+    "date": "23 August 1628",
+    "title": "George Villiers, the first Duke of Buckingham, is assassinated by John Felton",
+    "note": "Duke of Buckingham, referring to the market town of Buckingham, England, is an extinct title that has been created several times in the peerages of England, Great Britain, and the United Kingdom.",
+    "source": "https://en.wikipedia.org/wiki/August_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Yongle_Emperor",
+    "year": 1402,
+    "date": "17 July 1402",
+    "title": "Zhu Di, better known by his era name as the Yongle Emperor, assumes the throne over the Ming dynasty of China",
+    "note": "The Yongle Emperor, personal name Zhu Di, was the third emperor of the Ming dynasty of China, reigning from 1402 to 1424.",
+    "source": "https://en.wikipedia.org/wiki/July_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "John_III_Sobieski",
+    "year": 1675,
+    "date": "24 August 1675",
+    "title": "A Polish-Lithuanian army under John III Sobieski defeats an Ottoman-Tartar army in the battle of Lwow",
+    "note": "John III Sobieski was King of Poland and Grand Duke of Lithuania from 1674 until his death in 1696.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Xiao_Tong",
+    "year": 502,
+    "date": "24 December 502",
+    "title": "Chinese emperor Xiao Yan names Xiao Tong his heir designate",
+    "note": "Xiao Tong, courtesy name Deshi (德施), formally Zhaoming Taizi, was a crown prince of the Chinese Liang dynasty, posthumously honored as Emperor Zhaoming (昭明皇帝).",
+    "source": "https://en.wikipedia.org/wiki/December_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Rama_I",
+    "year": 1782,
+    "date": "10 June 1782",
+    "title": "King Buddha Yodfa Chulaloke (Rama I) of Siam (modern day Thailand) is crowned",
+    "note": "Phutthayotfa Chulalok, posthumously honoured as King Phutthayotfa Chulalok the Great, also known by his regnal name Rama I, was the founder of the Rattanakosin Kingdom and the first King of Siam from the reigning Chakri dynasty.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_Zosimus",
+    "year": 417,
+    "date": "18 March 417",
+    "title": "Pope Zosimus is elected following the death of Pope Innocent I",
+    "note": "Pope Zosimus was the bishop of Rome from 18 March 417 to his death on 26 December 418.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Margaret_Bondfield",
+    "year": 1929,
+    "date": "8 June 1929",
+    "title": "Margaret Bondfield is appointed Minister of Labour",
+    "note": "She is the first woman appointed to the Cabinet of the United Kingdom.",
+    "source": "https://en.wikipedia.org/wiki/June_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "King_of_Hungary",
+    "year": 1438,
+    "date": "1 January 1438",
+    "title": "Albert II of Habsburg is crowned King of Hungary",
+    "note": "The King of Hungary was the ruling head of state of the Kingdom of Hungary from 1000 to 1918.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Valletta",
+    "year": 1571,
+    "date": "18 March 1571",
+    "title": "Valletta is made the capital city of Malta",
+    "note": "Valletta, also known as Città Umilissima, is the capital city of Malta and one of its 68 council areas.",
+    "source": "https://en.wikipedia.org/wiki/March_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Marquess_of_Pembroke",
+    "year": 1532,
+    "date": "1 September 1532",
+    "title": "Lady Anne Boleyn is made Marquess of Pembroke by her fiancé, King Henry VIII of England",
+    "note": "Marquess of Pembroke was a title in the Peerage of England created by King Henry VIII for his future spouse Anne Boleyn.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Triple_Alliance_(1717)",
+    "year": 1717,
+    "date": "4 January 1717",
+    "title": "The Netherlands, Great Britain, and France sign the Triple Alliance",
+    "note": "The Triple Alliance was a defence pact signed on 4 January 1717 in The Hague between the Dutch Republic, France and Great Britain, against Bourbon Spain in an attempt to maintain the agreements of the 1713–15 Peace of Utrecht.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Graffito_of_Esmet-Akhom",
+    "year": 394,
+    "date": "24 August 394",
+    "title": "The Graffito of Esmet-Akhom, the latest known inscription in Egyptian hieroglyphs, is written",
+    "note": "The Graffito of Esmet-Akhom, also known by its designation Philae 436 or GPH 436, is the last known ancient Egyptian inscription written in Egyptian hieroglyphs, carved on 24 August AD 394.",
+    "source": "https://en.wikipedia.org/wiki/August_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Belgian_Revolution",
+    "year": 1830,
+    "date": "25 August 1830",
+    "title": "The Belgian Revolution begins",
+    "note": "The Belgian Revolution was a conflict which led to the secession of the southern provinces from the United Kingdom of the Netherlands and the establishment of an independent Kingdom of Belgium.",
+    "source": "https://en.wikipedia.org/wiki/August_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Jacob_Barsimson",
+    "year": 1654,
+    "date": "22 August 1654",
+    "title": "Jacob Barsimson arrives in New Amsterdam",
+    "note": "He is the first known Jewish immigrant to America.",
+    "source": "https://en.wikipedia.org/wiki/August_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Reinheitsgebot",
+    "year": 1516,
+    "date": "23 April 1516",
+    "title": "The Munich Reinheitsgebot (regarding the ingredients of beer) takes effect in all of Bavaria",
+    "note": "\n\nThe Reinheitsgebot is a series of regulations limiting the ingredients in beer in Germany and the states of the former Holy Roman Empire.",
+    "source": "https://en.wikipedia.org/wiki/April_23#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Coonan_Cross_Oath",
+    "year": 1653,
+    "date": "3 January 1653",
+    "title": "By the Coonan Cross Oath, the Eastern Church in India cuts itself off from colonial Portuguese tutelage",
+    "note": "The Coonan Cross Oath, also known as the Great Oath of Bent Cross or Leaning Cross Oath, was taken on 3 January 1653 in Mattancherry by a significant portion of the Saint Thomas Christian community in the Malabar region of India.",
+    "source": "https://en.wikipedia.org/wiki/January_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Hagia_Sophia",
+    "year": 415,
+    "date": "10 October 415",
+    "title": "The second church structure of Hagia Sophia was inaugurated",
+    "note": "Hagia Sophia, officially the Hagia Sophia Grand Mosque, is a mosque and a major cultural and historical site in Istanbul, Turkey.",
+    "source": "https://en.wikipedia.org/wiki/October_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Empress_Myeongseong",
+    "year": 1895,
+    "date": "8 October 1895",
+    "title": "Korean Empress Myeongseong is assassinated by Japanese infiltrators",
+    "note": "Empress Myeongseongtae, of the Yeoheung Min clan, personal name Min Ja-yeong, commonly known as Empress Myeongseong, was the wife of Gojong, the 26th king of Joseon and the first emperor of the Korean Empire.",
+    "source": "https://en.wikipedia.org/wiki/October_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Alemanni",
+    "year": 366,
+    "date": "2 January 366",
+    "title": "The Alemanni cross the frozen Rhine in large numbers, invading the Roman Empire",
+    "note": "The Alemanni or Alamanni were a confederation of Germanic peoples who first appeared in the region east of the Upper Rhine river during the third century AD.",
+    "source": "https://en.wikipedia.org/wiki/January_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Roman_emperor",
+    "year": 392,
+    "date": "22 August 392",
+    "title": "Arbogast has Eugenius elected Western Roman Emperor",
+    "note": "The Roman emperor was the ruler of the Roman Empire, starting with the granting of the title augustus to Octavian in 27 BC.",
+    "source": "https://en.wikipedia.org/wiki/August_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Fettmilch_uprising",
+    "year": 1614,
+    "date": "22 August 1614",
+    "title": "Fettmilch uprising: Jews are expelled from Frankfurt, Holy Roman Empire, following the plundering of the Judengasse",
+    "note": "The Fettmilch uprising of 1614 was an antisemitic revolt in the Free imperial city of Frankfurt am Main, led by baker Vincenz Fettmilch.",
+    "source": "https://en.wikipedia.org/wiki/August_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Royal_Academy_of_Turku",
+    "year": 1640,
+    "date": "15 July 1640",
+    "title": "The first university of Finland, the Royal Academy of Turku, is inaugurated in Turku",
+    "note": "The Royal Academy of Turku or the Royal Academy of Åbo was the first university in Finland, and the only Finnish university that was founded when the country still was a part of Sweden.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_Benedict_III",
+    "year": 858,
+    "date": "24 April 858",
+    "title": "Consecration of Pope Nicholas I following the death of Pope Benedict III earlier that month",
+    "note": "Pope Benedict III was the bishop of Rome and leader of the Papal States from 29 September 855 to his death on 17 April 858.",
+    "source": "https://en.wikipedia.org/wiki/April_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_John_IV",
+    "year": 640,
+    "date": "24 December 640",
+    "title": "Pope John IV is elected, several months after his predecessor's death",
+    "note": "Pope John IV was the bishop of Rome from 24 December 640 to his death on 12 October 642.",
+    "source": "https://en.wikipedia.org/wiki/December_24#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Church_of_the_Holy_Sepulchre",
+    "year": 1149,
+    "date": "15 July 1149",
+    "title": "The reconstructed Church of the Holy Sepulchre is consecrated in Jerusalem",
+    "note": "The Church of the Holy Sepulchre, also known as the Church of the Resurrection, is a fourth-century church in the Christian Quarter of the Old City of Jerusalem.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_John_XV",
+    "year": 996,
+    "date": "3 May 996",
+    "title": "German king Otto III chooses his cousin Bruno of Carinthia as pope following the death of Pope John XV",
+    "note": "Pope John XV was the bishop of Rome and ruler of the Papal States from August 985 until his death.",
+    "source": "https://en.wikipedia.org/wiki/May_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Brussels",
+    "year": 1507,
+    "date": "18 July 1507",
+    "title": "In Brussels, Prince Charles I is crowned Duke of Burgundy and Count of Flanders, a year after inheriting the title",
+    "note": "Brussels, officially the Brussels-Capital Region, is a region of Belgium comprising 19 municipalities, including the City of Brussels, which is the capital of Belgium.",
+    "source": "https://en.wikipedia.org/wiki/July_18#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Council_of_Constance",
+    "year": 1415,
+    "date": "4 May 1415",
+    "title": "Religious reformer John Wycliffe is condemned as a heretic at the Council of Constance",
+    "note": "The Council of Constance was an ecumenical council of the Catholic Church that was held from 1414 to 1418 in the Bishopric of Constance (Konstanz) in present-day Germany.",
+    "source": "https://en.wikipedia.org/wiki/May_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Saulos_Chilima",
+    "year": 2024,
+    "date": "10 June 2024",
+    "title": "A plane crash in Malawi leaves 10 people dead, including the country's Vice President Saulos Chilima",
+    "note": "Saulos Klaus Chilima was a Malawian economist and politician who served as Vice President of Malawi from 2014 to 2019 and again from 2020 until his death in 2024.",
+    "source": "https://en.wikipedia.org/wiki/June_10#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Kinsale",
+    "year": 1601,
+    "date": "2 September 1601",
+    "title": "4th Spanish Armada makes landfall in Ireland at Kinsale",
+    "note": "Kinsale is a historic port and fishing town in County Cork, Ireland.",
+    "source": "https://en.wikipedia.org/wiki/September_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Swedish–Novgorodian_Wars",
+    "year": 1240,
+    "date": "15 July 1240",
+    "title": "Swedish–Novgorodian Wars: A Novgorodian army led by Alexander Nevsky defeats the Swedes in the Battle of the Neva",
+    "note": "The Swedish–Novgorodian Wars were a series of armed conflicts in the 12th and 13th centuries between the Novgorod Republic and medieval Sweden over control of the Gulf of Finland.",
+    "source": "https://en.wikipedia.org/wiki/July_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "United_Nations_Security_Council_Resolution_89",
+    "year": 1950,
+    "date": "17 November 1950",
+    "title": "United Nations Security Council Resolution 89 relating to the Palestine Question is adopted",
+    "note": "Explore the linked article for more about United Nations Security Council Resolution 89.",
+    "source": "https://en.wikipedia.org/wiki/November_17#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Western_Roman_Empire",
+    "year": 421,
+    "date": "8 February 421",
+    "title": "Constantius III becomes co-emperor of the Western Roman Empire",
+    "note": "In modern historiography, the Western Roman Empire was the Roman Empire's western provinces collectively during any period in which they were administered separately from the eastern provinces by a separate, independent imperial court.",
+    "source": "https://en.wikipedia.org/wiki/February_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Pope_Innocent_I",
+    "year": 401,
+    "date": "22 December 401",
+    "title": "Pope Innocent I is elected, the only pope to succeed his father in the office",
+    "note": "Pope Innocent I was the bishop of Rome from 401 to his death on 12 March 417.",
+    "source": "https://en.wikipedia.org/wiki/December_22#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "New_Apostolic_Church",
+    "year": 1863,
+    "date": "4 January 1863",
+    "title": "The New Apostolic Church, a Christian and chiliastic church, is established in Hamburg, Germany",
+    "note": "The New Apostolic Church (NAC) is a Christian church of the Irvingian tradition.",
+    "source": "https://en.wikipedia.org/wiki/January_4#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Grand_marshal",
+    "year": 1817,
+    "date": "8 February 1817",
+    "title": "An army led by Grand Marshal Las Heras crosses the Andes to join San Martín in the liberation of Chile from Spain",
+    "note": "Grand marshal is a ceremonial, military, or political office of very high rank.",
+    "source": "https://en.wikipedia.org/wiki/February_8#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Powder_Alarm",
+    "year": 1774,
+    "date": "1 September 1774",
+    "title": "Massachusetts Bay colonists rise up in the bloodless Powder Alarm",
+    "note": "The Powder Alarm was a major popular reaction to the removal of gunpowder from a gunpowder magazine near Boston by British troops under orders from General Thomas Gage, governor of the Province of Massachusetts Bay, on September 1, 1774.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Charles_Fremantle",
+    "year": 1829,
+    "date": "2 May 1829",
+    "title": "After anchoring nearby, Captain Charles Fremantle of HMS Challenger declares the Swan River Colony in Australia",
+    "note": "Admiral Sir Charles Howe Fremantle GCB was a British Royal Navy officer.",
+    "source": "https://en.wikipedia.org/wiki/May_2#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Guillotine",
+    "year": 1792,
+    "date": "25 April 1792",
+    "title": "Nicolas Pelletier becomes the first person executed by guillotine",
+    "note": "A guillotine is an apparatus designed for effectively carrying out executions by beheading.",
+    "source": "https://en.wikipedia.org/wiki/April_25#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Eudokia_Makrembolitissa",
+    "year": 1068,
+    "date": "1 January 1068",
+    "title": "Romanos IV Diogenes marries Eudokia Makrembolitissa and is crowned Byzantine Emperor",
+    "note": "Eudokia Makrembolitissa was a Byzantine empress by her successive marriages to Constantine X Doukas and Romanos IV Diogenes.",
+    "source": "https://en.wikipedia.org/wiki/January_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Wamba_(king)",
+    "year": 673,
+    "date": "3 September 673",
+    "title": "King Wamba of the Visigoths puts down a revolt by Hilderic, governor of Nîmes (France) and rival for the throne",
+    "note": "Wamba was the king of the Visigoths from 672 to 680.",
+    "source": "https://en.wikipedia.org/wiki/September_3#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Nijmegen",
+    "year": 1702,
+    "date": "11 June 1702",
+    "title": "Anglo-Dutch forces skirmish with French forces before the walls of Nijmegen and prevent its fall",
+    "note": "Nijmegen is the largest city in the Dutch province of Gelderland and the ninth largest of the Netherlands as a whole.",
+    "source": "https://en.wikipedia.org/wiki/June_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Emperor_of_China",
+    "year": 1449,
+    "date": "1 September 1449",
+    "title": "Tumu Crisis: The Mongols capture the Emperor of China",
+    "note": "Throughout Chinese history, \"Emperor\" was the superlative title held by the monarchs of imperial China's various dynasties.",
+    "source": "https://en.wikipedia.org/wiki/September_1#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Space_Shuttle_Discovery",
+    "year": 1997,
+    "date": "11 February 1997",
+    "title": "Space Shuttle Discovery is launched on a mission to service the Hubble Space Telescope",
+    "note": "Space Shuttle Discovery is a retired American Space Shuttle orbiter.",
+    "source": "https://en.wikipedia.org/wiki/February_11#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Afonso_I_of_Portugal",
+    "year": 1147,
+    "date": "15 March 1147",
+    "title": "Afonso I of Portugal captures in a surprise attack the city of Santarem from the Almoravids",
+    "note": "Dom Afonso I nicknamed \"the Conqueror\", \"the Founder\" and \"the Great\" by the Portuguese, was the first king of Portugal, from 26 July 1139 until his death on 6 December 1185.",
+    "source": "https://en.wikipedia.org/wiki/March_15#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  },
+  {
+    "id": "Convention_Parliament_(1660)",
+    "year": 1660,
+    "date": "16 March 1660",
+    "title": "The Long Parliament of England is dissolved so as to prepare for the new Convention Parliament",
+    "note": "The Convention Parliament of England followed the Long Parliament that had finally voted for its own dissolution on 16 March that year.",
+    "source": "https://en.wikipedia.org/wiki/March_16#Events",
+    "attribution": "Adapted from Wikipedia contributors, via On This Day and the linked article (CC BY-SA 4.0)."
+  }
 ]
