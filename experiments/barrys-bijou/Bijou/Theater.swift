@@ -72,6 +72,7 @@ struct Theater: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.scenePhase) private var phase
     @State private var home = false
+    @State private var searchingTMDb = false
     @State private var query = ""
     @State private var sort = WatchedSort.viewed
     @State private var shelf = MovieShelf.watched
@@ -118,6 +119,10 @@ struct Theater: View {
                             Label(studio.status, systemImage: j.needsReview ? "exclamationmark.circle" : "ticket")
                         }.buttonStyle(.plain).accessibilityHint("Opens home sync")
                         TextField("Find a film", text: $query).textFieldStyle(.roundedBorder)
+                        if j.base.origin == "personal", studio.credentials?.library == j.base.library {
+                            Button { searchingTMDb = true } label: { Label("Search TMDb", systemImage: "magnifyingglass") }
+                                .buttonStyle(AdmissionStyle())
+                        }
                         HStack {
                             Text("Collection").font(.subheadline.bold())
                             Spacer()
@@ -166,6 +171,11 @@ struct Theater: View {
             .navigationDestination(for: FilmRef.self) { ref in FilmDetail(ref: ref) }
         }
         .sheet(isPresented: $home) { HomePanel() }
+        .sheet(isPresented: $searchingTMDb) {
+            if let creds = studio.credentials, let catalog = studio.journal?.base {
+                MovieDiscovery(credentials: creds, catalog: catalog, initial: query)
+            }
+        }
         .onChange(of: studio.journal?.base.library) { _, _ in path.removeAll() }
     }
 }

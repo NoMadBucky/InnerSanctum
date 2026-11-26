@@ -44,6 +44,22 @@ def test_watchlist_date_is_saved_without_ranking_or_duplicate_log(root):
     assert canonical(root) == after
 
 
+def test_tmdb_search_encodes_titles_and_returns_only_movie_fields(monkeypatch):
+    import io
+    from types import SimpleNamespace
+    from urllib.parse import parse_qs, urlsplit
+    home = adapter("home")
+    monkeypatch.setattr(home.subprocess, "run", lambda *a, **kw: SimpleNamespace(stdout=b"fixture-only\n"))
+    def search(request, timeout):
+        assert urlsplit(request.full_url).netloc == "api.themoviedb.org"
+        assert parse_qs(urlsplit(request.full_url).query) == {"query": ["A & B"], "page": ["2"]}
+        assert request.get_header("Authorization") == "Bearer fixture-only"
+        return io.BytesIO(b'{"results":[{"id":22,"title":"A & B","release_date":null}],"total_pages":612}')
+    monkeypatch.setattr(home.urllib.request, "build_opener", lambda *_: SimpleNamespace(open=search))
+    assert home.tmdb_search({"query": " A & B ", "page": 2}) == {
+        "results": [{"id": 22, "title": "A & B", "year": "", "overview": ""}], "pages": 500}
+
+
 def test_artwork_redirects_check_every_hop():
     from urllib.request import Request
 

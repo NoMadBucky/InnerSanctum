@@ -18,7 +18,7 @@ import ssl
 import subprocess
 import threading
 import time
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 import urllib.request
 
 from innersanctum import bijou, handover, writer
@@ -27,6 +27,38 @@ from innersanctum.schema import Refused, document
 
 def hashed(s):
     return hashlib.sha256(s.encode()).hexdigest()
+
+
+def tmdb_search(payload):
+    query, page = payload.get("query"), payload.get("page")
+    if (not isinstance(query, str) or not 1 <= len(query.strip()) <= 200
+            or type(page) is not int or not 1 <= page <= 500):
+        raise ValueError("Invalid movie search.")
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args):
+            return None
+    try:
+        cred = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", "org.innersanctum.bijou.tmdb",
+                               "-a", "read-token", "-w", str(Path.home() / "Library/Keychains/login.keychain-db")],
+                              capture_output=True, timeout=30, check=True).stdout.decode("ascii").strip()
+    except (subprocess.SubprocessError, UnicodeError, OSError):
+        raise Refused("Allow the Personal Sync adapter to read the TMDb token in the Mac’s login keychain.") from None
+    url = "https://api.themoviedb.org/3/search/movie?" + urlencode({"query": query.strip(), "page": page})
+    request = urllib.request.Request(url, headers={"Authorization": "Bearer " + cred, "Accept": "application/json"})
+    try:
+        with urllib.request.build_opener(NoRedirect()).open(request, timeout=5) as response:
+            data = json.load(response)
+        return {"results": [{"id": r["id"], "title": r["title"], "year": (r.get("release_date") or "")[:4],
+                             "overview": r.get("overview") or ""} for r in data["results"]],
+                "pages": min(data["total_pages"], 500)}
+    except urllib.error.HTTPError as err:
+        if err.code in (401, 403):
+            raise Refused("TMDb rejected the Mac’s read token.") from None
+        if err.code == 429:
+            raise Refused("TMDb is receiving too many searches. Try again shortly.") from None
+        raise Refused("TMDb search is unavailable. Try again later.") from None
+    except (OSError, ValueError, KeyError, TypeError):
+        raise Refused("The Mac could not get search results from TMDb.") from None
 
 
 CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"  # No 0/O or 1/I/L.
@@ -266,6 +298,8 @@ def handler(home):
                     return self.reply(200, home.place(payload))
                 if self.command == "POST" and self.path == "/watched":
                     return self.reply(200, home.watch(payload))
+                if self.command == "POST" and self.path == "/tmdb/search" and isinstance(home, PersonalHome):
+                    return self.reply(200, tmdb_search(payload))
                 if self.command == "GET" and (m := re.fullmatch(r"/covers/([0-9a-f]{64})", self.path)):
                     p = home.state / (m[1] + ".jpg")
                     if p.is_file():

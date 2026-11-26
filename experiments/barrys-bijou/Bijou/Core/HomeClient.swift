@@ -71,6 +71,23 @@ struct HomeResponse: LocalizedError {
 }
 
 final class HomeClient {
+    struct MovieHit: Decodable, Identifiable {
+        let id: Int
+        let title, year, overview: String
+    }
+    struct MoviePage: Decodable {
+        let results: [MovieHit]
+        let pages: Int
+    }
+    func searchTMDb(_ query: String, page: Int) async throws -> MoviePage {
+        struct Search: Encodable { let query: String; let page: Int }
+        do {
+            let data = try JSONEncoder().encode(Search(query: query, page: page))
+            return try await JSONDecoder().decode(MoviePage.self, from: send("tmdb/search", data: data, timeout: 40))
+        } catch let error as HomeResponse where error.status == 404 {
+            throw BijouError("Restart the updated Personal Sync adapter on your Mac to enable TMDb search.")
+        }
+    }
     let url: URL
     private let token: String?
     private let session: URLSession
@@ -79,7 +96,7 @@ final class HomeClient {
         self.url = url; self.token = token; self.pin = pin
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 8
-        config.timeoutIntervalForResource = 15
+        config.timeoutIntervalForResource = 45
         config.httpShouldSetCookies = false
         config.urlCredentialStorage = nil
         config.allowsCellularAccess = false
@@ -93,8 +110,9 @@ final class HomeClient {
     }
     deinit { session.invalidateAndCancel() }
 
-    private func send(_ path: String, data: Data? = nil) async throws -> Data {
+    private func send(_ path: String, data: Data? = nil, timeout: TimeInterval = 8) async throws -> Data {
         var req = URLRequest(url: url.appendingPathComponent(path))
+        req.timeoutInterval = timeout
         if let token { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         if let data { req.httpMethod = "POST"; req.httpBody = data; req.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         let (bytes, response) = try await session.data(for: req)
