@@ -26,6 +26,44 @@ def canonical(root):
     return {path: f.read_bytes() for path, f in writer.visible_files(root)}
 
 
+def test_interrupted_reaction_filing_is_retryable_and_bound_to_take(tmp_path, monkeypatch):
+    import io
+    import wave
+    from innersanctum import reaction_filing as filing
+    root = adapter("fixture").create(tmp_path.resolve() / "room", reactions=True)
+    snap = bijou.catalog(root)
+    stream = io.BytesIO()
+    with wave.open(stream, "wb") as wav:
+        wav.setparams((1, 2, 44100, 0, "NONE", "not compressed"))
+        wav.writeframes(b"\xff\x04\x01\xfb" * 22050)
+    audio = stream.getvalue()
+    meta = dict(library=snap["library"], film=snap["films"][0]["ref"], sha256=writer.digest(audio),
+                take=str(uuid.uuid4()), recordedAt="2026-11-25T22:00:00Z", viewingDate="2026-11-24")
+    before = canonical(root)
+    with monkeypatch.context() as patch:
+        def interrupted(*a, **kw):
+            raise OSError("simulated crash before concept")
+        patch.setattr(writer, "create", interrupted)
+        with pytest.raises(OSError):
+            filing.file_take(root, meta, audio)
+    assert canonical(root) == before
+    with pytest.raises(Refused, match="different recording or movie"):
+        filing.file_take(root, {**meta, "film": snap["films"][1]["ref"]}, audio)
+    result = filing.file_take(root, meta, audio)
+    filed = canonical(root)
+    assert filing.file_take(root, meta, audio) == result and canonical(root) == filed
+    _, _, store = filing.target(root)
+    sources = json.loads((store / "catalog.json").read_bytes())["sources"]
+    fields, body, _ = document((root / result["path"]).read_text())
+    assert len(sources) == 1 and len(list((store / "audio").iterdir())) == 1
+    archived = store / sources[fields["source_key"]]["path"]
+    assert archived.read_bytes() == audio and fields["film_id"] == meta["film"]["personalID"]
+    assert fields["duration_ms"] == 1000 and fields["viewing_date"] == meta["viewingDate"]
+    assert meta["film"]["path"] in body and set(filed) - set(before) == {result["path"]}
+    with pytest.raises(Refused):
+        filing.file_take(root, meta, b"not audio")
+
+
 def test_create_watchlist_movie_retry_then_watch_with_same_identity(root):
     library = bijou.catalog(root)["library"]
     details = dict(id=123, title="Fixture premiere", release_date="2025-09-02", overview="A fictional synopsis.",

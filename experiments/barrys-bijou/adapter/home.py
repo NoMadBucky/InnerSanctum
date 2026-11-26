@@ -1,6 +1,7 @@
 """Pair and serve a disposable Bijou library over pinned HTTPS on the Mac."""
 
 import argparse
+import base64
 from contextlib import closing, contextmanager
 import hashlib
 import hmac
@@ -21,7 +22,7 @@ import time
 from urllib.parse import urlencode, urlsplit
 import urllib.request
 
-from innersanctum import bijou, handover, writer
+from innersanctum import bijou, handover, reaction_filing, writer
 from innersanctum.schema import Refused, document
 
 
@@ -155,7 +156,10 @@ class Home:
         cache_covers(self.root, self.state, allowed)
 
     def catalog(self, *, all_movies=False):
-        return bijou.catalog(self.root, all_movies=all_movies)
+        catalog = bijou.catalog(self.root, all_movies=all_movies)
+        if (self.root / "Documents/reactions/index.md").exists():
+            catalog["fixtureReactionFiling"] = True
+        return catalog
 
     def place(self, payload):
         return bijou.place(self.root, payload, "process:bijou-fixture")
@@ -294,6 +298,22 @@ def handler(home):
         def route(self):
             payload = {}
             try:
+                if self.command == "POST" and self.path == "/fixture/reactions":
+                    if type(home) is not Home:
+                        return self.reply(404, {"error": "Fixture filing only."})
+                    auth = self.headers.get("Authorization", "")
+                    if not auth.startswith("Bearer ") or not home.authenticated(auth[7:]):
+                        return self.reply(401, {"error": "Pair this device."})
+                    length = int(self.headers.get("Content-Length", "0"))
+                    header = self.headers.get("Bijou-Reaction", "")
+                    if not 0 < length <= reaction_filing.LIMIT or not 0 < len(header) <= 4096:
+                        return self.reply(400, {"error": "Invalid reaction upload."})
+                    meta = json.loads(base64.b64decode(header, validate=True))
+                    self.connection.settimeout(40)
+                    audio = self.rfile.read(length)
+                    if len(audio) != length:
+                        raise ValueError
+                    return self.reply(200, reaction_filing.file_take(home.root, meta, audio))
                 if self.command == "POST":
                     length = int(self.headers.get("Content-Length", "0"))
                     if not 0 < length <= 8192:

@@ -1,5 +1,23 @@
 # Build and try Bijou
 
+## Rehearse reaction filing in a disposable library
+
+When creating a **new** external practice bundle with `adapter/fixture.py`,
+pass `--reactions`. This also creates a private sibling source store named
+`BijouSources-<fixture library ID>`. Both belong to that disposable fixture.
+Pair with its practice adapter as usual. Keep a WAV take on a fixture film
+and select **File in practice library**. The Mac archives the original bytes,
+reads back the SHA-256 source catalog entry, and files a `Film Reaction`
+concept in `Documents/reactions/`. Its `film_id` and Markdown link identify
+the movie; `source_key` identifies the recording in the sibling catalog.
+The file name in the media store is derived from the checksum.
+
+If filing is interrupted, retain the device copy and retry the same take.
+A pending OKF publication requires the existing fixture recovery command
+before retry. Removing a filed take from the phone leaves the archive intact.
+Legacy AAC imports, adoption of the live source catalog, and installation of
+the reaction schema in Personal are outside this rehearsal.
+
 ## Open a library movie in Plex on iPhone
 
 1. On the Mac, open Plex Web. Select a movie **from your server’s Movies

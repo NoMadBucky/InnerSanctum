@@ -8,7 +8,7 @@ import struct
 import uuid
 import zlib
 
-from innersanctum import bijou, writer
+from innersanctum import bijou, reaction_filing, writer
 from innersanctum.schema import Refused
 
 
@@ -73,7 +73,7 @@ def poster(number):
             + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b""))
 
 
-def create(directory):
+def create(directory, *, reactions=False):
     root = writer.external_root(directory, CHECKOUT, new=True)
     if any(writer.present(p / writer.MARKER) or writer.present(p / writer.STATE)
            or (writer.present(p / "index.md") and writer.present(p / "log.md")) for p in root.parents):
@@ -117,14 +117,22 @@ def create(directory):
     cfg = {"id": result["id"], "path": result["path"], "library": uuid.uuid4().hex,
            "bundle": writer.bundle_identity(root)}
     (root / bijou.BINDING).write_bytes(writer.json_bytes(cfg))
+    if reactions:
+        (root / "Documents/reactions").mkdir()
+        (root / "Documents/reactions/index.md").write_text(reaction_filing.SCHEMA)
+        with (root / "Documents/index.md").open("a") as index:
+            index.write("* [Film reactions](reactions/index.md)\n")
+        reaction_filing.initialize(root)
     return root
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("new_directory")
+    parser.add_argument("--reactions", action="store_true", help="Create a paired disposable source store too.")
     os.umask(0o077)
     try:
-        print(create(parser.parse_args().new_directory))
+        args = parser.parse_args()
+        print(create(args.new_directory, reactions=args.reactions))
     except (Refused, OSError) as error:
         parser.exit(2, f"{parser.prog}: {error}\n")

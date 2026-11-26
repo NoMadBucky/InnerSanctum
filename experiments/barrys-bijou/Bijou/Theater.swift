@@ -279,7 +279,7 @@ struct FilmDetail: View {
                     if j.needsReview { Text("Open Home Sync to review the ranking.").font(.caption) }
                     if let store = studio.reactionStore(library: j.base.library, film: ref) {
                         Divider()
-                        AudioReactions(store: store, viewed: f.watched).id(store.directory)
+                        AudioReactions(store: store, viewed: f.watched, film: ref).id(store.directory)
                     }
                     Divider()
                     ForEach(Array(f.body.components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, block in

@@ -1,6 +1,39 @@
 import AVFoundation
 import SwiftUI
 
+#if os(iOS)
+@MainActor
+private enum ReactionSession {
+    static var tail: Task<Void, Never>?
+    static func enqueue(_ operation: @escaping @Sendable () async throws -> Void) -> Task<Void, Error> {
+        let previous = tail
+        let next = Task.detached {
+            await previous?.value
+            try await operation()
+        }
+        tail = Task { _ = await next.result }
+        return next
+    }
+    static func activate(recording: Bool) -> Task<Void, Error> {
+        enqueue {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(recording ? .record : .playback, mode: recording ? .measurement : .spokenAudio)
+            if #available(iOS 27, *) {
+                guard try await session.activate(options: []) else { throw BijouError("Audio session could not start.") }
+            } else { try session.setActive(true) }
+        }
+    }
+    static func release() {
+        _ = enqueue {
+            let session = AVAudioSession.sharedInstance()
+            if #available(iOS 27, *) {
+                _ = try await session.deactivate(options: .notifyOthersOnDeactivation)
+            } else { try session.setActive(false, options: .notifyOthersOnDeactivation) }
+        }
+    }
+}
+#endif
+
 @MainActor
 private final class ReactionRoom: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var takes: [AudioReaction] = []
@@ -24,6 +57,7 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioPlayerDeleg
     private var started = Date()
     private var viewing: String?
     private var permissionRequest: UUID?
+    private var playbackRequest: UUID?
     private var sessionActive = false
 
     init(store: ReactionStore) { self.store = store }
@@ -50,15 +84,15 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioPlayerDeleg
         let permitted = await AVCaptureDevice.requestAccess(for: .audio)
         #endif
         guard permissionRequest == request else { return }
-        requesting = false; permissionRequest = nil
+        defer { if permissionRequest == request { requesting = false; permissionRequest = nil } }
         guard permitted else { notice = "Allow Bijou to use the microphone in Settings → Privacy & Security → Microphone."; return }
         do {
             #if os(iOS)
             let session = AVAudioSession.sharedInstance()
             // A reaction uses only input. Playback sets its own category when requested.
-            try session.setCategory(.record, mode: .measurement)
-            try session.setActive(true)
             sessionActive = true
+            try await ReactionSession.activate(recording: true).value
+            guard permissionRequest == request else { return }
             if let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }) {
                 try session.setPreferredInput(builtIn)
             }
@@ -78,7 +112,7 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioPlayerDeleg
             engine.prepare()
             try engine.start()
             lastInput = .now; started = Date(); viewing = viewed; elapsed = 0; inputLevel = 0; recording = true
-        } catch { discard(); notice = error.localizedDescription }
+        } catch { if permissionRequest == request { discard(); notice = error.localizedDescription } }
     }
 
     nonisolated private static func attach(_ input: AVAudioInputNode, track: MicrophoneTrack) throws {
@@ -135,28 +169,38 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioPlayerDeleg
         }
         draftID = nil; preview = nil; elapsed = 0
     }
-    func play(_ take: AudioReaction) {
+    func play(_ take: AudioReaction) async {
+        guard !recording, !requesting else { return }
         let wasPlaying = playing == take.id
         stopPlayback()
-        guard !wasPlaying, !recording else { return }
+        guard !wasPlaying else { return }
+        let request = UUID()
+        playbackRequest = request
         do {
             #if os(iOS)
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio); try session.setActive(true)
             sessionActive = true
+            try await ReactionSession.activate(recording: false).value
+            guard playbackRequest == request else { return }
             output = session.currentRoute.outputs.map(\.portName).joined(separator: ", ")
             if session.outputVolume == 0 { output += " · Media volume is zero" }
             #else
             output = "system sound output"
             #endif
             let url = store.audio(take.id, draft: take.id == draftID)
-            let warning = try ReactionSignal.quietMessage(at: url)
-            let p = try AVAudioPlayer(contentsOf: url)
-            p.delegate = self
-            p.volume = 1
-            guard p.prepareToPlay(), p.play() else { throw BijouError("Cannot play this recording.") }
-            player = p; playing = take.id; notice = warning
-        } catch { releaseSession(); notice = error.localizedDescription }
+            let (p, warning) = try await Task.detached {
+                let warning = try ReactionSignal.quietMessage(at: url)
+                let p = try AVAudioPlayer(contentsOf: url)
+                guard p.prepareToPlay() else { throw BijouError("Cannot prepare this recording.") }
+                return (p, warning)
+            }.value
+            guard playbackRequest == request else { return }
+            player = p; playing = take.id; p.delegate = self
+            let started = await Task.detached { p.play() }.value
+            guard playbackRequest == request else { p.stop(); return }
+            guard started else { throw BijouError("Cannot play this recording.") }
+            notice = warning
+        } catch { if playbackRequest == request { stopPlayback(); notice = error.localizedDescription } }
     }
     func delete(_ take: AudioReaction) {
         if playing == take.id { stopPlayback() }
@@ -174,11 +218,11 @@ private final class ReactionRoom: NSObject, ObservableObject, AVAudioPlayerDeleg
             self.stopPlayback(); self.notice = "The audio file could not be decoded."
         } }
     }
-    func stopPlayback() { player?.stop(); player = nil; playing = nil; releaseSession() }
+    func stopPlayback() { playbackRequest = nil; player?.stop(); player = nil; playing = nil; releaseSession() }
     private func releaseSession() {
         #if os(iOS)
         guard sessionActive else { return }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        ReactionSession.release()
         sessionActive = false
         #endif
     }
@@ -188,9 +232,12 @@ struct AudioReactions: View {
     @StateObject private var room: ReactionRoom
     @Environment(\.scenePhase) private var phase
     @State private var deleting: AudioReaction?
+    @EnvironmentObject private var studio: Studio
+    @State private var filing: UUID?
+    let film: FilmRef
     let viewed: String?
-    init(store: ReactionStore, viewed: String?) {
-        _room = StateObject(wrappedValue: ReactionRoom(store: store)); self.viewed = viewed
+    init(store: ReactionStore, viewed: String?, film: FilmRef) {
+        _room = StateObject(wrappedValue: ReactionRoom(store: store)); self.viewed = viewed; self.film = film
     }
     private func clock(_ t: Double) -> String {
         if t > 0 && t < 1 { return "<1s" }
@@ -219,11 +266,27 @@ struct AudioReactions: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(take.recordedAt.formatted(date: .abbreviated, time: .shortened)).font(.subheadline.bold())
                     if let day = take.viewingDate { Text("Viewing: \(day)").font(.caption) }
-                    Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { room.play(take) }
+                    Button(room.playing == take.id ? "Stop playback" : "Play · \(clock(take.seconds))") { Task { await room.play(take) } }
                         .disabled(room.recording || room.requesting)
-                    Button(role: .destructive) { deleting = take } label: {
-                        Label("Delete recording", systemImage: "trash")
+                    if room.store.filed(take.id) {
+                        Label("Filed in practice library", systemImage: "checkmark.circle")
+                    } else if studio.journal?.base.fixtureReactionFiling == true,
+                              let creds = studio.credentials, creds.library == studio.journal?.base.library {
+                        Button(filing == take.id ? "Filing…" : "File in practice library") {
+                            filing = take.id
+                            Task {
+                                defer { filing = nil }
+                                do {
+                                    let receipt = try await HomeClient(creds).fileReaction(take, url: room.store.audio(take.id),
+                                                                                          film: film, library: creds.library)
+                                    try room.store.saveReceipt(receipt); room.notice = nil; room.reload()
+                                } catch { room.notice = error.localizedDescription }
+                            }
+                        }.disabled(filing != nil)
                     }
+                    Button(role: .destructive) { deleting = take } label: {
+                        Label(room.store.filed(take.id) ? "Remove from this device" : "Delete recording", systemImage: "trash")
+                    }.disabled(filing == take.id)
                 }
             }
             if room.playing != nil { Label("Playing through \(room.output)", systemImage: "speaker.wave.2").font(.caption) }
@@ -248,7 +311,7 @@ struct AudioReactions: View {
         }
     }
     @ViewBuilder private func previewActions(_ take: AudioReaction) -> some View {
-        Button(room.playing == take.id ? "Stop preview" : "Preview") { room.play(take) }
+        Button(room.playing == take.id ? "Stop preview" : "Preview") { Task { await room.play(take) } }
         Button("Keep") { room.keep() }.buttonStyle(.borderedProminent)
         Button("Discard", role: .destructive) { room.discard() }
     }

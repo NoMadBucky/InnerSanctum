@@ -9,6 +9,11 @@ struct AudioReaction: Codable, Identifiable {
     let seconds: Double
 }
 
+struct FilingReceipt: Codable {
+    let id, path, sha256: String
+    let take: UUID
+}
+
 /// A kept take is one directory: the recording and its metadata become visible together.
 struct ReactionStore {
     static let limit: TimeInterval = 120
@@ -54,6 +59,12 @@ struct ReactionStore {
     }
     func delete(_ id: UUID) throws {
         try FileManager.default.removeItem(at: folder(id, draft: false))
+    }
+    func saveReceipt(_ receipt: FilingReceipt) throws {
+        try JSONEncoder().encode(receipt).write(to: folder(receipt.take, draft: false).appendingPathComponent("filed.json"), options: .atomic)
+    }
+    func filed(_ id: UUID) -> Bool {
+        FileManager.default.fileExists(atPath: folder(id, draft: false).appendingPathComponent("filed.json").path)
     }
     func keep(_ take: AudioReaction) throws {
         guard take.seconds.isFinite, take.seconds > 0, take.seconds <= Self.limit,

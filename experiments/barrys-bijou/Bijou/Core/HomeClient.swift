@@ -125,11 +125,15 @@ final class HomeClient {
     }
     deinit { session.invalidateAndCancel() }
 
-    private func send(_ path: String, data: Data? = nil, timeout: TimeInterval = 8) async throws -> Data {
+    private func send(_ path: String, data: Data? = nil, timeout: TimeInterval = 8, reaction: String? = nil) async throws -> Data {
         var req = URLRequest(url: url.appendingPathComponent(path))
         req.timeoutInterval = timeout
         if let token { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         if let data { req.httpMethod = "POST"; req.httpBody = data; req.setValue("application/json", forHTTPHeaderField: "Content-Type") }
+        if let reaction {
+            req.setValue("audio/wav", forHTTPHeaderField: "Content-Type")
+            req.setValue(reaction, forHTTPHeaderField: "Bijou-Reaction")
+        }
         let (bytes, response) = try await session.data(for: req)
         guard let http = response as? HTTPURLResponse else { throw BijouError("No response from the Mac.") }
         guard http.statusCode == 200 else {
@@ -180,4 +184,21 @@ final class HomeClient {
         }
     }
     func cover(_ key: String) async throws -> Data { try await send("covers/\(key)") }
+    func fileReaction(_ take: AudioReaction, url: URL, film: FilmRef, library: String) async throws -> FilingReceipt {
+        guard url.pathExtension == "wav" else { throw BijouError("Fixture filing supports WAV recordings.") }
+        let audio = try Data(contentsOf: url)
+        let digest = SHA256.hash(data: audio).map { String(format: "%02x", $0) }.joined()
+        struct Header: Encodable {
+            let library: String; let film: FilmRef; let take: String; let recordedAt: String
+            let viewingDate: String?; let sha256: String
+        }
+        let header = Header(library: library, film: film, take: take.id.uuidString.lowercased(),
+                            recordedAt: ISO8601DateFormatter().string(from: take.recordedAt),
+                            viewingDate: take.viewingDate, sha256: digest)
+        let encoded = try JSONEncoder().encode(header).base64EncodedString()
+        let result = try await JSONDecoder().decode(FilingReceipt.self, from: send("fixture/reactions", data: audio, timeout: 40, reaction: encoded))
+        guard result.sha256 == digest, result.take == take.id, result.id.hasPrefix("bho:"),
+              result.path == "Documents/reactions/\(result.id.dropFirst(4)).md" else { throw BijouError("Unrecognized filing receipt.") }
+        return result
+    }
 }
