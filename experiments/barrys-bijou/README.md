@@ -43,17 +43,18 @@ not just color, to identify the selected slot and its neighbors.
 * Watchlist and watched-date editing are later features. Watch state and rank
   are independent: ranking a film does not change its watched date.
 
-## Record a reaction (later)
+## Record an audio reaction
 
-From film detail, choose **Audio** or **Video**, then record, preview, and keep
-or discard the take. Display a timer and stop recording at **two minutes**.
-Use AVFoundation and request microphone or camera permission only when
-needed. Allow multiple dated reactions per film; when a viewing date is
-known, associate the reaction with that viewing without overwriting earlier
-takes or dates.
+From film detail, choose **Record reaction**. Allow microphone access when
+prompted. Stop early or let the timer reach **two minutes**, then **Preview**
+and **Keep** or **Discard**. Keep the take before leaving the film. Kept
+takes appear newest first, with the recording time and the film’s viewing
+date when known. They stay in private app storage on the recording device
+and can be replayed offline after relaunch.
 
-Keeping a take saves the original recording, links it to the film, and starts
-transcription. Save the resulting text alongside the reaction so it can be
+### Later: transcription, video and filing
+
+When transcription is added, save the resulting text alongside the reaction so it can be
 read without playing the clip. Prefer on-device transcription; don’t send
 recordings to an external service without a separate, explicit choice. If
 transcription is unavailable or fails, keep the clip and show that the text
