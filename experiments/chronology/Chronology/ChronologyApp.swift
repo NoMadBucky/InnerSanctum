@@ -16,12 +16,13 @@ private struct GameLoader: View {
     @State private var round: Round?
     @State private var failed = false
     @State private var started = false
+    @State private var mode = GameMode.standard
     @State private var showScores = false
 
     var body: some View {
         if !started {
-            WelcomeView(start: { started = true }, scores: { showScores = true })
-                .sheet(isPresented: $showScores) { ScoreBoard() }
+            WelcomeView(mode: $mode, start: { started = true }, scores: { showScores = true })
+                .sheet(isPresented: $showScores) { ScoreBoard(mode: mode) }
         } else if let round {
             GameView(round: round, restart: restart)
         } else if failed {
@@ -56,7 +57,7 @@ private struct GameLoader: View {
                         return
                     }
                     #endif
-                    round = try Round(deck: deck)
+                    round = try Round(deck: deck, mode: mode)
                 } catch { failed = true }
             }
         }
@@ -73,7 +74,13 @@ private struct GameView: View {
     @State private var reading: Event?
     @State private var hasDrawn = false
     @State private var showScores = false
-    @AppStorage("chronology.scores.v1") private var scores = Data()
+    @AppStorage private var scores: Data
+
+    init(round: Round, restart: @escaping () -> Void) {
+        _round = State(initialValue: round)
+        _scores = AppStorage(wrappedValue: Data(), round.mode.scoresKey)
+        self.restart = restart
+    }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var motion: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.35) }
 
@@ -89,7 +96,8 @@ private struct GameView: View {
                 Spacer()
                 Button("Draw First Card") { hasDrawn = true }.buttonStyle(.borderedProminent)
             } else if let event = round.drawn {
-                Text("Guess \(round.turn) of \(Round.guesses)  ·  \(round.score) correct")
+                Text(round.mode == .standard ? "Guess \(round.turn) of \(Round.guesses)  ·  \(round.score) correct" :
+                        "Long Play · \(round.score) correct · \(round.misses)/\(Round.missLimit) misses")
                     .font(.subheadline.monospacedDigit())
                 Spacer(minLength: 0)
                 ViewThatFits(in: .vertical) {
@@ -108,14 +116,14 @@ private struct GameView: View {
                     Button("Place Here") {
                         guard !scrolling, round.reveal == nil else { return }
                         withAnimation(motion) { round.place(at: gap) }
-                        if round.turn == Round.guesses, round.reveal != nil {
+                        if round.isFinalReveal {
                             scores = ScoreHistory.record(round.score, in: scores)
                         }
                     }.disabled(scrolling)
                         .accessibilityValue(gapDescription)
                         .buttonStyle(.borderedProminent)
                 } else {
-                    Button(round.turn == Round.guesses ? "See Results" : "Draw Next") {
+                    Button(round.isFinalReveal ? "See Results" : "Draw Next") {
                         showingAnswer = false
                         scrolling = false
                         round.advance()
@@ -127,7 +135,10 @@ private struct GameView: View {
             } else {
                 Spacer()
                 Image(systemName: "rosette").font(.largeTitle)
-                Text("\(round.score) of \(Round.guesses) placed correctly").font(.title2.bold())
+                if round.mode == .longPlay {
+                    Text(round.misses == Round.missLimit ? "Long Play · Three misses" : "Long Play · Deck completed")
+                }
+                Text("\(round.score) of \(round.score + round.misses) placed correctly").font(.title2.bold())
                 Text("Your final table · Tap a card to explore").font(.caption)
                 finalTable
                 Button("High Scores") { showScores = true }
@@ -137,7 +148,7 @@ private struct GameView: View {
         }
         .padding(.vertical)
         .sheet(item: $reading) { EventReader(event: $0) }
-        .sheet(isPresented: $showScores) { ScoreBoard() }
+        .sheet(isPresented: $showScores) { ScoreBoard(mode: round.mode) }
         .task(id: round.reveal != nil) {
             guard let reveal = round.reveal, !reveal.correct else { return }
             if !reduceMotion {

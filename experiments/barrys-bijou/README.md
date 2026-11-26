@@ -133,6 +133,15 @@ The [design decisions](design-decisions.md) record the device and home-sync
 choices and the working design for storage, pairing, and conflict review.
 The Personal and practice adapters use separate device enrollments.
 
+## Roadmap
+
+**ATProto Spaces integration — after the first upstream stable release.**
+Once ATProto Spaces ships a release its maintainers designate as stable,
+review the published API and choose a first Bijou use case. A candidate is
+a shared screening room where a viewer can share a selected film reaction.
+Keep Personal OKF private by default; sharing a reaction should be a
+separate choice from filing it in Personal.
+
 ## Prototype and verification
 
 1. Build Watched, film detail, and the ranking carousel on a disposable

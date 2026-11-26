@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WelcomeView: View {
+    @Binding var mode: GameMode
     let start, scores: () -> Void
     @State private var spread = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -24,11 +25,24 @@ struct WelcomeView: View {
             }.accessibilityElement(children: .combine)
             Text("Can you find your place in history?").bold().multilineTextAlignment(.center)
             Spacer()
+            ModePicker(mode: $mode)
+            Text(mode == .standard ? "Ten guesses to build your timeline." :
+                    "Draw without repeats until three misses or the deck runs out.")
+                .font(.subheadline).multilineTextAlignment(.center)
             Button("New Game", action: start).buttonStyle(.borderedProminent).controlSize(.large)
             Button("High Scores", action: scores)
         }
         .padding()
         .onAppear { withAnimation(reduceMotion ? nil : .spring(duration: 0.8)) { spread = true } }
+    }
+}
+
+private struct ModePicker: View {
+    @Binding var mode: GameMode
+    var body: some View {
+        Picker("Game mode", selection: $mode) {
+            ForEach(GameMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+        }.pickerStyle(.segmented)
     }
 }
 
@@ -51,12 +65,15 @@ enum ScoreHistory {
 }
 
 struct ScoreBoard: View {
-    @AppStorage("chronology.scores.v1") private var data = Data()
+    @State var mode: GameMode
+    @AppStorage(GameMode.standard.scoresKey) private var standardScores = Data()
+    @AppStorage(GameMode.longPlay.scoresKey) private var longScores = Data()
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
-            let entries = ScoreHistory.entries(data)
+            let entries = ScoreHistory.entries(mode == .standard ? standardScores : longScores)
             List {
+                ModePicker(mode: $mode)
                 if entries.isEmpty {
                     ContentUnavailableView("No scores yet", systemImage: "rosette",
                                            description: Text("Finish a round to record your first score."))
@@ -67,7 +84,7 @@ struct ScoreBoard: View {
                                 Text("#\(index + 1)").foregroundStyle(.secondary)
                                 Text(entry.date, style: .date)
                                 Spacer()
-                                Text("\(entry.score)/\(Round.guesses)").bold()
+                                Text(mode == .standard ? "\(entry.score)/\(Round.guesses)" : "\(entry.score) correct").bold()
                             }
                         }
                     }

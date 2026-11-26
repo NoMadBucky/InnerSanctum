@@ -34,3 +34,25 @@ do {
     fatalError("Duplicate year accepted")
 } catch DeckError.duplicateYear {}
 print("Validated \(deck.count) cards, perfect round, and final opposite-end miss.")
+
+var long = try Round(deck: sorted, mode: .longPlay, shuffle: false)
+for guess in 1...15 {
+    let miss = [1, 8, 15].contains(guess)
+    long.place(at: miss ? 0 : long.table.count)
+    precondition(long.isFinalReveal == (guess == 15))
+    long.place(at: 0) // A second tap cannot spend another miss.
+    precondition(!long.finished && long.drawn != nil)
+    long.advance()
+}
+precondition(long.finished && long.drawn == nil && long.score == 12 && long.misses == 3)
+
+var marathon = try Round(deck: deck, mode: .longPlay)
+var dealt = Set([marathon.table[0].id])
+while let card = marathon.drawn {
+    precondition(dealt.insert(card.id).inserted)
+    marathon.place(at: marathon.table.filter { $0.year < card.year }.count)
+    precondition(marathon.isFinalReveal == (dealt.count == deck.count))
+    marathon.advance()
+}
+precondition(dealt.count == deck.count && marathon.score == deck.count - 1 && marathon.misses == 0)
+print("Validated Long Play beyond ten guesses, third miss, and full-deck exhaustion.")

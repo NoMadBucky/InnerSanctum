@@ -4,7 +4,10 @@
 
 Open `Chronology.xcodeproj`, select the Chronology scheme and run on a portrait
 iPhone (iOS 18 or later). Choose New Game to inspect the dated opening card,
-then Draw First Card to begin ten scored guesses.
+then Draw First Card to begin. Standard gives you ten scored guesses.
+Choose Long Play before New Game to play without repeats until your third
+miss or the last card in the deck. Each correct placement earns one point;
+the opening anchor is free. Both modes let you inspect the final reveal.
 Slide the continuous row of dated cards under the fixed center marker.
 A flick coasts across multiple cards; when it settles, the marker and year
 caption identify the proposed insertion gap. First, Earlier, Later and Last
@@ -12,7 +15,7 @@ also move the timeline.
 Only Place Here commits. A correct guess grows the table; a miss shows the
 correct gap. You can keep browsing after either result. Tap any dated card
 to read about it, even on the final table. A perfect round has eleven cards.
-High Scores keeps the best ten finished rounds on this iPhone, newest first
+High Scores keeps the best ten finished rounds per mode on this iPhone, newest first
 for ties. The opening animation respects Reduce Motion.
 
 `Chronology/events.json` holds the offline deck. Each clue names one event;
@@ -48,6 +51,3 @@ swiftc Chronology/Round.swift Tests/main.swift -o "$TMPDIR/chronology-tests"
 
 Playtest the expanded pool for clue clarity, difficulty and coverage across
 regions, eras and disciplines before choosing cards for custom artwork.
-A longer-play mode should deal
-without replacement until the deck runs out or its stopping rule is reached.
-Three misses is a playtest candidate, not a settled rule.
