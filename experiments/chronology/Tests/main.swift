@@ -56,3 +56,35 @@ while let card = marathon.drawn {
 }
 precondition(dealt.count == deck.count && marathon.score == deck.count - 1 && marathon.misses == 0)
 print("Validated Long Play beyond ten guesses, third miss, and full-deck exhaustion.")
+
+let legacy = ScoreEntry(id: UUID(), score: 8, date: Date(timeIntervalSince1970: 0))
+var board = try JSONEncoder().encode(Array(repeating: legacy, count: 10))
+let below = ScoreEntry(id: UUID(), score: 7, date: Date())
+precondition(ScoreHistory.record(below, in: board) == nil)
+let tied = ScoreEntry(id: UUID(), score: 8, date: Date())
+board = ScoreHistory.record(tied, in: board)!
+precondition(ScoreHistory.sign(tied.id, with: "a1", in: board) == board)
+board = ScoreHistory.sign(tied.id, with: "a-c3e!", in: board)
+let ranked = ScoreHistory.entries(board)
+precondition(ranked.count == 10 && ranked.first?.initials == "ACE" && ranked.last?.initials == nil)
+print("Validated initials, unsigned scores and the top-ten cutoff with ties.")
+
+func verdict(_ years: [Int], guess: Int) throws -> Round.Reveal {
+    let cards = years.map { Event(id: "\($0)", year: $0, date: "\($0)", title: "", note: "", source: nil, attribution: nil) }
+    var game = try Round(deck: cards, mode: .longPlay, shuffle: false)
+    for year in years.dropFirst().dropLast() {
+        game.place(at: game.table.filter { $0.year < year }.count)
+        game.advance()
+    }
+    game.place(at: guess)
+    return game.reveal!
+}
+let near = try verdict([1000, 1500], guess: 0)
+let far = try verdict([1501, 1000], guess: 1)
+precondition(near.yearsOutsideGap == 500 && near.verdict == "Almost!")
+precondition(far.yearsOutsideGap == 501 && far.verdict != near.verdict)
+let timeline = [1000, 1010, 1020, 1030, 1040, 1050, 1055]
+let misses = try (0...6).map { try verdict(timeline, guess: $0) }
+precondition(misses[1].verdict == far.verdict && misses[2].verdict != far.verdict)
+precondition(misses[3].verdict == misses[4].verdict && misses[2].verdict != misses[3].verdict)
+precondition(misses[4].yearsOutsideGap == 15 && misses[5].verdict == near.verdict && misses[6].correct)

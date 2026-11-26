@@ -34,10 +34,11 @@ struct NameThatFilm: View {
     @State private var questions: [FilmQuiz.Question] = []
     @State private var answers: [String] = []
     @State private var index = 0
+    @State private var roundID = UUID()
     private var pool: FilmQuiz { FilmQuiz(films: studio.journal?.base.films ?? []) }
     private func start() {
         let round = pool.round()
-        questions = round; index = 0; answers = []
+        questions = round; index = 0; answers = []; roundID = UUID()
         if !muted, let first = round.first { voice.read(first.clue, using: voiceID) }
     }
     var body: some View {
@@ -76,12 +77,14 @@ struct NameThatFilm: View {
                         Button("Sync clues") { Task { await studio.sync(manual: true) } }
                             .disabled(studio.syncing || studio.isSample || studio.isSnapshot)
                     }
+                    QuizScoreboard(score: nil, round: roundID)
                 } else if questions.indices.contains(index) {
                     questionView(questions[index])
                 } else {
                     let missed = questions.indices.filter { answers[$0] != questions[$0].film.id }
                     BillingLine(title: "FINAL SCORE")
                     Text("\(questions.count - missed.count) / \(questions.count)").font(.largeTitle.bold())
+                    QuizScoreboard(score: questions.count - missed.count, round: roundID).id(roundID)
                     if missed.isEmpty { Text("A perfect round!") }
                     else {
                         Text("Films you missed").font(.headline)

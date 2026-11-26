@@ -74,6 +74,9 @@ private struct GameView: View {
     @State private var showingAnswer = false
     @State private var reading: Event?
     @State private var hasDrawn = false
+    @State private var qualifyingScore: ScoreEntry?
+    @State private var enteringInitials = false
+    @State private var initials = ""
     @State private var showScores = false
     @AppStorage private var scores: Data
 
@@ -136,7 +139,11 @@ private struct GameView: View {
                         guard !scrolling, round.reveal == nil else { return }
                         withAnimation(motion) { round.place(at: gap) }
                         if round.isFinalReveal {
-                            scores = ScoreHistory.record(round.score, in: scores)
+                            let entry = ScoreEntry(id: UUID(), score: round.score, date: Date())
+                            if let updated = ScoreHistory.record(entry, in: scores) {
+                                scores = updated
+                                qualifyingScore = entry
+                            }
                         }
                     }.disabled(scrolling)
                         .accessibilityValue(gapDescription)
@@ -147,6 +154,7 @@ private struct GameView: View {
                         showingAnswer = false
                         scrolling = false
                         round.advance()
+                        enteringInitials = round.finished && qualifyingScore != nil
                     }.buttonStyle(.borderedProminent)
                         .tint(teal).foregroundStyle(scheme == .dark ? .black : .white)
                         // Only a miss needs the brief "Your guess" preview.
@@ -170,6 +178,27 @@ private struct GameView: View {
         .padding(.vertical)
         .sheet(item: $reading) { EventReader(event: $0) }
         .sheet(isPresented: $showScores) { ScoreBoard(mode: round.mode) }
+        .sheet(isPresented: $enteringInitials) {
+            VStack(spacing: 20) {
+                Label("You made the board!", systemImage: "trophy.fill").font(.title2.bold())
+                Text("Enter three initials for your \(round.mode.rawValue) score.")
+                TextField("AAA", text: $initials)
+                    .accessibilityLabel("Three initials")
+                    .font(.system(.largeTitle, design: .monospaced).bold())
+                    .multilineTextAlignment(.center)
+                    .keyboardType(.asciiCapable)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .onChange(of: initials) { _, value in initials = ScoreHistory.letters(value) }
+                Button("Save Initials") {
+                    if let entry = qualifyingScore {
+                        scores = ScoreHistory.sign(entry.id, with: initials, in: scores)
+                    }
+                    enteringInitials = false
+                }.buttonStyle(.borderedProminent).disabled(ScoreHistory.letters(initials).count != 3)
+                Button("Skip") { enteringInitials = false }
+            }.padding().presentationDetents([.medium, .large])
+        }
         .task(id: round.reveal != nil) {
             guard let reveal = round.reveal, !reveal.correct else { return }
             if !reduceMotion {
@@ -192,10 +221,14 @@ private struct GameView: View {
     private func drawCard(_ event: Event) -> some View {
                 VStack(spacing: 8) {
                     if let reveal = round.reveal {
-                        Label(reveal.correct ? "Correct!" : "Not quite",
+                        Label(reveal.verdict,
                               systemImage: reveal.correct ? "sparkles" : "arrow.uturn.left.circle")
                             .foregroundStyle(reveal.correct ? Color.green : .secondary)
                             .transition(.scale.combined(with: .opacity))
+                        if !reveal.correct {
+                            Text("\(reveal.gapsOff == 1 ? "1 gap" : "\(reveal.gapsOff) gaps") off · \(reveal.yearsOutsideGap) \(reveal.yearsOutsideGap == 1 ? "year" : "years") outside your slot")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     } else {
                         Text("YOUR DRAW").font(.caption.bold()).foregroundStyle(.secondary)
                     }

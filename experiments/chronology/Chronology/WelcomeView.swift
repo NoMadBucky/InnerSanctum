@@ -55,24 +55,6 @@ private struct ModePicker: View {
     }
 }
 
-struct ScoreEntry: Codable, Identifiable {
-    let id: UUID
-    let score: Int
-    let date: Date
-}
-
-enum ScoreHistory {
-    static func entries(_ data: Data) -> [ScoreEntry] {
-        (try? JSONDecoder().decode([ScoreEntry].self, from: data)) ?? []
-    }
-
-    static func record(_ score: Int, in data: Data) -> Data {
-        let ranked = (entries(data) + [ScoreEntry(id: UUID(), score: score, date: Date())])
-            .sorted { ($0.score, $0.date) > ($1.score, $1.date) }
-        return (try? JSONEncoder().encode(Array(ranked.prefix(10)))) ?? data
-    }
-}
-
 struct ScoreBoard: View {
     @State var mode: GameMode
     @AppStorage(GameMode.standard.scoresKey) private var standardScores = Data()
@@ -91,6 +73,7 @@ struct ScoreBoard: View {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                             HStack {
                                 Text("#\(index + 1)").foregroundStyle(.secondary)
+                                Text(entry.initials ?? "–––").font(.system(.headline, design: .monospaced))
                                 Text(entry.date, style: .date)
                                 Spacer()
                                 Text(mode == .standard ? "\(entry.score)/\(Round.guesses)" : "\(entry.score) correct").bold()

@@ -16,7 +16,9 @@ Only Place Here commits. A correct guess grows the table; a miss shows the
 correct gap. You can keep browsing after either result. Tap any dated card
 to read about it, even on the final table. A perfect round has eleven cards.
 High Scores keeps the best ten finished rounds per mode on this iPhone, newest first
-for ties. The welcome screen plays a silent, bundled montage. Reduce Motion
+for ties. If you make the board, See Results invites you to sign your score
+with three initials. Skipping keeps the score unsigned.
+The welcome screen plays a silent, bundled montage. Reduce Motion
 shows a still; the player stops when the welcome screen is covered or inactive.
 
 ## Intro montage
@@ -64,7 +66,7 @@ after Learn More, and repeat with VoiceOver and Reduce Motion.
 To run the engine checks from this directory without an iPhone runtime:
 
 ```sh
-swiftc Chronology/Round.swift Tests/main.swift -o "$TMPDIR/chronology-tests"
+swiftc Chronology/{Round,ScoreHistory}.swift Tests/main.swift -o "$TMPDIR/chronology-tests"
 "$TMPDIR/chronology-tests" Chronology/events.json
 ```
 

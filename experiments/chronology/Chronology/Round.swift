@@ -25,8 +25,20 @@ struct Round {
     static let missLimit = 3
     let mode: GameMode
     struct Reveal {
-        let chosen, actual: Int
+        let chosen, actual, yearsOutsideGap: Int
         var correct: Bool { chosen == actual }
+        var gapsOff: Int { abs(chosen - actual) }
+        var verdict: String {
+            if correct { return "Correct!" }
+            if gapsOff > 4 || yearsOutsideGap > 500 {
+                return "Your time machine has been repossessed."
+            }
+            switch gapsOff {
+            case 1: return "Almost!"
+            case 2...3: return "History begs to differ."
+            default: return "Did you shuffle the centuries?"
+            }
+        }
     }
 
     private let hand: [Event]
@@ -54,7 +66,12 @@ struct Round {
     mutating func place(at gap: Int) {
         guard reveal == nil, let drawn, (0...table.count).contains(gap) else { return }
         let actual = table.firstIndex { $0.year > drawn.year } ?? table.count
-        reveal = Reveal(chosen: gap, actual: actual)
+        // A guess is an interval, not a year. Measure to its nearest crossed boundary.
+        let yearsOutside: Int
+        if gap < actual { yearsOutside = drawn.year - table[gap].year }
+        else if gap > actual { yearsOutside = table[gap - 1].year - drawn.year }
+        else { yearsOutside = 0 }
+        reveal = Reveal(chosen: gap, actual: actual, yearsOutsideGap: yearsOutside)
         if gap == actual { table.insert(drawn, at: gap) } else { misses += 1 }
     }
 
