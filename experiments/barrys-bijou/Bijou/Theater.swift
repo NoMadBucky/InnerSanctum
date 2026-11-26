@@ -17,7 +17,6 @@ struct Poster: View {
     @EnvironmentObject var studio: Studio
     let film: Film?
     let width: CGFloat
-    var height: CGFloat? = nil
     var body: some View {
         let _ = studio.coverGeneration
         ZStack {
@@ -55,7 +54,7 @@ struct Poster: View {
                 }.foregroundStyle(Color(red: 0.95, green: 0.84, blue: 0.60)).padding(7)
             }
         }
-        .frame(width: width, height: height ?? (width * 1.48)).clipped()
+        .frame(width: width, height: width * 1.5).clipped()
         .accessibilityHidden(true)
     }
     private func image(_ url: URL) -> Image? {
@@ -128,7 +127,7 @@ struct Theater: View {
                             ForEach(films) { film in
                                 Button { path.append(film.ref) } label: {
                                     HStack(spacing: 15) {
-                                        Poster(film: film, width: 64, height: 112)
+                                        Poster(film: film, width: 112 * 2 / 3)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(film.title).font(.system(.headline, design: .serif))
                                             Text([film.year, film.watched ?? "Watch date unknown"].compactMap { $0 }.joined(separator: "  ·  "))
